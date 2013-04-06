@@ -2,8 +2,8 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 
 // based on http://stackoverflow.com/a/13928240
-
-var cmd = 'git log --pretty=format:\'{%n^@^hash^@^:^@^%h^@^,%n^@^author^@^:^@^%an^@^,%n^@^date^@^:^@^%ad^@^,%n^@^email^@^:^@^%aE^@^,%n^@^message^@^:^@^%s^@^,%n^@^commitDate^@^:^@^%ai^@^,%n^@^age^@^:^@^%cr^@^},\' > result.json';
+var format = '{%n"hash":"%h","parent":"%p",%n"author":"%an",%n"date":"%ad",%n"message":"%s",%n"commitDate":"%ai", "subject": "%s"}'.replace(/\"/g, '^@^');
+var cmd = 'git log --pretty=format:\'' + format + ',\' > result.json';
 var cwd = '../../three.js/'
 var target = '../data/test.json'
 
@@ -14,10 +14,10 @@ var child = exec(cmd, {cwd: cwd},
 			console.log('exec error: ' + error);
 			return;
 		}
-		format();
+		convert();
 });
 
-function format() {
+function convert() {
 
 	var result = fs.readFileSync(cwd + 'result.json', 'utf8');
 	fs.unlinkSync(cwd + 'result.json');
