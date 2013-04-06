@@ -6,10 +6,11 @@
 
 <form>
 Enter your github username and password to bypass the 60 requests per hour limit for unauthenticated API accesses. <br>
-username: <input id="username" type="text" value="zodiac"> <br>
-password: <input id="password" type="password" value=""> <br>
-owner: <input id="owner" value="zz85"> <br>
-repo: <input id="repo" value="3ource"> <br>
+username: <input id="username" type="text" value="zodiac"/> <br>
+password: <input id="password" type="password" value=""/> <br><br>
+owner: <input id="owner" value="zz85" /> <br/>
+repo: <input id="repo" value="3ource" /> <br/>
+<button onclick="start(); return false;">Load commit data from Github</button>
 </form>
 <script>
 
@@ -25,12 +26,12 @@ function git_url() {
 	return "https://" + login + "@api.github.com/repos/" + owner + "/" + repo + "/git";
 }
 function getAllRefs() {
-	url = git_url() + "/refs";
+	url = git_url() + "/refs" + "?callback=getRefsCallback";
 	return $.get(url);
 }
 
 function getCommit(sha) {
-	url = git_url() + "/commits/" + sha;
+	url = git_url() + "/commits/" + sha + "?callback=processCommit";
 	return $.get(url);
 }
 
@@ -45,12 +46,17 @@ function clean(c) {
 }
 
 function processCommit(commit) {
+	commit = commit.data;
 	commits.push(clean(commit));
 
 	for (i in commit.parents) {
 		p = commit.parents[i];
 
-		getCommit(p.sha).done(processCommit);
+		getCommit(p.sha);
+	}
+
+	if (commit.parents.length == 0) {
+		console.log('loading done');
 	}
 }
 
@@ -59,15 +65,19 @@ function start() {
 	promised_commits = [];
 	commits = [];
 
-	getAllRefs().done(function(refs) {
-		for (i in refs) {
-			commit = refs[i];
-			if (commit.object.type === "commit") {
-				getCommit(commit.object.sha).done(processCommit);
-			}
-		}
-	});
+	getAllRefs();
 }
+
+function getRefsCallback(refs) {
+	refs = refs.data;
+	for (i in refs) {
+		commit = refs[i];
+		if (commit.object.type === "commit") {
+			getCommit(commit.object.sha);
+		}
+	}
+}
+
 
 </script>
 
