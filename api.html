@@ -1,0 +1,83 @@
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+</head>
+<body>
+
+<form>
+Enter your github username and password to bypass the 60 requests per hour limit for unauthenticated API accesses. <br>
+username: <input id="username" type="text" value="zodiac"> <br>
+password: <input id="password" type="password" value=""> <br><br>
+owner: <input id="owner" value="zz85"> <br>
+repo: <input id="repo" value="3ource"> <br>
+run the start() function from the js console. the commits array will be populated with commits as they come (there may be duplicates)
+</form>
+<script>
+
+
+function git_url() {
+	username = $("#username").val();
+	password = $("#password").val();
+
+	owner = $("#owner").val();
+	repo = $("#repo").val();
+
+	login = username + ":" + password;
+	return "https://" + login + "@api.github.com/repos/" + owner + "/" + repo;
+}
+function getAllRefs() {
+	url = git_url() + "/git/refs";
+	return $.get(url);
+}
+
+function getCommit(sha) {
+	url = git_url() + "/commits/" + sha;
+	return $.get(url);
+}
+
+commits = [];
+
+function clean(c) {
+	p = []
+	for (i in c.parents) {
+		p.push(c.parents[i].sha);
+	}
+
+	f = []
+	for (i in c.files) {
+		f.push(c.files[i].filename);
+	}
+
+	return {'message': c.commit.message,
+			'author': c.commit.author.name,
+			'time': c.commit.author.date,
+			'parents': p,
+			'files': f}
+}
+
+function processCommit(commit) {
+	commits.push(clean(commit));
+
+	for (i in commit.parents) {
+		p = commit.parents[i];
+
+		getCommit(p.sha).done(processCommit);
+	}
+}
+
+function start() {
+
+	getAllRefs().done(function(refs) {
+		for (i in refs) {
+			commit = refs[i];
+			if (commit.object.type === "commit") {
+				getCommit(commit.object.sha).done(processCommit);
+			}
+		}
+	});
+}
+
+</script>
+
+</body>
+</html>
