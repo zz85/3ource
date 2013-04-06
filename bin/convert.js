@@ -2,10 +2,10 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 
 // based on http://stackoverflow.com/a/13928240
-var format = '{%n"hash":"%h","parent":"%p",%n"author":"%an",%n"date":"%ad",%n"message":"%s",%n"commitDate":"%ai", "subject": "%s"}'.replace(/\"/g, '^@^');
+var format = '{%n"hash":"%h","parent":"%p",%n"author":"%an",%n"date":"%at",%n"message":"%s",%n"commitDate":"%ct", "subject": "%s"}'.replace(/\"/g, '^@^');
 var cmd = 'git log --pretty=format:\'' + format + ',\' > result.json';
-var cwd = '../../three.js/'
-var target = '../data/test.json'
+var cwd = ''
+var target = 'data/test.json'
 
 
 var child = exec(cmd, {cwd: cwd},
