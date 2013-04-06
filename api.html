@@ -1,6 +1,9 @@
 <html>
 <head>
 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script src="http://arborjs.org/js/lib/arbor.js"></script>
+<script src="https://raw.github.com/samizdatco/arbor/master/demos/_/graphics.js"></script>
+<script src="https://raw.github.com/samizdatco/arbor/master/demos/halfviz/src/renderer.js"></script>
 </head>
 <body>
 
@@ -12,8 +15,14 @@ owner: <input id="owner" value="zz85"> <br>
 repo: <input id="repo" value="3ource"> <br>
 run the start() function from the js console. the commits array will be populated with commits as they come (there may be duplicates)
 </form>
+
+<canvas id="viewport" width="800" height="600"></canvas>
+
 <script>
 
+var sys = arbor.ParticleSystem(1000, 400,1);
+sys.parameters({gravity:false});
+sys.renderer = Renderer("#viewport");
 
 function git_url() {
 	username = $("#username").val();
@@ -41,6 +50,7 @@ function clean(c) {
 	p = []
 	for (i in c.parents) {
 		p.push(c.parents[i].sha);
+		sys.addEdge(c.parents[i].sha, c.sha)
 	}
 
 	f = []
@@ -48,7 +58,8 @@ function clean(c) {
 		f.push(c.files[i].filename);
 	}
 
-	return {'message': c.commit.message,
+	return {'sha': c.sha,
+			'message': c.commit.message,
 			'author': c.commit.author.name,
 			'time': c.commit.author.date,
 			'parents': p,
@@ -57,6 +68,8 @@ function clean(c) {
 
 function processCommit(commit) {
 	commits.push(clean(commit));
+
+	sys.addNode(commit.sha,{'color':'red','shape':'dot','label':commit.commit.message.substr(0,12)});
 
 	for (i in commit.parents) {
 		p = commit.parents[i];
@@ -76,6 +89,7 @@ function start() {
 		}
 	});
 }
+
 
 </script>
 
