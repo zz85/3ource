@@ -3,5 +3,27 @@
 <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
 </head>
 <body>
+
+<form>
+Enter your github username and password to bypass the 60 requests per hour limit for unauthenticated API accesses. <br>
+username: <input id="username" type="text"> </input> <br>
+password: <input id="password" type="password"> </input>
+</form>
+<script>
+function login() {
+	username = $("#username").val();
+	password = $("#password").val();
+
+	 return username + ":" + password;
+}
+function getAllRefs(owner, repo) {
+
+	url = "https://" + login() + "@github.com/repos/" + owner + "/" + repo + "/git/refs";
+
+	$.get(url, function(res) {console.log(res)});
+
+}
+</script>
+
 </body>
 </html>
