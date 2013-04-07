@@ -41,6 +41,12 @@
 		var hashes = {};
 		var targetRows = 200;
 
+		function compare(a, b) {
+			return b.date - a.date;
+		}
+		// Date order vs Ancestor order
+		timeline.sort(compare);
+
 		// create hashes
 		for (i=0,il=timeline.length;i<il;i++) {
 			v = timeline[i];
@@ -88,12 +94,12 @@
 			v = timeline[i];
 			e = document.createElement('div');
 			e.className = 'log';
-			e.innerHTML =  v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
+			e.innerHTML =  i + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
 			container.appendChild(e);
 
 			var pendingParents2 = [];
 			for (j=0;j<v.parents.length;j++) {
-				pendingParents2.push({toHash: v.parents[j],
+				pendingParents2.push({targetHash: v.parents[j],
 					row: i, merge: true});
 			}
 
@@ -107,7 +113,7 @@
 				ctx.moveTo(getTrackX(p.track), getRowY(p.row+LINK_PORTION));
 
 				p.row = i;
-				if (p.toHash==v.hash) {
+				if (p.targetHash==v.hash) {
 					var first = nodeTrack===null;
 					if (first) nodeTrack = j;
 
@@ -116,7 +122,6 @@
 					if (first && pendingParents2.length) {
 						pendingParents[j] = pendingParents2.shift()
 						pendingParents[j].track = j;
-						// -merges;
 					} else {
 						pendingParents.splice(j, 1);
 						merges++;
@@ -136,27 +141,39 @@
 				nodeTrack = 0;
 			}
 
+			//TODO fix this part!
 			// console.log(nodeTrack);
 
 			var uniqueTargets = {};
-			var uniqueTargetsCount = 0,hash ;
+			var uniqueTargetsCount = 0, hash;
 
-			for (j=0;j<pendingParents.length;j++) {
-				hash = pendingParents[j].toHash;
-				if (!(hash in uniqueTargets)) {
-					uniqueTargets[hash] = pendingParents[j].track;
-					uniqueTargetsCount++;
-				}
-			}
+			// for (j=0;j<pendingParents.length;j++) {
+			// 	hash = pendingParents[j].targetHash;
+			// 	if (!(hash in uniqueTargets)) {
+			// 		uniqueTargets[hash] = pendingParents[j].track;
+			// 		uniqueTargetsCount++;
+			// 	} else {
+			// 		console.log('oh no!')
+			// 	}
+			// }
+
+			uniqueTargetsCount = pendingParents.length;
 
 			for (j=0;j<pendingParents2.length;j++) {
 				p = pendingParents2[j];
-				if (p.toHash in uniqueTargets) {
-					p.track = uniqueTargets[p.toHash];
-					p.duplicate = true;
-				} else {
-					p.track = uniqueTargetsCount++;
-				}
+				// if (p.targetHash in uniqueTargets) {
+				// 	p.track = uniqueTargets[p.targetHash];
+				// 	p.duplicate = true;
+				// } else {
+				// 	p.track = uniqueTargetsCount++;
+				// }
+				// p.track = pendingParents.length;
+
+				// if (p.targetHash == timeline[i+1].hash) {
+				// 	console.log('do something!', i)
+				// }
+
+				p.track = uniqueTargetsCount++;
 				pendingParents.push(p);
 			}
 
@@ -181,9 +198,9 @@
 
 			}
 
-			for (j=0;j<pendingParents.length;j++) {
-				if (pendingParents[j].duplicate) pendingParents.splice(j, 1);
-			}
+			// for (j=0;j<pendingParents.length;j++) {
+			// 	if (pendingParents[j].duplicate) pendingParents.splice(j, 1);
+			// }
 
 			// Draw node
 
@@ -200,16 +217,7 @@
 			return t * 25 + 10;
 		}
 
-		// Date order vs Ancestor order
 
-		// var isBigger = 0;
-		// for (i=0,il=u.length;i<il;i++) {
-		// 	v = u[i];
-		// 	// v.date = new Date(v.date*1000);
-		// 	if (v.date > isBigger) {
-		// 		isBigger = v.date;
-		// 	} else debugger;
-		// }
 
 	}
 
