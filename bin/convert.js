@@ -11,7 +11,7 @@ var target = 'data/test.json';
 var fileschanged = 'git log --name-status --pretty="__HASH__%h"'
 // --name-status --name-only
 
-var pretty_json = !true;
+var pretty_json = true;
 var hash = {};
 
 // AMD - Add, Modified, Delete
@@ -81,7 +81,7 @@ function convert() {
 	for (var i=0;i<log.length;i++) {
 		commit = log[i];
 		commit.files = hash[commit.hash];
-		commit.parents = commit.parents.split(' ');
+		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
 	}
 

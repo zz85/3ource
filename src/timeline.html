@@ -1,0 +1,175 @@
+<html>
+<body>
+	<style>
+	#graph {
+		position: absolute;
+	}
+
+	#container {
+		position: absolute;
+		left: 100px;
+		white-space: nowrap; /*pre*/
+	}
+
+	.log {
+		/*border: 1px solid blue;*/
+		height: 25px;
+	}
+	</style>
+	<div id="container"></div>
+	<script>
+	var request = new XMLHttpRequest();
+	var url = '../data/test.json';
+	var u;
+	request.open( 'GET', url, true );
+	request.onload = function(e) {
+		console.time('decode');
+		var timeline = JSON.parse(request.response);
+		console.timeEnd('decode');
+		readTimeline(timeline);
+	}
+	request.send(null);
+
+	function readTimeline(timeline) {
+		// console.log(timeline);
+		window.t = timeline;
+		// u = timeline.reverse();
+		var i, il, v;
+		var hashes = {};
+		var targetRows = 200;
+
+		// create hashes
+		for (i=0,il=timeline.length;i<il;i++) {
+			v = timeline[i];
+			v.children = [];
+			hashes[v.hash] = v;
+		}
+
+		var parents, hash;
+
+		// create reverse references
+		for (i=0;i<il;i++) {
+			v = timeline[i];
+			parents = v.parents;
+			for (j=0;j<parents.length;j++) {
+				hash = parents[j];
+				hashes[hash].children.push(v);
+			}
+		}
+
+		var canvas = document.createElement('canvas');
+		canvas.id = 'graph';
+		canvas.width = 100;
+		canvas.height = targetRows * 25;
+		document.body.appendChild(canvas);
+
+		// Graphing stragies
+		// 1. pending parents first (gitk, jetbrains)
+		// 2. Current node first, pending parents, remaining parents (sourcetree, gitx)
+		// 3. Current parent, remaining parents, pending parents. (git log --graph)
+		// 4. force layout (github)
+
+		// var
+		ctx = canvas.getContext('2d');
+		ctx.lineWidth = 2.5;
+		// ctx.fillStyle = 'hsl(10%, 80%, 80%)';
+		ctx.fillStyle = 'violet'; // lime
+
+		var e;
+		var pendingParents = [];
+		var nodeTrack = 0;
+		var p;
+		for (i=0;i<targetRows;i++) {
+			v = timeline[i];
+			e = document.createElement('div');
+			e.className = 'log';
+			e.innerHTML =  v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
+			container.appendChild(e);
+
+			var pendingParents2 = [];
+			for (j=0;j<v.parents.length;j++) {
+				pendingParents2.push({toHash: v.parents[j],
+					row: i});
+				// nodeTrack v.parents.length - 1
+				// , track: v.parents.length - 1 
+			}
+
+			nodeTrack = null;
+			var merges = 0;
+			for (j=0;j<pendingParents.length;j++) {
+				p = pendingParents[j];
+
+				// Draw connecting lines
+				ctx.beginPath();
+				ctx.moveTo(getTrackX(p.track), getRowY(p.row));
+
+				p.row = i;
+				if (p.toHash==v.hash) {
+					if (nodeTrack===null) nodeTrack = j;
+
+					ctx.lineTo(getTrackX(nodeTrack), getRowY(i));
+
+					if (pendingParents2.length) {
+						pendingParents[j] = pendingParents2.shift()
+						pendingParents[j].track = j;
+						// -merges;
+					} else {
+						pendingParents.splice(j, 1);
+						merges++;
+						j--;
+					}
+
+				} else {
+					p.track -= merges;
+					ctx.lineTo(getTrackX(p.track), getRowY(i));
+				}
+
+				ctx.stroke();
+
+			}
+			if (nodeTrack===null) {
+				nodeTrack = 0;
+			}
+
+			// console.log(nodeTrack);
+
+			for (j=0;j<pendingParents2.length;j++) {
+				p = pendingParents2[j];
+				p.track = pendingParents.length;
+				pendingParents.push(p);
+			}
+
+			// Draw node
+
+			ctx.beginPath();
+			ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
+			ctx.fill();
+
+
+
+		}
+
+		function getTrackX(t) {
+			return t * 16 + 6;
+		}
+
+		function getRowY(t) {
+			return t * 25 + 10;
+		}
+
+		// Date order vs Ancestor order
+
+		// var isBigger = 0;
+		// for (i=0,il=u.length;i<il;i++) {
+		// 	v = u[i];
+		// 	// v.date = new Date(v.date*1000);
+		// 	if (v.date > isBigger) {
+		// 		isBigger = v.date;
+		// 	} else debugger;
+		// }
+
+	}
+
+	</script>
+</body>
+</html>
