@@ -1,6 +1,9 @@
 <html>
 <body>
 	<style>
+	body {
+		font-family: monospace;
+	}
 	#graph {
 		position: absolute;
 	}
@@ -79,6 +82,8 @@
 		var pendingParents = [];
 		var nodeTrack = 0;
 		var p;
+		var LINK_PORTION = 0.25;
+
 		for (i=0;i<targetRows;i++) {
 			v = timeline[i];
 			e = document.createElement('div');
@@ -99,15 +104,16 @@
 
 				// Draw connecting lines
 				ctx.beginPath();
-				ctx.moveTo(getTrackX(p.track), getRowY(p.row+0.35));
+				ctx.moveTo(getTrackX(p.track), getRowY(p.row+LINK_PORTION));
 
 				p.row = i;
 				if (p.toHash==v.hash) {
-					if (nodeTrack===null) nodeTrack = j;
+					var first = nodeTrack===null;
+					if (first) nodeTrack = j;
 
 					ctx.lineTo(getTrackX(nodeTrack), getRowY(i));
 
-					if (pendingParents2.length) {
+					if (first && pendingParents2.length) {
 						pendingParents[j] = pendingParents2.shift()
 						pendingParents[j].track = j;
 						// -merges;
@@ -132,9 +138,25 @@
 
 			// console.log(nodeTrack);
 
+			var uniqueTargets = {};
+			var uniqueTargetsCount = 0,hash ;
+
+			for (j=0;j<pendingParents.length;j++) {
+				hash = pendingParents[j].toHash;
+				if (!(hash in uniqueTargets)) {
+					uniqueTargets[hash] = pendingParents[j].track;
+					uniqueTargetsCount++;
+				}
+			}
+
 			for (j=0;j<pendingParents2.length;j++) {
 				p = pendingParents2[j];
-				p.track = pendingParents.length;
+				if (p.toHash in uniqueTargets) {
+					p.track = uniqueTargets[p.toHash];
+					p.duplicate = true;
+				} else {
+					p.track = uniqueTargetsCount++;
+				}
 				pendingParents.push(p);
 			}
 
@@ -148,18 +170,19 @@
 				ctx.beginPath();
 
 				if (p.merge) {
-					console.log('hey', v.hash);
 					ctx.moveTo(getTrackX(nodeTrack), getRowY(i));
-					ctx.lineTo(getTrackX(p.track), getRowY(i + 0.35));
-
-				}
-				else {
+				} else {
 					ctx.moveTo(getTrackX(p.track), getRowY(i));
-					ctx.lineTo(getTrackX(p.track), getRowY(i + 0.35));
 				}
+
+				ctx.lineTo(getTrackX(p.track), getRowY(i + LINK_PORTION));
 
 				ctx.stroke();
 
+			}
+
+			for (j=0;j<pendingParents.length;j++) {
+				if (pendingParents[j].duplicate) pendingParents.splice(j, 1);
 			}
 
 			// Draw node
