@@ -7,7 +7,7 @@
 
 	#container {
 		position: absolute;
-		left: 100px;
+		left: 120px;
 		white-space: nowrap; /*pre*/
 	}
 
@@ -59,14 +59,14 @@
 
 		var canvas = document.createElement('canvas');
 		canvas.id = 'graph';
-		canvas.width = 100;
+		canvas.width = 120;
 		canvas.height = targetRows * 25;
 		document.body.appendChild(canvas);
 
-		// Graphing stragies
-		// 1. pending parents first (gitk, jetbrains)
+		// Graphing strategies
+		// 1. pending parents first (gitk, jetbrains, git log --graph)
 		// 2. Current node first, pending parents, remaining parents (sourcetree, gitx)
-		// 3. Current parent, remaining parents, pending parents. (git log --graph)
+		// 3. Current parent, remaining parents, pending parents. (soucetree)
 		// 4. force layout (github)
 
 		// var
@@ -89,9 +89,7 @@
 			var pendingParents2 = [];
 			for (j=0;j<v.parents.length;j++) {
 				pendingParents2.push({toHash: v.parents[j],
-					row: i});
-				// nodeTrack v.parents.length - 1
-				// , track: v.parents.length - 1 
+					row: i, merge: true});
 			}
 
 			nodeTrack = null;
@@ -101,7 +99,7 @@
 
 				// Draw connecting lines
 				ctx.beginPath();
-				ctx.moveTo(getTrackX(p.track), getRowY(p.row));
+				ctx.moveTo(getTrackX(p.track), getRowY(p.row+0.35));
 
 				p.row = i;
 				if (p.toHash==v.hash) {
@@ -122,6 +120,7 @@
 				} else {
 					p.track -= merges;
 					ctx.lineTo(getTrackX(p.track), getRowY(i));
+					p.merge = false;
 				}
 
 				ctx.stroke();
@@ -139,14 +138,35 @@
 				pendingParents.push(p);
 			}
 
+
+
+			// Draw 1/4 -> 1/3 portions of lines
+			for (j=0;j<pendingParents.length;j++) {
+				p = pendingParents[j];
+
+				// Draw connecting lines
+				ctx.beginPath();
+
+				if (p.merge) {
+					console.log('hey', v.hash);
+					ctx.moveTo(getTrackX(nodeTrack), getRowY(i));
+					ctx.lineTo(getTrackX(p.track), getRowY(i + 0.35));
+
+				}
+				else {
+					ctx.moveTo(getTrackX(p.track), getRowY(i));
+					ctx.lineTo(getTrackX(p.track), getRowY(i + 0.35));
+				}
+
+				ctx.stroke();
+
+			}
+
 			// Draw node
 
 			ctx.beginPath();
 			ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
 			ctx.fill();
-
-
-
 		}
 
 		function getTrackX(t) {
