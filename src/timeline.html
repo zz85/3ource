@@ -84,6 +84,8 @@
 		// ctx.fillStyle = 'hsl(10%, 80%, 80%)';
 		ctx.fillStyle = 'violet'; // lime
 
+		var colors = ['black', '#ee8', 'red', 'green', 'blue'];
+
 		var e;
 		var pendingParents = [];
 		var nodeTrack = 0;
@@ -108,7 +110,7 @@
 			var pendingParents2 = [];
 			for (j=0;j<v.parents.length;j++) {
 				pendingParents2.push({targetHash: v.parents[j],
-					row: i, length: 0});
+					row: i, length: 0, color: colors[~~(Math.random()*colors.length)]});
 			}
 
 			nodeTrack = null;
@@ -116,14 +118,11 @@
 			for (j=0;j<pendingParents.length;j++) {
 				p = pendingParents[j];
 
-				// Draw connecting lines
-				ctx.beginPath();
-
-				ctx.moveTo(getTrackX(p.prevTrack), getRowY(p.row));
 
 				var middleTrack;
 				var endTrack;
 				var first;
+				var tmp;
 
 				middleTrack = p.track;
 
@@ -135,8 +134,11 @@
 
 					if (first && pendingParents2.length) {
 
-						pendingParents[j] = pendingParents2.shift()
-						pendingParents[j].track = j;
+						tmp= pendingParents2.shift()
+						tmp.track = j;
+						tmp.color = pendingParents[j].color;
+						pendingParents[j] = tmp;
+
 					} else {
 
 						if (p.length==0 && p.prevTrack!=p.track) {
@@ -153,6 +155,12 @@
 					p.length++;
 				}
 
+
+				// Draw connecting lines
+				ctx.strokeStyle = p.color;
+				ctx.beginPath();
+				ctx.moveTo(getTrackX(p.prevTrack), getRowY(p.row));
+
 				// if (middleTrack!==null)
 				ctx.lineTo(getTrackX(middleTrack), getRowY(p.row + LINK_PORTION));
 				ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
@@ -168,9 +176,9 @@
 			}
 
 			// TODO
-			// Colors
 			// Bezier
 			// Keep graph in memory?
+			// Mouse over interactivity
 
 			for (j=0;j<pendingParents2.length;j++) {
 				p = pendingParents2[j];
@@ -198,6 +206,7 @@
 		}
 
 		ctx.lineWidth = 1.5;
+		ctx.strokeStyle = '#000';
 		for (i=0;i<targetRows;i++) {
 			// Draw nodes
 
