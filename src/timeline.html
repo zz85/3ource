@@ -90,6 +90,10 @@
 		var p;
 		var LINK_PORTION = 0.25;
 
+		console.time('draw');
+
+		var nodeTracks = [];
+
 		for (i=0;i<targetRows;i++) {
 			v = timeline[i];
 			e = document.createElement('div');
@@ -100,7 +104,7 @@
 			var pendingParents2 = [];
 			for (j=0;j<v.parents.length;j++) {
 				pendingParents2.push({targetHash: v.parents[j],
-					row: i, merge: true});
+					row: i, length: 0});
 			}
 
 			nodeTrack = null;
@@ -120,9 +124,12 @@
 					ctx.lineTo(getTrackX(nodeTrack), getRowY(i));
 
 					if (first && pendingParents2.length) {
+
 						pendingParents[j] = pendingParents2.shift()
 						pendingParents[j].track = j;
 					} else {
+
+								if (p.length==0 && p.start!=p.track) console.log('abc... ' + p.start, p.track, 'mooo');
 						pendingParents.splice(j, 1);
 						merges++;
 						j--;
@@ -131,7 +138,7 @@
 				} else {
 					p.track -= merges;
 					ctx.lineTo(getTrackX(p.track), getRowY(i));
-					p.merge = false;
+					p.length++;
 				}
 
 				ctx.stroke();
@@ -140,6 +147,11 @@
 			if (nodeTrack===null) {
 				nodeTrack = 0;
 			}
+
+			// Colors
+			// Bezier
+			// Combine
+			// Keep graph in memory?
 
 			//TODO fix this part!
 			// console.log(nodeTrack);
@@ -169,9 +181,9 @@
 				// }
 				// p.track = pendingParents.length;
 
-				// if (p.targetHash == timeline[i+1].hash) {
-				// 	console.log('do something!', i)
-				// }
+				if (p.targetHash == timeline[i+1].hash) {
+					console.log('do something!', i)
+				}
 
 				p.track = uniqueTargetsCount++;
 				pendingParents.push(p);
@@ -186,7 +198,8 @@
 				// Draw connecting lines
 				ctx.beginPath();
 
-				if (p.merge) {
+				if (p.length==0) {
+					p.start = nodeTrack;
 					ctx.moveTo(getTrackX(nodeTrack), getRowY(i));
 				} else {
 					ctx.moveTo(getTrackX(p.track), getRowY(i));
@@ -202,12 +215,21 @@
 			// 	if (pendingParents[j].duplicate) pendingParents.splice(j, 1);
 			// }
 
-			// Draw node
+
+			nodeTracks.push(nodeTrack);
+		}
+
+		for (i=0;i<targetRows;i++) {
+			// Draw nodes
+
+			nodeTrack = nodeTracks[i];
 
 			ctx.beginPath();
 			ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
 			ctx.fill();
 		}
+
+		console.timeEnd('draw');
 
 		function getTrackX(t) {
 			return t * 16 + 6;
