@@ -45,7 +45,7 @@
 			return b.date - a.date;
 		}
 		// Date order vs Ancestor order
-		timeline.sort(compare);
+		// timeline.sort(compare);
 
 		// create hashes
 		for (i=0,il=timeline.length;i<il;i++) {
@@ -88,7 +88,7 @@
 		var pendingParents = [];
 		var nodeTrack = 0;
 		var p;
-		var LINK_PORTION = 0.25;
+		var LINK_PORTION = 0.28;
 
 		console.time('draw');
 
@@ -100,6 +100,10 @@
 			e.className = 'log';
 			e.innerHTML =  i + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
 			container.appendChild(e);
+		}
+
+		for (i=0;i<targetRows;i++) {
+			v = timeline[i];
 
 			var pendingParents2 = [];
 			for (j=0;j<v.parents.length;j++) {
@@ -114,14 +118,20 @@
 
 				// Draw connecting lines
 				ctx.beginPath();
-				ctx.moveTo(getTrackX(p.track), getRowY(p.row+LINK_PORTION));
 
-				p.row = i;
+				ctx.moveTo(getTrackX(p.prevTrack), getRowY(p.row));
+
+				var middleTrack;
+				var endTrack;
+				var first;
+
+				middleTrack = p.track;
+
 				if (p.targetHash==v.hash) {
-					var first = nodeTrack===null;
+					first = nodeTrack===null;
 					if (first) nodeTrack = j;
 
-					ctx.lineTo(getTrackX(nodeTrack), getRowY(i));
+					endTrack = nodeTrack;
 
 					if (first && pendingParents2.length) {
 
@@ -129,7 +139,9 @@
 						pendingParents[j].track = j;
 					} else {
 
-								if (p.length==0 && p.start!=p.track) console.log('abc... ' + p.start, p.track, 'mooo');
+						if (p.length==0 && p.prevTrack!=p.track) {
+							middleTrack = p.prevTrack;
+						}
 						pendingParents.splice(j, 1);
 						merges++;
 						j--;
@@ -137,88 +149,55 @@
 
 				} else {
 					p.track -= merges;
-					ctx.lineTo(getTrackX(p.track), getRowY(i));
+					endTrack = p.track;
 					p.length++;
 				}
 
+				// if (middleTrack!==null)
+				ctx.lineTo(getTrackX(middleTrack), getRowY(p.row + LINK_PORTION));
+				ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
+				ctx.lineTo(getTrackX(endTrack), getRowY(i));
+
 				ctx.stroke();
+
+				p.row = i;
 
 			}
 			if (nodeTrack===null) {
 				nodeTrack = 0;
 			}
 
+			// TODO
 			// Colors
 			// Bezier
-			// Combine
 			// Keep graph in memory?
-
-			//TODO fix this part!
-			// console.log(nodeTrack);
-
-			var uniqueTargets = {};
-			var uniqueTargetsCount = 0, hash;
-
-			// for (j=0;j<pendingParents.length;j++) {
-			// 	hash = pendingParents[j].targetHash;
-			// 	if (!(hash in uniqueTargets)) {
-			// 		uniqueTargets[hash] = pendingParents[j].track;
-			// 		uniqueTargetsCount++;
-			// 	} else {
-			// 		console.log('oh no!')
-			// 	}
-			// }
-
-			uniqueTargetsCount = pendingParents.length;
 
 			for (j=0;j<pendingParents2.length;j++) {
 				p = pendingParents2[j];
-				// if (p.targetHash in uniqueTargets) {
-				// 	p.track = uniqueTargets[p.targetHash];
-				// 	p.duplicate = true;
-				// } else {
-				// 	p.track = uniqueTargetsCount++;
-				// }
-				// p.track = pendingParents.length;
 
-				if (p.targetHash == timeline[i+1].hash) {
-					console.log('do something!', i)
-				}
-
-				p.track = uniqueTargetsCount++;
+				p.track = pendingParents.length;
 				pendingParents.push(p);
 			}
 
-
+			ctx.stroke();
 
 			// Draw 1/4 -> 1/3 portions of lines
 			for (j=0;j<pendingParents.length;j++) {
 				p = pendingParents[j];
 
 				// Draw connecting lines
-				ctx.beginPath();
-
 				if (p.length==0) {
-					p.start = nodeTrack;
-					ctx.moveTo(getTrackX(nodeTrack), getRowY(i));
+					p.prevTrack = nodeTrack;
 				} else {
-					ctx.moveTo(getTrackX(p.track), getRowY(i));
+					p.prevTrack = p.track;
 				}
 
-				ctx.lineTo(getTrackX(p.track), getRowY(i + LINK_PORTION));
-
-				ctx.stroke();
-
 			}
-
-			// for (j=0;j<pendingParents.length;j++) {
-			// 	if (pendingParents[j].duplicate) pendingParents.splice(j, 1);
-			// }
-
 
 			nodeTracks.push(nodeTrack);
 		}
 
+		ctx.lineWidth = 1.5;
 		for (i=0;i<targetRows;i++) {
 			// Draw nodes
 
@@ -227,19 +206,18 @@
 			ctx.beginPath();
 			ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
 			ctx.fill();
+			ctx.stroke();
 		}
 
 		console.timeEnd('draw');
 
 		function getTrackX(t) {
-			return t * 16 + 6;
+			return ~~(t * 16 + 8)+0.5;
 		}
 
 		function getRowY(t) {
 			return t * 25 + 10;
 		}
-
-
 
 	}
 
