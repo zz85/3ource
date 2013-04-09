@@ -72,6 +72,61 @@
 		this.remove(node);
 	}
 
+
+	TreeNode.prototype.addPath = function(filename) {
+		var paths, i, il, path, node;
+		paths = filename.split('/');
+		node = this; // start
+		for (i=0, il=paths.length;i<il;i++) {
+			path = paths[i];
+			if (i<il-1) {
+				node = node.getOrCreate(path + '/');
+			} else {
+				node = node.getOrCreate(path);
+			}
+		}
+	}
+
+	TreeNode.prototype.getPath = function(filename) {
+		var paths, i, il, path, node, tmp;
+		paths = filename.split('/');
+		node = this; // start
+		for (i=0, il=paths.length;i<il;i++) {
+			path = paths[i];
+			tmp = node.get(path + '/');
+			if (tmp) {
+				node = tmp;
+			} else {
+				node = node.get(path);
+			}
+		}
+		return node;
+	}
+
+	TreeNode.prototype.removePath = function(filename) {
+		// traverse in and remove by layer.
+		var paths, i, il, path, node;
+		paths = filename.split('/');
+		node = this;
+		var nodes = [root];
+		for (i=0, il=paths.length;i<il;i++) {
+			path = paths[i];
+			if (i<il-1) {
+				node = node.get(path + '/');
+				nodes.push(node);
+			} else {
+				node = node.get(path);
+			}
+		}
+		var parent;
+		for (i=nodes.length;i--;) {
+			parent = nodes.pop();
+			parent.rm(node.name);
+			if (!parent.isEmpty()) break;
+			node = parent;
+		}
+
+	}
 	var scene = new THREE.Scene();
 	var root = new TreeNode('/');
 
@@ -109,68 +164,13 @@
 			var path;
 			for (j=0;j<mods.A.length;j++) {
 				path = mods.A[j];
-				addPath(path);
+				root.addPath(path);
 			}
 
 			for (j=0;j<mods.D.length;j++) {
 				path = mods.D[j];
-				removePath(path);
+				root.removePath(path);
 			}
-		}
-
-	}
-
-	function addPath(filename) {
-		var paths, i, il, path, node;
-		paths = filename.split('/');
-		node = root; // start
-		for (i=0, il=paths.length;i<il;i++) {
-			path = paths[i];
-			if (i<il-1) {
-				node = node.getOrCreate(path + '/');
-			} else {
-				node = node.getOrCreate(path);
-			}
-		}
-	}
-
-	function getPath(filename) {
-		var paths, i, il, path, node, tmp;
-		paths = filename.split('/');
-		node = root; // start
-		for (i=0, il=paths.length;i<il;i++) {
-			path = paths[i];
-			tmp = node.get(path + '/');
-			if (tmp) {
-				node = tmp;
-			} else {
-				node = node.get(path);
-			}
-		}
-		return node;
-	}
-
-	function removePath(filename) {
-		// traverse in and remove by layer.
-		var paths, i, il, path, node;
-		paths = filename.split('/');
-		node = root;
-		var nodes = [root];
-		for (i=0, il=paths.length;i<il;i++) {
-			path = paths[i];
-			if (i<il-1) {
-				node = node.get(path + '/');
-				nodes.push(node);
-			} else {
-				node = node.get(path);
-			}
-		}
-		var parent;
-		for (i=nodes.length;i--;) {
-			parent = nodes.pop();
-			parent.rm(node.name);
-			if (!parent.isEmpty()) break;
-			node = parent;
 		}
 
 	}
