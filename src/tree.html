@@ -62,6 +62,16 @@
 		return this.name.charAt(this.name.length-1) == '/';
 	}
 
+	TreeNode.prototype.isEmpty = function() {
+		return this.ls().length == 0;
+	}
+
+	TreeNode.prototype.rm = function(name) {
+		var node = this.fsChildren[name];
+		delete this.fsChildren[name];
+		this.remove(node);
+	}
+
 	var scene = new THREE.Scene();
 	var root = new TreeNode('/');
 
@@ -96,11 +106,15 @@
 			commit.mods = mods;
 			// console.log(commit)
 
-			var add;
+			var path;
 			for (j=0;j<mods.A.length;j++) {
-				add = mods.A[j];
-				addPath(add);
+				path = mods.A[j];
+				addPath(path);
+			}
 
+			for (j=0;j<mods.D.length;j++) {
+				path = mods.D[j];
+				removePath(path);
 			}
 		}
 
@@ -120,8 +134,45 @@
 		}
 	}
 
+	function getPath(filename) {
+		var paths, i, il, path, node, tmp;
+		paths = filename.split('/');
+		node = root; // start
+		for (i=0, il=paths.length;i<il;i++) {
+			path = paths[i];
+			tmp = node.get(path + '/');
+			if (tmp) {
+				node = tmp;
+			} else {
+				node = node.get(path);
+			}
+		}
+		return node;
+	}
+
 	function removePath(filename) {
 		// traverse in and remove by layer.
+		var paths, i, il, path, node;
+		paths = filename.split('/');
+		node = root;
+		var nodes = [root];
+		for (i=0, il=paths.length;i<il;i++) {
+			path = paths[i];
+			if (i<il-1) {
+				node = node.get(path + '/');
+				nodes.push(node);
+			} else {
+				node = node.get(path);
+			}
+		}
+		var parent;
+		for (i=nodes.length;i--;) {
+			parent = nodes.pop();
+			parent.rm(node.name);
+			if (!parent.isEmpty()) break;
+			node = parent;
+		}
+
 	}
 
 	</script>
