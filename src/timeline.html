@@ -39,7 +39,7 @@
 		// u = timeline.reverse();
 		var i, il, v;
 		var hashes = {};
-		var targetRows = 200;
+		var targetRows = Math.min(200, timeline.length);
 
 		function compare(a, b) {
 			return b.date - a.date;

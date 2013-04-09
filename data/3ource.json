@@ -1,0 +1,298 @@
+[
+  {
+    "hash": "fed51f40e942e6534076ce374d617a8b6da7095e",
+    "parents": [
+      "c1da067e22cd56d46e2e486203030cc9b86aff27"
+    ],
+    "author": "Li Xuanji",
+    "message": "rerun convert.js\n\nthe old test.json had git conflict lines like\n<<<<<<< Updated upstream",
+    "commitDate": 1365436368000,
+    "files": [
+      "data/test.json"
+    ]
+  },
+  {
+    "hash": "c1da067e22cd56d46e2e486203030cc9b86aff27",
+    "parents": [
+      "fe62b303bd7626f600a7721c570457bab4a82d01"
+    ],
+    "author": "zz85",
+    "message": "Fix track reduction feature in the git graph",
+    "commitDate": 1365404383000,
+    "files": [
+      "src/timeline.html"
+    ]
+  },
+  {
+    "hash": "fe62b303bd7626f600a7721c570457bab4a82d01",
+    "parents": [
+      "7dfa4dbedad7213aa2a81aabd87ebaf34150b475"
+    ],
+    "author": "zz85",
+    "message": "Detecting unwanted tracks in graph",
+    "commitDate": 1365398021000,
+    "files": [
+      "src/timeline.html"
+    ]
+  },
+  {
+    "hash": "7dfa4dbedad7213aa2a81aabd87ebaf34150b475",
+    "parents": [
+      "6ebe14502db00e6bc4cf669f92955fcbe25bea84"
+    ],
+    "author": "zz85",
+    "message": "Duplicate parent detection doesnt seem reliable. Reverting feature for now..",
+    "commitDate": 1365364666000,
+    "files": [
+      "src/timeline.html"
+    ]
+  },
+  {
+    "hash": "6ebe14502db00e6bc4cf669f92955fcbe25bea84",
+    "parents": [
+      "39bc939dc98d7de8a1df442143fd7013a8f9343e"
+    ],
+    "author": "zz85",
+    "message": "Support tracks merge by removing duplicates",
+    "commitDate": 1365357056000,
+    "files": [
+      "src/timeline.html"
+    ]
+  },
+  {
+    "hash": "39bc939dc98d7de8a1df442143fd7013a8f9343e",
+    "parents": [
+      "e1658bebfd9cdd4d4c86fb3a49464ed8d6030ea1"
+    ],
+    "author": "zz85",
+    "message": "Git graph fixes",
+    "commitDate": 1365355131000,
+    "files": [
+      "src/timeline.html"
+    ]
+  },
+  {
+    "hash": "e1658bebfd9cdd4d4c86fb3a49464ed8d6030ea1",
+    "parents": [
+      "7553a5d6b063404be706d9f8cd24d7f2144f0e23"
+    ],
+    "author": "zz85",
+    "message": "Experimental git commits log viewer + grapher",
+    "commitDate": 1365353235000,
+    "files": [
+      "bin/convert.js",
+      "bin/convert.sh",
+      "src/timeline.html"
+    ]
+  },
+  {
+    "hash": "7553a5d6b063404be706d9f8cd24d7f2144f0e23",
+    "parents": [
+      "7ff0bfc425b27862f4efe67d6ae40165a45d123d"
+    ],
+    "author": "zz85",
+    "message": "Improve convert.js",
+    "commitDate": 1365316620000,
+    "files": [
+      "bin/convert.js"
+    ]
+  },
+  {
+    "hash": "7ff0bfc425b27862f4efe67d6ae40165a45d123d",
+    "parents": [
+      "64429d3abbe014545331980346fe4285ffbc23a6"
+    ],
+    "author": "zz85",
+    "message": "Changing github api example to use json-p instead",
+    "commitDate": 1365271433000,
+    "files": [
+      "api.html",
+      "src/api.html"
+    ]
+  },
+  {
+    "hash": "64429d3abbe014545331980346fe4285ffbc23a6",
+    "parents": [
+      "a76142b7a7ad37b8b20fd94309468e76c6fdbb30"
+    ],
+    "author": "zz85",
+    "message": "convert files for commits",
+    "commitDate": 1365249637000,
+    "files": [
+      "bin/convert.js",
+      "data/test.json"
+    ]
+  },
+  {
+    "hash": "a76142b7a7ad37b8b20fd94309468e76c6fdbb30",
+    "parents": [
+      "aa887215adcca7828b339bca4fadcc2c247ad1ba"
+    ],
+    "author": "Li Xuanji",
+    "message": "add arbor.js, nodes and links",
+    "commitDate": 1365249108000,
+    "files": [
+      "api.html"
+    ]
+  },
+  {
+    "hash": "aa887215adcca7828b339bca4fadcc2c247ad1ba",
+    "parents": [
+      "edf5d0fa04ad1a2c995c880ee817c584a58a76ae"
+    ],
+    "author": "CJ",
+    "message": "Use Unix timestamp instead of date string;\nMove script running to root of repository;",
+    "commitDate": 1365247692000,
+    "files": [
+      "bin/convert.js",
+      "data/test.json"
+    ]
+  },
+  {
+    "hash": "edf5d0fa04ad1a2c995c880ee817c584a58a76ae",
+    "parents": [
+      "1f0650de25b4f837fe7d6147eec03cc6ff0cd72b"
+    ],
+    "author": "Li Xuanji",
+    "message": "generate some sample data",
+    "commitDate": 1365247121000,
+    "files": [
+      "api.html",
+      "data/3ource 1918hrs.json"
+    ]
+  },
+  {
+    "hash": "1f0650de25b4f837fe7d6147eec03cc6ff0cd72b",
+    "parents": [
+      "1ee9036ac4491780daa568947e8885ce61d28041"
+    ],
+    "author": "Li Xuanji",
+    "message": "recursively fetch all commits",
+    "commitDate": 1365245832000,
+    "files": [
+      "src/api.html"
+    ]
+  },
+  {
+    "hash": "1ee9036ac4491780daa568947e8885ce61d28041",
+    "parents": [
+      "759e401082b9bd7333624068fbd8c5aca7240271"
+    ],
+    "author": "Li Xuanji",
+    "message": "oops - url should be api.github.com",
+    "commitDate": 1365242938000,
+    "files": [
+      "src/api.html"
+    ]
+  },
+  {
+    "hash": "759e401082b9bd7333624068fbd8c5aca7240271",
+    "parents": [
+      "2db53d5fbc390cc7087720c76db97491ece27a1b"
+    ],
+    "author": "zz85",
+    "message": "update convert.js, import test.json",
+    "commitDate": 1365245721000,
+    "files": [
+      "bin/convert.js",
+      "data/test.json"
+    ]
+  },
+  {
+    "hash": "2db53d5fbc390cc7087720c76db97491ece27a1b",
+    "parents": [
+      "8a375f232feba563734b8673a809398a061f55cf"
+    ],
+    "author": "zz85",
+    "message": "Nodejs script for git log -> json",
+    "commitDate": 1365244902000,
+    "files": [
+      "bin/convert.js"
+    ]
+  },
+  {
+    "hash": "8a375f232feba563734b8673a809398a061f55cf",
+    "parents": [
+      "3478699c790317ff5ebaee31e2f389c3efb3946d"
+    ],
+    "author": "CJ",
+    "message": "Moved files to directory structure;",
+    "commitDate": 1365243463000,
+    "files": [
+      "bin/convert.sh",
+      "src/api.html"
+    ]
+  },
+  {
+    "hash": "3478699c790317ff5ebaee31e2f389c3efb3946d",
+    "parents": [
+      "b235428a41c53a60a7df7a0cba9e2d3382c37e2b"
+    ],
+    "author": "CJ",
+    "message": "Create directory structure",
+    "commitDate": 1365243431000,
+    "files": [
+      "bin/README.md",
+      "data/README.md",
+      "src/README.md"
+    ]
+  },
+  {
+    "hash": "b235428a41c53a60a7df7a0cba9e2d3382c37e2b",
+    "parents": [
+      "e21622675910f7825e05aae8cd6a8762bd07733f"
+    ],
+    "author": "Li Xuanji",
+    "message": "try to get all refs",
+    "commitDate": 1365242048000,
+    "files": [
+      "api.html"
+    ]
+  },
+  {
+    "hash": "e21622675910f7825e05aae8cd6a8762bd07733f",
+    "parents": [
+      "4ab2a929630a44bfaf3b8494b3a889d24b680b39"
+    ],
+    "author": "zz85",
+    "message": "Script for git log -> json",
+    "commitDate": 1365241726000,
+    "files": [
+      "convert.sh"
+    ]
+  },
+  {
+    "hash": "4ab2a929630a44bfaf3b8494b3a889d24b680b39",
+    "parents": [
+      "393d5c1326abd514f9dd2dc2030a6c51a6be9bca"
+    ],
+    "author": "chernjie",
+    "message": "Update README.md",
+    "commitDate": 1365241415000,
+    "files": [
+      "README.md"
+    ]
+  },
+  {
+    "hash": "393d5c1326abd514f9dd2dc2030a6c51a6be9bca",
+    "parents": [
+      "99a63180ddd8c67ad7e6c9ef4286a1236437295a"
+    ],
+    "author": "chernjie",
+    "message": "Create README.md",
+    "commitDate": 1365241394000,
+    "files": [
+      "README.md"
+    ]
+  },
+  {
+    "hash": "99a63180ddd8c67ad7e6c9ef4286a1236437295a",
+    "parents": [],
+    "author": "Li Xuanji",
+    "message": "file for experimenting with the github api",
+    "commitDate": 1365240376000,
+    "files": [
+      "api.html"
+    ]
+  }
+]
