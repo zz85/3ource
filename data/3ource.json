@@ -1,12 +1,28 @@
 [
   {
+    "hash": "1303f605412906e9f12042e60509e3d577024ee3",
+    "parents": [
+      "fed51f40e942e6534076ce374d617a8b6da7095e"
+    ],
+    "author": "Li Xuanji",
+    "message": "make api.html output readable by timeline.html",
+    "date": 1365508023,
+    "files": [
+      "api.html",
+      "data/3ource 1918hrs.json",
+      "data/3ource.json",
+      "src/api.html",
+      "src/timeline.html"
+    ]
+  },
+  {
     "hash": "fed51f40e942e6534076ce374d617a8b6da7095e",
     "parents": [
       "c1da067e22cd56d46e2e486203030cc9b86aff27"
     ],
     "author": "Li Xuanji",
     "message": "rerun convert.js\n\nthe old test.json had git conflict lines like\n<<<<<<< Updated upstream",
-    "commitDate": 1365436368000,
+    "date": 1365436368,
     "files": [
       "data/test.json"
     ]
@@ -18,7 +34,7 @@
     ],
     "author": "zz85",
     "message": "Fix track reduction feature in the git graph",
-    "commitDate": 1365404383000,
+    "date": 1365404383,
     "files": [
       "src/timeline.html"
     ]
@@ -30,7 +46,7 @@
     ],
     "author": "zz85",
     "message": "Detecting unwanted tracks in graph",
-    "commitDate": 1365398021000,
+    "date": 1365398021,
     "files": [
       "src/timeline.html"
     ]
@@ -42,7 +58,7 @@
     ],
     "author": "zz85",
     "message": "Duplicate parent detection doesnt seem reliable. Reverting feature for now..",
-    "commitDate": 1365364666000,
+    "date": 1365364666,
     "files": [
       "src/timeline.html"
     ]
@@ -54,7 +70,7 @@
     ],
     "author": "zz85",
     "message": "Support tracks merge by removing duplicates",
-    "commitDate": 1365357056000,
+    "date": 1365357056,
     "files": [
       "src/timeline.html"
     ]
@@ -66,7 +82,7 @@
     ],
     "author": "zz85",
     "message": "Git graph fixes",
-    "commitDate": 1365355131000,
+    "date": 1365355131,
     "files": [
       "src/timeline.html"
     ]
@@ -78,7 +94,7 @@
     ],
     "author": "zz85",
     "message": "Experimental git commits log viewer + grapher",
-    "commitDate": 1365353235000,
+    "date": 1365353235,
     "files": [
       "bin/convert.js",
       "bin/convert.sh",
@@ -92,7 +108,7 @@
     ],
     "author": "zz85",
     "message": "Improve convert.js",
-    "commitDate": 1365316620000,
+    "date": 1365316620,
     "files": [
       "bin/convert.js"
     ]
@@ -104,7 +120,7 @@
     ],
     "author": "zz85",
     "message": "Changing github api example to use json-p instead",
-    "commitDate": 1365271433000,
+    "date": 1365271433,
     "files": [
       "api.html",
       "src/api.html"
@@ -117,7 +133,7 @@
     ],
     "author": "zz85",
     "message": "convert files for commits",
-    "commitDate": 1365249637000,
+    "date": 1365249637,
     "files": [
       "bin/convert.js",
       "data/test.json"
@@ -130,7 +146,7 @@
     ],
     "author": "Li Xuanji",
     "message": "add arbor.js, nodes and links",
-    "commitDate": 1365249108000,
+    "date": 1365249108,
     "files": [
       "api.html"
     ]
@@ -142,7 +158,7 @@
     ],
     "author": "CJ",
     "message": "Use Unix timestamp instead of date string;\nMove script running to root of repository;",
-    "commitDate": 1365247692000,
+    "date": 1365247692,
     "files": [
       "bin/convert.js",
       "data/test.json"
@@ -155,7 +171,7 @@
     ],
     "author": "Li Xuanji",
     "message": "generate some sample data",
-    "commitDate": 1365247121000,
+    "date": 1365247121,
     "files": [
       "api.html",
       "data/3ource 1918hrs.json"
@@ -168,7 +184,7 @@
     ],
     "author": "Li Xuanji",
     "message": "recursively fetch all commits",
-    "commitDate": 1365245832000,
+    "date": 1365245832,
     "files": [
       "src/api.html"
     ]
@@ -180,7 +196,7 @@
     ],
     "author": "Li Xuanji",
     "message": "oops - url should be api.github.com",
-    "commitDate": 1365242938000,
+    "date": 1365242938,
     "files": [
       "src/api.html"
     ]
@@ -192,7 +208,7 @@
     ],
     "author": "zz85",
     "message": "update convert.js, import test.json",
-    "commitDate": 1365245721000,
+    "date": 1365245721,
     "files": [
       "bin/convert.js",
       "data/test.json"
@@ -205,7 +221,7 @@
     ],
     "author": "zz85",
     "message": "Nodejs script for git log -> json",
-    "commitDate": 1365244902000,
+    "date": 1365244902,
     "files": [
       "bin/convert.js"
     ]
@@ -217,7 +233,7 @@
     ],
     "author": "CJ",
     "message": "Moved files to directory structure;",
-    "commitDate": 1365243463000,
+    "date": 1365243463,
     "files": [
       "bin/convert.sh",
       "src/api.html"
@@ -230,7 +246,7 @@
     ],
     "author": "CJ",
     "message": "Create directory structure",
-    "commitDate": 1365243431000,
+    "date": 1365243431,
     "files": [
       "bin/README.md",
       "data/README.md",
@@ -244,7 +260,7 @@
     ],
     "author": "Li Xuanji",
     "message": "try to get all refs",
-    "commitDate": 1365242048000,
+    "date": 1365242048,
     "files": [
       "api.html"
     ]
@@ -256,7 +272,7 @@
     ],
     "author": "zz85",
     "message": "Script for git log -> json",
-    "commitDate": 1365241726000,
+    "date": 1365241726,
     "files": [
       "convert.sh"
     ]
@@ -268,7 +284,7 @@
     ],
     "author": "chernjie",
     "message": "Update README.md",
-    "commitDate": 1365241415000,
+    "date": 1365241415,
     "files": [
       "README.md"
     ]
@@ -280,7 +296,7 @@
     ],
     "author": "chernjie",
     "message": "Create README.md",
-    "commitDate": 1365241394000,
+    "date": 1365241394,
     "files": [
       "README.md"
     ]
@@ -290,7 +306,7 @@
     "parents": [],
     "author": "Li Xuanji",
     "message": "file for experimenting with the github api",
-    "commitDate": 1365240376000,
+    "date": 1365240376,
     "files": [
       "api.html"
     ]

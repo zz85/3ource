@@ -50,13 +50,11 @@ function clean(c) {
 		f.push(c.files[i].filename);
 	}
 
-	d = new Date(c.commit.author.date);
-
 	return {'hash': c.sha,
 					'parents': p,
 					'author': c.commit.author.name,
 					'message': c.commit.message,
-					'commitDate': d.getTime(),
+					'date': Date.parse(c.commit.author.date) / 1000,
 					'files': f}
 }
 
