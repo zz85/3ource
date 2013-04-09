@@ -31,34 +31,19 @@
 	}
 	TreeNode.prototype = Object.create( THREE.Object3D.prototype );
 
-	TreeNode.prototype.getDir = function(path) {
-		return this.fsChildren[path + '/'];
-		// var children = this.children, child;
-		// for (var i=0;i<children.length;i++) {
-		// 	child = children[i];
-		// 	if (child instanceof TreeNode) {
-		// 		if (child.name==path) return child;
-		// 	}
-		// }
+	TreeNode.prototype.get = function(path) {
+		return this.fsChildren[path];
 	}
 
-	TreeNode.prototype.getOrCreateDir = function(path) {
-		var node = this.getDir(path);
+	TreeNode.prototype.getOrCreate = function(path) {
+		var node = this.get(path);
 		if (!node) {
-			node = this.createDir(path);
+			node = this.create(path);
 		}
 		return node;
 	}
 
-	TreeNode.prototype.createDir = function(path) {
-		path = path + '/'
-		var node = new TreeNode(path);
-		this.add(node);
-		this.fsChildren[path] = node;
-		return node;
-	}
-
-	TreeNode.prototype.createFile = function(path) {
+	TreeNode.prototype.create = function(path) {
 		var node = new TreeNode(path);
 		this.add(node);
 		this.fsChildren[path] = node;
@@ -66,18 +51,15 @@
 	}
 
 	TreeNode.prototype.ls = function() {
-		var children = this.children, child;
 		var names = [];
-		// for (var i=0;i<children.length;i++) {
-		// 	child = children[i];
-		// 	if (child instanceof TreeNode) {
-		// 		names.push(child.name);
-		// 	}
-		// }
 		for (var i in this.fsChildren) {
 			names.push(this.fsChildren[i].name);
 		}
 		return names;
+	}
+
+	TreeNode.prototype.isDir = function() {
+		return this.name.charAt(this.name.length-1) == '/';
 	}
 
 	var scene = new THREE.Scene();
@@ -117,26 +99,29 @@
 			var add;
 			for (j=0;j<mods.A.length;j++) {
 				add = mods.A[j];
-				addNode(add);
+				addPath(add);
 
 			}
 		}
 
 	}
 
-	function addNode(filename) {
+	function addPath(filename) {
 		var paths, i, il, path, node;
 		paths = filename.split('/');
 		node = root; // start
 		for (i=0, il=paths.length;i<il;i++) {
 			path = paths[i];
 			if (i<il-1) {
-				node = node.getOrCreateDir(path);
+				node = node.getOrCreate(path + '/');
 			} else {
-				node = node.getOrCreateFile(path);
+				node = node.getOrCreate(path);
 			}
 		}
+	}
 
+	function removePath(filename) {
+		// traverse in and remove by layer.
 	}
 
 	</script>
