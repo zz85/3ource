@@ -1,0 +1,129 @@
+<html>
+<body>
+	<style>
+	body {
+		font-family: monospace;
+	}
+	#graph {
+		position: absolute;
+	}
+
+	#container {
+		position: absolute;
+		left: 120px;
+		white-space: nowrap; /*pre*/
+	}
+
+	.log {
+		/*border: 1px solid blue;*/
+		height: 25px;
+	}
+	</style>
+	<script src="lib/three.min.js"></script>
+	<div id="container"></div>
+	<script>
+
+	// TODO - make this a mixin of a TreeNode (file system representation) and a Three.js object
+	TreeNode = function() {
+		THREE.Object3D.call( this );
+	}
+	TreeNode.prototype = Object.create( THREE.Object3D.prototype );
+
+	TreeNode.prototype.getNode = function(path) {
+		var children = this.children, child;
+		for (var i=0;i<children.length;i++) {
+			child = children[i];
+			if (child instanceof TreeNode) {
+				if (child.name==path) return child;
+			}
+		}
+	}
+
+	TreeNode.prototype.ls = function() {
+		var children = this.children, child;
+		var names = [];
+		for (var i=0;i<children.length;i++) {
+			child = children[i];
+			if (child instanceof TreeNode) {
+				names.push(child.name);
+			}
+		}
+		return names;
+	}
+
+	var scene = new THREE.Scene();
+	var root = new TreeNode();
+
+	var request = new XMLHttpRequest();
+	var url = '../data/test.json';
+	var u;
+	request.open( 'GET', url, true );
+	request.onload = function(e) {
+		console.time('decode');
+		var timeline = JSON.parse(request.response);
+		console.timeEnd('decode');
+		readTimeline(timeline);
+	}
+	request.send(null);
+
+	function readTimeline(timeline) {
+		t = timeline;
+		u = timeline.concat()
+		timeline.reverse();
+
+		var i,il, commit, j, entry, filename;
+		var added, deleted, modified;
+		for (i=0;i<5;i++) {
+			commit = timeline[i];
+			files = commit.files;
+			mods = {A:[], D:[], M:[]};
+			for (j=0; j<files.length; j++) {
+				entry = files[j];
+				mods[entry.charAt(0)].push(entry.substring(2));
+			}
+			console.log(mods);
+			commit.mods = mods;
+			// console.log(commit)
+
+			var add;
+			for (j=0;j<mods.A.length;j++) {
+				add = mods.A[j];
+				addNode(add);
+
+			}
+		}
+
+	}
+
+	function TreeNode() {
+
+	}
+
+	function addNode(filename) {
+		var paths, i, il, path, node;
+		paths = filename.split('/');
+		node = root; // start
+		for (i=0, il=paths.length;i<il;i++) {
+			path = paths[i];
+			// create node if not exists
+			node = getNode(node, path);
+		}
+
+	}
+
+	function getNode(parent, path) {
+		var node = parent.getNode(path);
+		if (!node) {
+			node = new TreeNode();
+			node.name = path;
+			parent.add(node);
+		}
+
+		return node;
+	}
+
+
+
+	</script>
+</body>
+</html>
