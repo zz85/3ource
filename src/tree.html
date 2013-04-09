@@ -24,35 +24,64 @@
 	<script>
 
 	// TODO - make this a mixin of a TreeNode (file system representation) and a Three.js object
-	TreeNode = function() {
+	TreeNode = function(name) {
 		THREE.Object3D.call( this );
+		this.name = name;
+		this.fsChildren = {};
 	}
 	TreeNode.prototype = Object.create( THREE.Object3D.prototype );
 
-	TreeNode.prototype.getNode = function(path) {
-		var children = this.children, child;
-		for (var i=0;i<children.length;i++) {
-			child = children[i];
-			if (child instanceof TreeNode) {
-				if (child.name==path) return child;
-			}
+	TreeNode.prototype.getDir = function(path) {
+		return this.fsChildren[path + '/'];
+		// var children = this.children, child;
+		// for (var i=0;i<children.length;i++) {
+		// 	child = children[i];
+		// 	if (child instanceof TreeNode) {
+		// 		if (child.name==path) return child;
+		// 	}
+		// }
+	}
+
+	TreeNode.prototype.getOrCreateDir = function(path) {
+		var node = this.getDir(path);
+		if (!node) {
+			node = this.createDir(path);
 		}
+		return node;
+	}
+
+	TreeNode.prototype.createDir = function(path) {
+		path = path + '/'
+		var node = new TreeNode(path);
+		this.add(node);
+		this.fsChildren[path] = node;
+		return node;
+	}
+
+	TreeNode.prototype.createFile = function(path) {
+		var node = new TreeNode(path);
+		this.add(node);
+		this.fsChildren[path] = node;
+		return node;
 	}
 
 	TreeNode.prototype.ls = function() {
 		var children = this.children, child;
 		var names = [];
-		for (var i=0;i<children.length;i++) {
-			child = children[i];
-			if (child instanceof TreeNode) {
-				names.push(child.name);
-			}
+		// for (var i=0;i<children.length;i++) {
+		// 	child = children[i];
+		// 	if (child instanceof TreeNode) {
+		// 		names.push(child.name);
+		// 	}
+		// }
+		for (var i in this.fsChildren) {
+			names.push(this.fsChildren[i].name);
 		}
 		return names;
 	}
 
 	var scene = new THREE.Scene();
-	var root = new TreeNode();
+	var root = new TreeNode('/');
 
 	var request = new XMLHttpRequest();
 	var url = '../data/test.json';
@@ -95,34 +124,20 @@
 
 	}
 
-	function TreeNode() {
-
-	}
-
 	function addNode(filename) {
 		var paths, i, il, path, node;
 		paths = filename.split('/');
 		node = root; // start
 		for (i=0, il=paths.length;i<il;i++) {
 			path = paths[i];
-			// create node if not exists
-			node = getNode(node, path);
+			if (i<il-1) {
+				node = node.getOrCreateDir(path);
+			} else {
+				node = node.getOrCreateFile(path);
+			}
 		}
 
 	}
-
-	function getNode(parent, path) {
-		var node = parent.getNode(path);
-		if (!node) {
-			node = new TreeNode();
-			node.name = path;
-			parent.add(node);
-		}
-
-		return node;
-	}
-
-
 
 	</script>
 </body>
