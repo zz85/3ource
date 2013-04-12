@@ -23,110 +23,124 @@
 	<div id="container"></div>
 	<script>
 
-	// TODO - make this a mixin of a TreeNode (file system representation) and a Three.js object
-	TreeNode = function(name) {
-		THREE.Object3D.call( this );
-		this.name = name;
-		this.fsChildren = {};
-	}
-	TreeNode.prototype = Object.create( THREE.Object3D.prototype );
+	// mixin of a TreeNode (file system representation) and a Three.js object
+	var TreeNodeMixin = {
+		init: function(name) {
+			THREE.Object3D.call( this );
+			this.name = name;
+			this.fsChildren = {};
+		},
 
-	TreeNode.prototype.get = function(path) {
-		return this.fsChildren[path];
-	}
+		get: function(path) {
+			return this.fsChildren[path];
+		},
 
-	TreeNode.prototype.getOrCreate = function(path) {
-		var node = this.get(path);
-		if (!node) {
-			node = this.create(path);
-		}
-		return node;
-	}
-
-	TreeNode.prototype.create = function(path) {
-		var node = new TreeNode(path);
-		this.add(node);
-		this.fsChildren[path] = node;
-		return node;
-	}
-
-	TreeNode.prototype.ls = function() {
-		var names = [];
-		for (var i in this.fsChildren) {
-			names.push(this.fsChildren[i].name);
-		}
-		return names;
-	}
-
-	TreeNode.prototype.isDir = function() {
-		return this.name.charAt(this.name.length-1) == '/';
-	}
-
-	TreeNode.prototype.isEmpty = function() {
-		return this.ls().length == 0;
-	}
-
-	TreeNode.prototype.rm = function(name) {
-		var node = this.fsChildren[name];
-		delete this.fsChildren[name];
-		this.remove(node);
-	}
-
-
-	TreeNode.prototype.addPath = function(filename) {
-		var paths, i, il, path, node;
-		paths = filename.split('/');
-		node = this; // start
-		for (i=0, il=paths.length;i<il;i++) {
-			path = paths[i];
-			if (i<il-1) {
-				node = node.getOrCreate(path + '/');
-			} else {
-				node = node.getOrCreate(path);
+		getOrCreate: function(path) {
+			var node = this.get(path);
+			if (!node) {
+				node = this.create(path);
 			}
-		}
-	}
+			return node;
+		},
 
-	TreeNode.prototype.getPath = function(filename) {
-		var paths, i, il, path, node, tmp;
-		paths = filename.split('/');
-		node = this; // start
-		for (i=0, il=paths.length;i<il;i++) {
-			path = paths[i];
-			tmp = node.get(path + '/');
-			if (tmp) {
-				node = tmp;
-			} else {
-				node = node.get(path);
+		create: function(path) {
+			var node = new TreeNode(path);
+			this.add(node);
+			this.fsChildren[path] = node;
+			return node;
+		},
+
+		ls: function() {
+			var names = [];
+			for (var i in this.fsChildren) {
+				names.push(this.fsChildren[i].name);
 			}
-		}
-		return node;
-	}
+			return names;
+		},
 
-	TreeNode.prototype.removePath = function(filename) {
-		// traverse in and remove by layer.
-		var paths, i, il, path, node;
-		paths = filename.split('/');
-		node = this;
-		var nodes = [root];
-		for (i=0, il=paths.length;i<il;i++) {
-			path = paths[i];
-			if (i<il-1) {
-				node = node.get(path + '/');
-				nodes.push(node);
-			} else {
-				node = node.get(path);
+		isDir: function() {
+			return this.name.charAt(this.name.length-1) == '/';
+		},
+
+		isEmpty: function() {
+			return this.ls().length == 0;
+		},
+
+		rm: function(name) {
+			var node = this.fsChildren[name];
+			delete this.fsChildren[name];
+			this.remove(node);
+		},
+
+
+		addPath: function(filename) {
+			var paths, i, il, path, node;
+			paths = filename.split('/');
+			node = this; // start
+			for (i=0, il=paths.length;i<il;i++) {
+				path = paths[i];
+				if (i<il-1) {
+					node = node.getOrCreate(path + '/');
+				} else {
+					node = node.getOrCreate(path);
+				}
 			}
-		}
-		var parent;
-		for (i=nodes.length;i--;) {
-			parent = nodes.pop();
-			parent.rm(node.name);
-			if (!parent.isEmpty()) break;
-			node = parent;
-		}
+		},
 
+		getPath: function(filename) {
+			var paths, i, il, path, node, tmp;
+			paths = filename.split('/');
+			node = this; // start
+			for (i=0, il=paths.length;i<il;i++) {
+				path = paths[i];
+				tmp = node.get(path + '/');
+				if (tmp) {
+					node = tmp;
+				} else {
+					node = node.get(path);
+				}
+			}
+			return node;
+		},
+
+		removePath: function(filename) {
+			// traverse in and remove by layer.
+			var paths, i, il, path, node;
+			paths = filename.split('/');
+			node = this;
+			var nodes = [root];
+			for (i=0, il=paths.length;i<il;i++) {
+				path = paths[i];
+				if (i<il-1) {
+					node = node.getOrCreate(path + '/'); // getOrCreate get
+					nodes.push(node);
+				} else {
+					node = node.getOrCreate(path);
+				}
+			}
+			var parent;
+			for (i=nodes.length;i--;) {
+				parent = nodes.pop();
+				parent.rm(node.name);
+				if (!parent.isEmpty()) break;
+				node = parent;
+			}
+
+		}
+	};
+
+	function mixin(o, type) {
+		var newType = TreeNodeMixin.init;
+		newType.prototype = Object.create( type.prototype );
+		for (var i in o) {
+			if (i!=='init')
+				newType.prototype[i] = o[i];
+		}
+		return newType;
 	}
+
+	TreeNode = mixin(TreeNodeMixin, THREE.Object3D);
+
 	var scene = new THREE.Scene();
 	var root = new TreeNode('/');
 
@@ -144,20 +158,32 @@
 
 	function readTimeline(timeline) {
 		t = timeline;
+
+		function compare(a, b) {
+			return b.date - a.date;
+		}
+		// Date order vs Ancestor order
+		// timeline.sort(compare);
+
 		u = timeline.concat()
 		timeline.reverse();
 
 		var i,il, commit, j, entry, filename;
 		var added, deleted, modified;
-		for (i=0;i<5;i++) {
+		for (i=0;i<8;i++) { //t.length
 			commit = timeline[i];
 			files = commit.files;
 			mods = {A:[], D:[], M:[]};
+			if (!files) {
+				// merge cases
+				console.log(commit);
+				continue;
+			}
 			for (j=0; j<files.length; j++) {
 				entry = files[j];
 				mods[entry.charAt(0)].push(entry.substring(2));
 			}
-			console.log(mods);
+			// console.log(mods);
 			commit.mods = mods;
 			// console.log(commit)
 
