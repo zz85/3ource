@@ -20,15 +20,29 @@
 	}
 	</style>
 	<script src="lib/three.min.js"></script>
+	<script src="source.js"></script>
 	<div id="container"></div>
 	<script>
 
+	var plane = new THREE.PlaneGeometry( 20, 20 );
+	var materials = [];
+	for (i=0;i<50;i++) {
+		materials.push(new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff } ));
+	}
+	var allnodes = [];
+	// var material = new THREE.MeshBasicMaterial( {color: new THREE.Color( 0xff0000 )} );
+
 	// mixin of a TreeNode (file system representation) and a Three.js object
 	var TreeNodeMixin = {
-		init: function(name) {
-			THREE.Object3D.call( this );
+		init2: function(name) {
 			this.name = name;
 			this.fsChildren = {};
+
+			// this.position2 = new THREE.Vector3();
+			// this.position2.x = this.position.x = (Math.random() - .5) * 100;
+			// this.position2.y = this.position.y = (Math.random() - .5) * 100;
+			this.position.dx = Math.random() - .5;
+			this.position.dy = Math.random() - .5;
 		},
 
 		get: function(path) {
@@ -44,9 +58,15 @@
 		},
 
 		create: function(path) {
-			var node = new TreeNode(path);
+			var node;
+			if (path.charAt(path.length-1)=='/') {
+				node = new TreeNode(path);
+			} else {
+				node = new FileNode(path, plane, materials[Math.random() * materials.length]);
+			}
 			this.add(node);
 			this.fsChildren[path] = node;
+			allnodes.push(node);
 			return node;
 		},
 
@@ -70,6 +90,7 @@
 			var node = this.fsChildren[name];
 			delete this.fsChildren[name];
 			this.remove(node);
+			allnodes.splice(allnodes.indexOf(node), 1);
 		},
 
 
@@ -126,11 +147,54 @@
 				node = parent;
 			}
 
+		},
+
+		simulate: function() {
+			var child, children = this.children;
+			var files = [];
+			var folders = [];
+			var i, il, j;
+			for (i=0, il=children.length;i<il;i++) {
+				child = children[i];
+
+				if (child instanceof FileNode) {
+					files.push(child);
+				} else if (child instanceof TreeNode) {
+					folders.push(child);
+					child.simulate();
+				}
+			}
+
+			var n, n2;
+			n = this;
+			n.position.dx -= n.position.x * 0.001;
+			n.position.dy -= n.position.y * 0.001;
+			var d;
+
+			for (i=files.length; i--; ) {
+				n = files[i];
+				// Gravity towards center
+				n.position.dx -= n.position.x * 0.001;
+				n.position.dy -= n.position.y * 0.001;
+
+				for (j=0;j<i;j++) {
+					n2 = files[j];
+					if (i==j) continue;
+
+					// tmp.subVectors(n2.position, n.position);
+					// d = tmp.distance();
+					// if (d < 50) {
+					// 	// n2.position += d / 50 * something;
+
+					// }
+
+				}
+			}
 		}
 	};
 
 	function mixin(o, type) {
-		var newType = TreeNodeMixin.init;
+		var newType = o.init;
 		newType.prototype = Object.create( type.prototype );
 		for (var i in o) {
 			if (i!=='init')
@@ -139,22 +203,33 @@
 		return newType;
 	}
 
+	FileNodeMixin = {};
+	for (var i in TreeNodeMixin) {
+		FileNodeMixin[i] = TreeNodeMixin[i];
+	}
+
+	TreeNodeMixin.init = function(name) {
+		THREE.Object3D.call( this );
+		this.init2(name);
+	}
+
+	FileNodeMixin.init = function(name, geometry, material) {
+		THREE.Mesh.call( this, geometry, material );
+		this.init2(name);
+	}
+
 	TreeNode = mixin(TreeNodeMixin, THREE.Object3D);
+	FileNode = mixin(FileNodeMixin, THREE.Mesh);
 
 	var scene = new THREE.Scene();
 	var root = new TreeNode('/');
 
-	var request = new XMLHttpRequest();
+	var tmp = new THREE.Vector3();
+
 	var url = '../data/test.json';
-	var u;
-	request.open( 'GET', url, true );
-	request.onload = function(e) {
-		console.time('decode');
-		var timeline = JSON.parse(request.response);
-		console.timeEnd('decode');
-		readTimeline(timeline);
-	}
-	request.send(null);
+	requestLog(url, readTimeline);
+
+	var target = new THREE.Vector3( 0, 0, 0 );
 
 	function readTimeline(timeline) {
 		t = timeline;
@@ -199,6 +274,50 @@
 			}
 		}
 
+		initScene();
+
+	}
+
+	function initScene() {
+		camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2100 );
+		// camera.position.y = 150;
+		camera.position.z = 500;
+		camera.lookAt(target);
+		scene.add(root);
+
+		renderer = new THREE.WebGLRenderer();
+		// renderer = new THREE.CanvasRenderer();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+
+		document.body.appendChild( renderer.domElement );
+
+		// moo = new THREE.Mesh(plane, material);
+		// scene.add(moo);
+
+		render();
+
+	}
+
+
+	function render() {
+		var node;
+
+		for (var i=0, il=allnodes.length;i<il;i++) {
+			node = allnodes[i];
+
+			node.position.x += node.position.dx;
+			node.position.y += node.position.dy;
+			// tmp.copy(node.position);
+			// node.position2.copy(node.position2);
+			// node.position2.copy(tmp);
+			// node.position2.multiplyScalar(2).sub(node.position);
+
+		}
+
+		root.simulate();
+
+		renderer.render( scene, camera );
+		requestAnimationFrame(render);
 	}
 
 	</script>
