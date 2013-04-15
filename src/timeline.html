@@ -22,10 +22,12 @@
 	<div id="container"></div>
 	<script src="source.js"></script>
 	<script>
+	/*OPTIONS*/
 	var url = '../data/test.json';
-	var currentRow = 0; //4000
-	var targetRows = 100;
-	
+	var currentRow = 0;
+	var targetRows = 200;
+	var scrollIncrement = 1; // 2 10
+	/*OPTIONS*/
 
 	requestLog(url, readTimeline);
 
@@ -35,7 +37,6 @@
 		// u = timeline.reverse();
 		var i, il, v;
 		var hashes = {};
-		
 
 		function compare(a, b) {
 			return b.date - a.date;
@@ -84,12 +85,9 @@
 
 		var nodeTracks = [];
 		var tracks = [];
-		// [[row, track] (start),  [row, track] (mids). [row, track] (end)]
-		// 1. roll down the strings?
-		// 2. find the pins?
 		var trackCounter = 0;
 
-		for (i=0;i<4000;i++) {
+		for (i=0, il=timeline.length;i<il;i++) {
 			v = timeline[i];
 
 			// current parents
@@ -110,7 +108,6 @@
 				p = pendingParents[j];
 
 				var currentTrack = tracks[p.id];
-				// var lastStation = currentTrack[currentTrack.length-1];
 
 				var middleTrack;
 				var endTrack;
@@ -160,8 +157,6 @@
 				// ctx.lineTo(getTrackX(middleTrack), getRowY(p.row + LINK_PORTION));
 				// ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
 				// ctx.lineTo(getTrackX(endTrack), getRowY(i));
-
-
 
 				p.row = i;
 
@@ -221,61 +216,24 @@
 		document.body.appendChild(canvas);
 
 		ctx = canvas.getContext('2d');
+
+
 		ctx.lineWidth = 2.5;
 
 		// ctx.fillStyle = 'hsl(10%, 80%, 80%)';
 		ctx.fillStyle = 'violet'; // lime
 
 		var colors = ['black', '#ee8', 'red', 'green', 'blue'];
+		var divs = [], d;
 
-		var minRow = Math.max(currentRow - 10, 0);
-		var maxRow = Math.min(currentRow + targetRows + 10, timeline.length-1);
-		// console.log(minRow,maxRow, getRowY(0)-getRowY(minRow))
-
-		ctx.translate(0, getRowY(0)-getRowY(minRow));
-		var track, entry;
-		// Draw commit tracks
-		for (i=0,il=tracks.length;i<il;i++) {
-			track = tracks[i];
-
-			entry = track[0];
-			// ctx.strokeStyle = 'black';
-			ctx.strokeStyle = colors[~~(Math.random()*colors.length)];
-
-			ctx.beginPath();
-			ctx.moveTo(getTrackX(entry.track), getRowY(entry.row));
-			for (j=1, jl=track.length;j<jl;j++) {
-				entry = track[j];
-				// if (entry.row < minRow) continue;
-				ctx.lineTo(getTrackX(entry.track), getRowY(entry.row));
-				if (entry.row > maxRow) break;
-			}
-			ctx.stroke();
+		for (j=0;j<(targetRows+20);j++) {
+			d = document.createElement('div');
+			d.className = 'log';
+			container.appendChild(d);
+			divs.push(d);
 		}
 
-		ctx.lineWidth = 1.5;
-		ctx.strokeStyle = '#000';
-
-		// Draw nodes
-		// for (i=0,il=tracks.length;i<il;i++) {
-		for (i=minRow;i<maxRow;i++) {
-
-			nodeTrack = nodeTracks[i];
-
-			ctx.beginPath();
-			ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
-			ctx.fill();
-			ctx.stroke();
-		}
-
-		// Display commit messages
-		for (i=minRow;i<maxRow;i++) {
-			v = timeline[i];
-			e = document.createElement('div');
-			e.className = 'log';
-			e.innerHTML =  i + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
-			container.appendChild(e);
-		}
+		draw();
 
 		console.timeEnd('draw');
 
@@ -284,7 +242,67 @@
 		}
 
 		function getRowY(t) {
-			return t * 25 + 10;
+			return t * 25 + 10; //+ offsetY
+		}
+
+		function draw() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.save();
+			currentRow += scrollIncrement;
+			var minRow = Math.max(currentRow - 10, 0);
+			var maxRow = Math.min(currentRow + targetRows + 10, timeline.length-1);
+
+			ctx.translate(0, getRowY(0)-getRowY(minRow));
+
+			var track, entry;
+			// Draw commit tracks
+			for (i=0,il=tracks.length;i<il;i++) {
+				track = tracks[i];
+
+				// ctx.strokeStyle = 'black';
+				ctx.strokeStyle = colors[~~(Math.random()*colors.length)];
+
+				for (j=0, jl=track.length;j<jl;j++) {
+					entry = track[j];
+					if (entry.row >= minRow) break;
+				}
+				ctx.beginPath();
+				ctx.moveTo(getTrackX(entry.track), getRowY(entry.row));
+				for (j=j+1, jl=track.length;j<jl;j++) {
+					entry = track[j];
+
+					ctx.lineTo(getTrackX(entry.track), getRowY(entry.row));
+					if (entry.row > maxRow) break;
+				}
+				ctx.stroke();
+			}
+
+			ctx.lineWidth = 1.5;
+			ctx.strokeStyle = '#000';
+
+			// Draw nodes
+			// for (i=0,il=tracks.length;i<il;i++) {
+			for (i=minRow;i<maxRow;i++) {
+
+				nodeTrack = nodeTracks[i];
+
+				ctx.beginPath();
+				ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.stroke();
+			}
+
+			// Display commit messages
+			for (i=minRow, j=0;i<maxRow;i++,j++) {
+				v = timeline[i];
+				d = divs[j];
+				d.innerHTML =  i + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
+			}
+
+			ctx.restore();
+
+			if (currentRow<timeline.length)
+				setTimeout(draw, 100);
 		}
 
 	}
