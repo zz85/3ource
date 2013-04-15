@@ -31,7 +31,7 @@
 		// u = timeline.reverse();
 		var i, il, v;
 		var hashes = {};
-		var targetRows = Math.min(200, timeline.length);
+		var targetRows = Math.min(250, timeline.length);
 
 		function compare(a, b) {
 			return b.date - a.date;
@@ -68,15 +68,13 @@
 		// 1. pending parents first (gitk, jetbrains, git log --graph)
 		// 2. Current node first, pending parents, remaining parents (sourcetree, gitx)
 		// 3. Current parent, remaining parents, pending parents. (soucetree)
-		// 4. force layout (github)
+		// 4. force layout (vizgraph)
 
-		// var
-		ctx = canvas.getContext('2d');
-		ctx.lineWidth = 2.5;
-		// ctx.fillStyle = 'hsl(10%, 80%, 80%)';
-		ctx.fillStyle = 'violet'; // lime
+		// TODO
+		// Bezier
+		// Mouse over interactivity
 
-		var colors = ['black', '#ee8', 'red', 'green', 'blue'];
+		// var ctx;
 
 		var e;
 		var pendingParents = [];
@@ -87,29 +85,34 @@
 		console.time('draw');
 
 		var nodeTracks = [];
+		var tracks = [];
+		// [[row, track] (start),  [row, track] (mids). [row, track] (end)]
+		// 1. roll down the strings?
+		// 2. find the pins?
+		var trackCounter = 0;
 
 		for (i=0;i<targetRows;i++) {
 			v = timeline[i];
-			e = document.createElement('div');
-			e.className = 'log';
-			e.innerHTML =  i + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
-			container.appendChild(e);
-		}
 
-		for (i=0;i<targetRows;i++) {
-			v = timeline[i];
-
-			var pendingParents2 = [];
+			// current parents
+			var currentParents = [];
 			for (j=0;j<v.parents.length;j++) {
-				pendingParents2.push({targetHash: v.parents[j],
-					row: i, length: 0, color: colors[~~(Math.random()*colors.length)]});
+				currentParents.push({
+					targetHash: v.parents[j],
+					row: i,
+					length: 0
+				});
 			}
 
 			nodeTrack = null;
 			var merges = 0;
+			// pending tracks
 			for (j=0;j<pendingParents.length;j++) {
+
 				p = pendingParents[j];
 
+				var currentTrack = tracks[p.id];
+				// var lastStation = currentTrack[currentTrack.length-1];
 
 				var middleTrack;
 				var endTrack;
@@ -119,23 +122,28 @@
 				middleTrack = p.track;
 
 				if (p.targetHash==v.hash) {
+					// previous track is a child of current commit
 					first = nodeTrack===null;
+
 					if (first) nodeTrack = j;
 
 					endTrack = nodeTrack;
 
-					if (first && pendingParents2.length) {
+					if (first && currentParents.length) {
 
-						tmp= pendingParents2.shift()
+						tmp = currentParents.shift()
 						tmp.track = j;
 						tmp.color = pendingParents[j].color;
+						tmp.id = pendingParents[j].id;
 						pendingParents[j] = tmp;
+
 
 					} else {
 
 						if (p.length==0 && p.prevTrack!=p.track) {
 							middleTrack = p.prevTrack;
 						}
+
 						pendingParents.splice(j, 1);
 						merges++;
 						j--;
@@ -147,41 +155,36 @@
 					p.length++;
 				}
 
+				currentTrack.push({track: p.prevTrack, row: p.row});
+				currentTrack.push({track: middleTrack, row: p.row});
+				currentTrack.push({track: endTrack, row: i});
 
-				// Draw connecting lines
-				ctx.strokeStyle = p.color;
-				ctx.beginPath();
-				ctx.moveTo(getTrackX(p.prevTrack), getRowY(p.row));
+				// ctx.lineTo(getTrackX(middleTrack), getRowY(p.row + LINK_PORTION));
+				// ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
+				// ctx.lineTo(getTrackX(endTrack), getRowY(i));
 
-				// if (middleTrack!==null)
-				ctx.lineTo(getTrackX(middleTrack), getRowY(p.row + LINK_PORTION));
-				ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
-				ctx.lineTo(getTrackX(endTrack), getRowY(i));
 
-				ctx.stroke();
 
 				p.row = i;
 
 			}
+
 			if (nodeTrack===null) {
 				nodeTrack = 0;
 			}
 
-			// TODO
-			// Bezier
-			// Keep graph in memory?
-			// Mouse over interactivity
+			// Merge current parents into a pending array
+			for (j=0;j<currentParents.length;j++) {
+				p = currentParents[j];
 
-			for (j=0;j<pendingParents2.length;j++) {
-				p = pendingParents2[j];
-
+				p.id = trackCounter++;
 				p.track = pendingParents.length;
+				tracks[p.id] = [];
+
+
 				pendingParents.push(p);
 			}
 
-			ctx.stroke();
-
-			// Draw 1/4 -> 1/3 portions of lines
 			for (j=0;j<pendingParents.length;j++) {
 				p = pendingParents[j];
 
@@ -197,10 +200,37 @@
 			nodeTracks.push(nodeTrack);
 		}
 
+		ctx = canvas.getContext('2d');
+		ctx.lineWidth = 2.5;
+		// ctx.fillStyle = 'hsl(10%, 80%, 80%)';
+		ctx.fillStyle = 'violet'; // lime
+
+		var colors = ['black', '#ee8', 'red', 'green', 'blue'];
+
+
+		var track, entry;
+		// Draw commit tracks
+		for (i=0,il=tracks.length;i<il;i++) {
+			track = tracks[i];
+
+			entry = track[0];
+			// ctx.strokeStyle = 'black';
+			ctx.strokeStyle = colors[~~(Math.random()*colors.length)];
+
+			ctx.beginPath();
+			ctx.moveTo(getTrackX(entry.track), getRowY(entry.row));
+			for (j=1;j<track.length;j++) {
+				entry = track[j];
+				ctx.lineTo(getTrackX(entry.track), getRowY(entry.row));
+			}
+			ctx.stroke();
+		}
+
 		ctx.lineWidth = 1.5;
 		ctx.strokeStyle = '#000';
+
+		// Draw nodes
 		for (i=0;i<targetRows;i++) {
-			// Draw nodes
 
 			nodeTrack = nodeTracks[i];
 
@@ -208,6 +238,15 @@
 			ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
 			ctx.fill();
 			ctx.stroke();
+		}
+
+		// Display commit messages
+		for (i=0;i<targetRows;i++) {
+			v = timeline[i];
+			e = document.createElement('div');
+			e.className = 'log';
+			e.innerHTML =  i + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
+			container.appendChild(e);
 		}
 
 		console.timeEnd('draw');
