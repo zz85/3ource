@@ -128,7 +128,6 @@
 
 						tmp = currentParents.shift()
 						tmp.track = j;
-						tmp.color = pendingParents[j].color;
 						tmp.id = pendingParents[j].id;
 						pendingParents[j] = tmp;
 
@@ -260,7 +259,7 @@
 				track = tracks[i];
 
 				// ctx.strokeStyle = 'black';
-				ctx.strokeStyle = colors[~~(Math.random()*colors.length)];
+				ctx.strokeStyle = colors[i % colors.length];
 
 				for (j=0, jl=track.length;j<jl;j++) {
 					entry = track[j];
@@ -296,7 +295,7 @@
 			for (i=minRow, j=0;i<maxRow;i++,j++) {
 				v = timeline[i];
 				d = divs[j];
-				d.innerHTML =  i + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
+				d.innerHTML =  (timeline.length-i) + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
 			}
 
 			ctx.restore();
