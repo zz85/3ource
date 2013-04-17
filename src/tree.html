@@ -25,6 +25,7 @@
 	<script>
 
 	var plane = new THREE.PlaneGeometry( 20, 20 );
+	var lineMaterial = new THREE.LineBasicMaterial( { color: 0x444fff, opacity: 1, linewidth: 3, vertexColors: THREE.VertexColors } );
 	var materials = [];
 	for (i=0;i<50;i++) {
 		materials.push(new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff } ));
@@ -43,6 +44,14 @@
 			// this.position2.y = this.position.y = (Math.random() - .5) * 100;
 			this.position.dx = Math.random() - .5;
 			this.position.dy = Math.random() - .5;
+
+			var geo = new THREE.Geometry();
+			geo.vertices.push(new THREE.Vector3( 0, 0, 0 ));
+			this.start = new THREE.Vector3( 2, 2, 0 );
+			geo.vertices.push(this.start);
+
+			this.line = new THREE.Line(geo, lineMaterial);
+			this.add(this.line);
 		},
 
 		get: function(path) {
@@ -166,32 +175,54 @@
 			}
 
 			var n, n2;
-			n = this;
-			n.position.dx -= n.position.x * 0.001;
-			n.position.dy -= n.position.y * 0.001;
+			// n = this;
+			// n.position.dx -= n.position.x * 0.001;
+			// n.position.dy -= n.position.y * 0.001;
 			var d;
 
-			for (i=files.length; i--; ) {
-				n = files[i];
-				// Gravity towards center
-				n.position.dx -= n.position.x * 0.001;
-				n.position.dy -= n.position.y * 0.001;
+			layout(files, 1/8000, 0);
+			layout(folders, 1/200, 50);
 
-				for (j=0;j<i;j++) {
-					n2 = files[j];
-					if (i==j) continue;
 
-					// tmp.subVectors(n2.position, n.position);
-					// d = tmp.distance();
-					// if (d < 50) {
-					// 	// n2.position += d / 50 * something;
-
-					// }
-
-				}
-			}
 		}
 	};
+
+	function layout(files, force, distance) {
+		for (i=files.length; i--; ) {
+			n = files[i];
+			// Gravity towards center
+			// n.position.dx -= n.position.x * 0.001;
+			// n.position.dy -= n.position.y * 0.001;
+
+			tmp.set(n.position.x, n.position.y, 0);
+			d = tmp.length();
+			tmp.multiplyScalar(force);
+			if (d<distance) tmp.multiplyScalar(-1);
+			n.position.dx -= tmp.x;
+			n.position.dy -= tmp.y;
+
+
+			for (j=0;j<i;j++) {
+				n2 = files[j];
+				if (i==j) continue;
+				// Forces away from each other
+
+				tmp.subVectors(n2.position, n.position);
+				d = tmp.length();
+				if (d < 10) {
+					tmp.normalize().multiplyScalar(d/10);
+					n2.position.dx += tmp.x;
+					n2.position.dy += tmp.y;
+					n.position.dx -= tmp.x;
+					n.position.dy -= tmp.y;
+
+					// n2.position.add(tmp);
+					// n.position.sub(tmp);
+				}
+
+			}
+		}
+	}
 
 	function mixin(o, type) {
 		var newType = o.init;
@@ -305,8 +336,15 @@
 		for (var i=0, il=allnodes.length;i<il;i++) {
 			node = allnodes[i];
 
+			node.position.dx *= 0.95;
+			node.position.dy *= 0.95;
 			node.position.x += node.position.dx;
 			node.position.y += node.position.dy;
+
+			node.start.y = -node.position.y;
+			node.start.x = -node.position.x;
+			node.line.geometry.verticesNeedUpdate = true;
+
 			// tmp.copy(node.position);
 			// node.position2.copy(node.position2);
 			// node.position2.copy(tmp);
