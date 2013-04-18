@@ -8,6 +8,9 @@ var pretty_json = true;
 var pack_json = true;
 // End Options
 
+
+
+// TODO manually parse the entry rather than relying on JSON
 var json_format = {
 	"hash":"%h",
 	"parents":"%p",
@@ -18,8 +21,20 @@ var json_format = {
 	"files": ""
 };
 
-var pretty_format = JSON.stringify(json_format).replace(/\"/g, '^@^');
-var cmd = 'git log --pretty=format:\'' + pretty_format + ',\' > result.json';
+var DELIMITER = '|^@^|';
+var LINE_DELIMTER = '';
+//\\#>.<#/
+var json_keys = [];
+var pretty_format2 = [];;
+for (var k in json_format) {
+	json_keys.push(k);
+	pretty_format2.push(json_format[k]);
+}
+pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
+
+var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
+
+var cmd = 'git log --encoding=UTF-8 --pretty=format:\'' + pretty_format2 + '\' > result.json';
 
 var fileschanged = 'git log --name-status --pretty="__HASH__%h"'
 // --name-status --name-only
@@ -116,18 +131,35 @@ function convert() {
 
 	var result = fs.readFileSync(cwd + 'result.json', 'utf8');
 	fs.unlinkSync(cwd + 'result.json');
+
+	/*
 	var out = result.replace(/"/gm, '\\"').replace(/\^@\^/gm, '"');
 	if (out[out.length - 1] == ',') {
 		out = out.substring (0, out.length - 1);
 	}
 
-	// quick hack!
+	// Probably not the best way, but
+	// JSON parsing is much stricter
 	var log = eval('[' + out + ']');
 	// var log = JSON.parse('[' + out + ']');
-	var commit;
+	*/
 
+	var log = [];
+	var lines = result.split(LINE_DELIMTER+'\n');
+	// lines.pop();
+	for (var i=0;i<lines.length;i++) {
+		var line = lines[i].split(DELIMITER);
+		var o = {};
+		for (var j=0;j<line.length;j++) {
+			o[json_keys[j]] = line[j];
+		}
+		log.push(o);
+	}
+
+	// console.log(log);
 	// console.log(hash);
 
+	var commit;
 	for (var i=0;i<log.length;i++) {
 		commit = log[i];
 		commit.files = hash[commit.hash];
