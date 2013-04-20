@@ -34,19 +34,65 @@ pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 
 var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
-var cmd = 'git log --encoding=UTF-8 --pretty=format:\'' + pretty_format2 + '\' > result.json';
+var cmd = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
+var RAW_FILES = 'git log --pretty=format:user:%aN%n%ct --reverse --raw --encoding=UTF-8';
 
-var fileschanged = 'git log --name-status --pretty="__HASH__%h"'
+
+var fileschanged = 'git log --encoding=UTF-8 --name-status --pretty="__HASH__%h"'
 // --name-status --name-only
 
 
 var hash = {};
 
 // AMD - Add, Modified, Delete
-getfiles();
+// getfiles();
+
+
+var test = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
+function (error, stdout, stderr) {
+	if (error !== null) {
+		console.log('exec error: ' + error);
+		return;
+	}
+	var logs = stdout.split('\n\n');
+	console.log(logs.length);
+	var commits = [];
+	var o;
+
+	var regex = /(.*)[ ](.*)[ ](\w+)[.]+[ ](\w+)[.]+[ ](.)\t(.*)/;
+	// sample format - ":000000 100644 0000000... e69de29... A\tREADME"
+
+	for (i=0,il=logs.length;i<il;i++) {
+		log = logs[i].split('\n');
+
+		o = {user: log[0].substring(5), time: log[1], files:[]};
+		commits.push(o);
+
+
+		for (j=2;j<log.length;j++) {
+			line = log[j];
+			e = regex.exec(line)
+			if (e)
+			o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
+			else
+				console.log(line, '|', log);
+		}
+
+		// if (line.substring(0, 5)=='user:') {
+		// 	o = {};
+		// }
+	}
+
+
+	json = JSON.stringify(commits, null, '\t');
+	fs.writeFileSync(target, json, 'utf8');
+	console.log('done');
+	// console.log(stdout);
+});
 
 function getfiles() {
 
+	// Piping to file due to "maxBuffer exceeded" error.
 	var child = exec(fileschanged + ' > __files.txt', {cwd: cwd},
 	function (error, stdout, stderr) {
 		if (error !== null) {
@@ -55,7 +101,7 @@ function getfiles() {
 		}
 
 		var files = fs.readFileSync(cwd + '__files.txt', 'utf8');
-		fs.unlinkSync(cwd + '__files.txt');
+		// fs.unlinkSync(cwd + '__files.txt');
 
 		files = files.split('__HASH__')
 		files.shift()
