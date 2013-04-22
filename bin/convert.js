@@ -17,8 +17,7 @@ var json_format = {
 	"author":"%an",
 	"date":"%at",
 	"message":"%s",
-	"commitDate":"%ct",
-	"files": ""
+	"commitDate":"%ct"
 };
 
 var DELIMITER = '|^@^|';
@@ -34,8 +33,9 @@ pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 
 var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
-var cmd = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
-var RAW_FILES = 'git log --pretty=format:user:%aN%n%ct --reverse --raw --encoding=UTF-8';
+var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
+var RAW_FILES = 'git log  --no-renames  --pretty=format:user:%aN%n%ct --reverse --raw --encoding=UTF-8';
+//%ct --no-renames  %s
 
 
 var fileschanged = 'git log --encoding=UTF-8 --name-status --pretty="__HASH__%h"'
@@ -45,7 +45,7 @@ var fileschanged = 'git log --encoding=UTF-8 --name-status --pretty="__HASH__%h"
 var hash = {};
 
 // AMD - Add, Modified, Delete
-// getfiles();
+getfiles();
 
 
 var test = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
@@ -54,8 +54,7 @@ function (error, stdout, stderr) {
 		console.log('exec error: ' + error);
 		return;
 	}
-	var logs = stdout.split('\n\n');
-	console.log(logs.length);
+	var logs = stdout.split('\n');
 	var commits = [];
 	var o;
 
@@ -63,29 +62,28 @@ function (error, stdout, stderr) {
 	// sample format - ":000000 100644 0000000... e69de29... A\tREADME"
 
 	for (i=0,il=logs.length;i<il;i++) {
-		log = logs[i].split('\n');
+		log = logs[i];
 
-		o = {user: log[0].substring(5), time: log[1], files:[]};
-		commits.push(o);
+		if (log.substring(0, 5)=='user:') {
+			o = {user: log.substring(5), time: logs[i+1], files:[]};
+			i++;
+			commits.push(o);
+		} else if (log.trim() =='') {
 
-
-		for (j=2;j<log.length;j++) {
-			line = log[j];
-			e = regex.exec(line)
+		} else {
+			e = regex.exec(log)
 			if (e)
-			o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
+				o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
 			else
-				console.log(line, '|', log);
+				console.log('Error at line ' + i, logs[i-1], logs[i], logs[i+1]);
+
 		}
 
-		// if (line.substring(0, 5)=='user:') {
-		// 	o = {};
-		// }
 	}
 
 
 	json = JSON.stringify(commits, null, '\t');
-	fs.writeFileSync(target, json, 'utf8');
+	fs.writeFileSync('data/files.json', json, 'utf8');
 	console.log('done');
 	// console.log(stdout);
 });
@@ -101,7 +99,7 @@ function getfiles() {
 		}
 
 		var files = fs.readFileSync(cwd + '__files.txt', 'utf8');
-		// fs.unlinkSync(cwd + '__files.txt');
+		fs.unlinkSync(cwd + '__files.txt');
 
 		files = files.split('__HASH__')
 		files.shift()
@@ -123,14 +121,7 @@ function getfiles() {
 
 		// console.log(hash);
 
-		var child = exec(cmd, {cwd: cwd},
-			function (error, stdout, stderr) {
-				if (error !== null) {
-					console.log('exec error: ' + error);
-					return;
-				}
-				convert();
-		});
+
 
 	});
 

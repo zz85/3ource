@@ -1,14 +1,21 @@
 function requestLog(url, callback) {
+	getJSON(url, function(results) {
+		console.time('decode');
+		var timeline = JSON.parse(results);
+		timeline = json_unpack(timeline);
+		console.timeEnd('decode');
+		callback(timeline);
+	});
+}
+
+
+function getJSON(url, callback) {
 
 	var request = new XMLHttpRequest();
 	var u;
 	request.open( 'GET', url, true );
 	request.onload = function(e) {
-		console.time('decode');
-		var timeline = JSON.parse(request.response);
-		timeline = json_unpack(timeline);
-		console.timeEnd('decode');
-		callback(timeline);
+		callback(request.response);
 	}
 	request.send(null);
 

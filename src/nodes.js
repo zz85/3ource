@@ -1,4 +1,5 @@
 var allnodes = [];
+// var material = new THREE.MeshBasicMaterial( {color: new THREE.Color( 0xff0000 )} );
 
 // mixin of a TreeNode (file system representation) and a Three.js object
 var TreeNodeMixin = {
@@ -206,7 +207,7 @@ function layout(files, force, distance) {
 
 			tmp.subVectors(n2.position, n.position);
 			d = tmp.length();
-			tmp.normalize().multiplyScalar(d/distanceTo);
+			tmp.normalize().multiplyScalar(d/distance);
 
 			if (d < distance) {
 				tmp.multiplyScalar(-1 );
