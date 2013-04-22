@@ -8,9 +8,6 @@ var pretty_json = true;
 var pack_json = true;
 // End Options
 
-
-
-// TODO manually parse the entry rather than relying on JSON
 var json_format = {
 	"hash":"%h",
 	"parents":"%p",
@@ -34,21 +31,22 @@ pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
 var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
-var RAW_FILES = 'git log  --no-renames  --pretty=format:user:%aN%n%ct --reverse --raw --encoding=UTF-8';
+var RAW_FILES = 'git log  --no-renames --pretty=format:user:%aN%n%ct\!%h --reverse --raw --encoding=UTF-8';
 //%ct --no-renames  %s
 
 
-var fileschanged = 'git log --encoding=UTF-8 --name-status --pretty="__HASH__%h"'
-// --name-status --name-only
+var commit_files = {};
 
+var child = exec(CMD, {cwd: cwd},
+		function (error, stdout, stderr) {
+	if (error !== null) {
+		console.log('exec error: ' + error);
+		return;
+	}
+	convert();
+});
 
-var hash = {};
-
-// AMD - Add, Modified, Delete
-getfiles();
-
-
-var test = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
+var rawlogs = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
 function (error, stdout, stderr) {
 	if (error !== null) {
 		console.log('exec error: ' + error);
@@ -57,6 +55,7 @@ function (error, stdout, stderr) {
 	var logs = stdout.split('\n');
 	var commits = [];
 	var o;
+	var log, line2;
 
 	var regex = /(.*)[ ](.*)[ ](\w+)[.]+[ ](\w+)[.]+[ ](.)\t(.*)/;
 	// sample format - ":000000 100644 0000000... e69de29... A\tREADME"
@@ -65,7 +64,8 @@ function (error, stdout, stderr) {
 		log = logs[i];
 
 		if (log.substring(0, 5)=='user:') {
-			o = {user: log.substring(5), time: logs[i+1], files:[]};
+			line2 = logs[i+1].split('!');
+			o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
 			i++;
 			commits.push(o);
 		} else if (log.trim() =='') {
@@ -88,44 +88,11 @@ function (error, stdout, stderr) {
 	// console.log(stdout);
 });
 
-function getfiles() {
-
-	// Piping to file due to "maxBuffer exceeded" error.
-	var child = exec(fileschanged + ' > __files.txt', {cwd: cwd},
-	function (error, stdout, stderr) {
-		if (error !== null) {
-			console.log('exec error: ' + error);
-			return;
-		}
-
-		var files = fs.readFileSync(cwd + '__files.txt', 'utf8');
-		fs.unlinkSync(cwd + '__files.txt');
-
-		files = files.split('__HASH__')
-		files.shift()
-
-		var f, names;
-
-
-		for (var i=0;i<files.length;i++) {
-			names = files[i].split('\n\n');
-			if (names.length>1) {
-				f = names[1]
-					.split('\n')
-				f.pop();
-			} else {
-				f = [];
-			}
-			hash[names[0]] = f;
-		}
-
-		// console.log(hash);
-
-
-
-	});
-
-}
+/*
+a90c4e1:
+   [ 'A\tsrc/Class.js',
+     'A\tsrc/cameras/Camera.js',
+*/
 
 function json_pack(a) {
 	// From [{a, b, c}, {a, b, c}] => {a:[], b:[], c:[]}
@@ -169,18 +136,6 @@ function convert() {
 	var result = fs.readFileSync(cwd + 'result.json', 'utf8');
 	fs.unlinkSync(cwd + 'result.json');
 
-	/*
-	var out = result.replace(/"/gm, '\\"').replace(/\^@\^/gm, '"');
-	if (out[out.length - 1] == ',') {
-		out = out.substring (0, out.length - 1);
-	}
-
-	// Probably not the best way, but
-	// JSON parsing is much stricter
-	var log = eval('[' + out + ']');
-	// var log = JSON.parse('[' + out + ']');
-	*/
-
 	var log = [];
 	var lines = result.split(LINE_DELIMTER+'\n');
 	// lines.pop();
@@ -194,12 +149,11 @@ function convert() {
 	}
 
 	// console.log(log);
-	// console.log(hash);
 
 	var commit;
 	for (var i=0;i<log.length;i++) {
 		commit = log[i];
-		commit.files = hash[commit.hash];
+		// commit.files = commit_files[commit.hash];
 		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
 	}
