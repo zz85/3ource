@@ -2,11 +2,17 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 
 // Options
-var cwd = '../three.js/'; // target git repository directory
+var cwd = './'; // target git repository directory
+cwd = '../three.js/'
 var target = 'data/test.json';
-var pretty_json = true;
+var pretty_json = !true;
 var pack_json = true;
 // End Options
+
+/*
+ * TODO - combine both git commands into 1
+ * GET Gravatar from emails
+ */
 
 var json_format = {
 	"hash":"%h",
@@ -14,11 +20,14 @@ var json_format = {
 	"author":"%an",
 	"date":"%at",
 	"message":"%s",
-	"commitDate":"%ct"
+	"commitDate":"%ct",
+	"files":""
 };
 
 var DELIMITER = '|^@^|';
 var LINE_DELIMTER = '';
+var DOWNLOAD_GRAVATAR = false;
+
 //\\#>.<#/
 var json_keys = [];
 var pretty_format2 = [];;
@@ -31,20 +40,24 @@ pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
 var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
-var RAW_FILES = 'git log  --no-renames --pretty=format:user:%aN%n%ct\!%h --reverse --raw --encoding=UTF-8';
-//%ct --no-renames  %s
+var RAW_FILES = 'git log --no-renames --pretty=format:user:%aN%n%ct\!%h --raw --encoding=UTF-8';
+//%ct --no-renames  %s --no-renames --no-renames 
 
 
 var commit_files = {};
+var commits = [];
 
-var child = exec(CMD, {cwd: cwd},
+function get_git_log() {
+	var child = exec(CMD, {cwd: cwd},
 		function (error, stdout, stderr) {
-	if (error !== null) {
-		console.log('exec error: ' + error);
-		return;
-	}
-	convert();
-});
+		if (error !== null) {
+			console.log('exec error: ' + error);
+			return;
+		}
+		convert();
+	});
+
+}
 
 var rawlogs = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
 function (error, stdout, stderr) {
@@ -53,7 +66,6 @@ function (error, stdout, stderr) {
 		return;
 	}
 	var logs = stdout.split('\n');
-	var commits = [];
 	var o;
 	var log, line2;
 
@@ -72,18 +84,22 @@ function (error, stdout, stderr) {
 
 		} else {
 			e = regex.exec(log)
-			if (e)
-				o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
-			else
-				console.log('Error at line ' + i, logs[i-1], logs[i], logs[i+1]);
+			// if (e)
+			// 	o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
+			// else
+			// 	console.log('Error at line ' + i, logs[i-1], logs[i], logs[i+1]);
+			if (e.length) {
+				o.files.push([e[6], e[5], e[3], e[4]].join('|'))
+			}
 
 		}
 
 	}
 
 
-	json = JSON.stringify(commits, null, '\t');
-	fs.writeFileSync('data/files.json', json, 'utf8');
+	// json = JSON.stringify(commits, null, '\t');
+	// fs.writeFileSync('data/files.json', json, 'utf8');
+	get_git_log();
 	console.log('done');
 	// console.log(stdout);
 });
@@ -153,7 +169,7 @@ function convert() {
 	var commit;
 	for (var i=0;i<log.length;i++) {
 		commit = log[i];
-		// commit.files = commit_files[commit.hash];
+		commit.files = commits[i].files;
 		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
 	}

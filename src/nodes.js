@@ -23,6 +23,7 @@ var TreeNodeMixin = {
 
 		this.box = new THREE.Box3();
 		this.radius = 10;
+		this.history = [];
 	},
 
 	get: function(path) {

@@ -3,6 +3,20 @@ function requestLog(url, callback) {
 		console.time('decode');
 		var timeline = JSON.parse(results);
 		timeline = json_unpack(timeline);
+
+		var files, file, i,il, j,jl;
+		for (i=0, il=timeline.length;i<il;i++) {
+			files = timeline[i].files;
+			for (j=0,jl=files.length;j<jl;j++) {
+				file = files[j].split('|')
+				files[j] = {
+					file: file[0],
+					op: file[1],
+					from: file[2],
+					to: file[3]
+				};
+			}
+		}
 		console.timeEnd('decode');
 		callback(timeline);
 	});

@@ -51,40 +51,61 @@
 		// Date order vs Ancestor order
 		// timeline.sort(compare);
 
-		u = timeline.concat()
-		timeline.reverse();
-
 		var i,il, commit, j, entry, filename;
-		var added, deleted, modified;
-		for (i=0;i<8;i++) { //t.length
+		var file_hashes = {};
+		var pending = {};
+		// for (i=0;i<timeline.length;i++) { //timeline.length
+		for (i=timeline.length;i--;) { //timeline.length
 			commit = timeline[i];
 			files = commit.files;
-			mods = {A:[], D:[], M:[]};
-			if (!files) {
-				// merge cases
-				console.log(commit);
-				continue;
-			}
-			for (j=0; j<files.length; j++) {
-				entry = files[j];
-				mods[entry.charAt(0)].push(entry.substring(2));
-			}
-			// console.log(mods);
-			commit.mods = mods;
-			// console.log(commit)
 
-			var path;
-			for (j=0;j<mods.A.length;j++) {
-				path = mods.A[j];
-				root.addPath(path);
+			for (f in pending) {
+				files.push(pending[f]);
+				// delete pending[f];
 			}
 
-			for (j=0;j<mods.D.length;j++) {
-				path = mods.D[j];
-				root.removePath(path);
+			for (j=files.length;j--;) {
+				file = files[j];
+
+				prev_hash = file.from;
+				current_hash = file.to;
+				filename = file.file;
+
+				if (prev_hash in pending) delete pending[prev_hash];
+
+				switch (file.op) {
+					case 'A':
+						node = root.addPath(filename);
+						file_hashes[current_hash] = filename;
+						// node;
+						break;
+					case 'M':
+						if (!(prev_hash in file_hashes)) {
+							console.log('Warning... Cant find hash', file, i, commit);
+							pending[prev_hash] = file;
+							return;
+						}
+
+						file_hashes[current_hash] = file_hashes[prev_hash]
+						delete file_hashes[prev_hash]
+
+						// check renames
+
+						break;
+					case 'D':
+						if (!(prev_hash in file_hashes)) {
+							console.log('Warning,...', file);
+						}
+						root.removePath(filename);
+						delete file_hashes[prev_hash]
+
+						break;
+
+				}
 			}
+
 		}
-
+		console.log('moo');
 		initScene();
 
 	}
