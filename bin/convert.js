@@ -40,12 +40,13 @@ pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
 var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
-var RAW_FILES = 'git log --no-renames --pretty=format:user:%aN%n%ct\!%h --raw --encoding=UTF-8';
-//%ct --no-renames  %s --no-renames --no-renames 
+var RAW_FILES = 'git whatchanged --raw -m --pretty=format:user:%aN%n%ct\!%h --encoding=UTF-8';
+//%ct --no-renames  %s 
 
 
 var commit_files = {};
 var commits = [];
+var commit_hashes = {};
 
 function get_git_log() {
 	var child = exec(CMD, {cwd: cwd},
@@ -66,7 +67,7 @@ function (error, stdout, stderr) {
 		return;
 	}
 	var logs = stdout.split('\n');
-	var o;
+	var o = {};
 	var log, line2;
 
 	var regex = /(.*)[ ](.*)[ ](\w+)[.]+[ ](\w+)[.]+[ ](.)\t(.*)/;
@@ -77,9 +78,15 @@ function (error, stdout, stderr) {
 
 		if (log.substring(0, 5)=='user:') {
 			line2 = logs[i+1].split('!');
-			o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
+			hash = line2[1]
+
+			if (hash!=o.hash) {
+				o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
+				commits.push(o);
+				commit_hashes[hash] = o;
+			}
 			i++;
-			commits.push(o);
+
 		} else if (log.trim() =='') {
 
 		} else {
@@ -96,6 +103,7 @@ function (error, stdout, stderr) {
 
 	}
 
+	console.log('Found ' + commits.length + ' commits');
 
 	// json = JSON.stringify(commits, null, '\t');
 	// fs.writeFileSync('data/files.json', json, 'utf8');
@@ -164,12 +172,18 @@ function convert() {
 		log.push(o);
 	}
 
-	// console.log(log);
+	console.log('log length: '  + log.length);
 
 	var commit;
 	for (var i=0;i<log.length;i++) {
 		commit = log[i];
-		commit.files = commits[i].files;
+		if (!(commit.hash in commit_hashes)) {
+			// console.log('too bad', commit);
+			commit.files= [];
+		} else {
+			commit.files = commit_hashes[commit.hash].files;
+			// commit.files = commits[i].files;
+		}
 		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
 	}
