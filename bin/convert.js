@@ -5,7 +5,7 @@ var fs = require('fs');
 var cwd = './'; // target git repository directory
 cwd = '../three.js/'
 var target = 'data/test.json';
-var pretty_json = !true;
+var pretty_json = true;
 var pack_json = true;
 // End Options
 
@@ -21,7 +21,8 @@ var json_format = {
 	"date":"%at",
 	"message":"%s",
 	"commitDate":"%ct",
-	"files":""
+	"files":"",
+	// "tree": ""
 };
 
 var DELIMITER = '|^@^|';
@@ -40,13 +41,20 @@ pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
 var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
-var RAW_FILES = 'git whatchanged --raw -m --pretty=format:user:%aN%n%ct\!%h --encoding=UTF-8';
-//%ct --no-renames  %s 
+var RAW_FILES = 'git log --raw -m --pretty=format:user:%aN%n%ct\!%h --encoding=UTF-8';
+// whatchanged -m --first-parent
 
 
-var commit_files = {};
 var commits = [];
 var commit_hashes = {};
+
+var commits;
+
+var mapped_filenames = {};
+var indexed_filenames = [];
+var filenames = 0;
+
+get_git_raw();
 
 function get_git_log() {
 	var child = exec(CMD, {cwd: cwd},
@@ -60,57 +68,107 @@ function get_git_log() {
 
 }
 
-var rawlogs = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
-function (error, stdout, stderr) {
-	if (error !== null) {
-		console.log('exec error: ' + error);
-		return;
-	}
-	var logs = stdout.split('\n');
-	var o = {};
-	var log, line2;
+function slog() {
+	var args = Array.prototype.slice.call(arguments);
+	var sample = args.shift();
+	(Math.random() < sample) && console.log.apply(console, args);
+}
 
-	var regex = /(.*)[ ](.*)[ ](\w+)[.]+[ ](\w+)[.]+[ ](.)\t(.*)/;
-	// sample format - ":000000 100644 0000000... e69de29... A\tREADME"
-
-	for (i=0,il=logs.length;i<il;i++) {
-		log = logs[i];
-
-		if (log.substring(0, 5)=='user:') {
-			line2 = logs[i+1].split('!');
-			hash = line2[1]
-
-			if (hash!=o.hash) {
-				o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
-				commits.push(o);
-				commit_hashes[hash] = o;
+function getTree(name, commit, i) {
+	var ls_cmd =  'git ls-tree -r --name-only ' + name;
+	slog(0.01, ls_cmd, i, 'unique filenames' + filenames);
+	var ls_tree = exec(ls_cmd, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
+		function(error, stdout, stderr) {
+			if (error !== null) {
+				console.log('exec error: ' + error);
+				return;
 			}
+			var files = stdout.split('\n');
+			var filename;
+			var tree = [];
+			for (var j=0;j<files.length;j++) {
+				filename = files[j];
+				if (filename.trim() == '') continue;
+				if (!(filename in mapped_filenames)) {
+					indexed_filenames.push(filename);
+					mapped_filenames[filename] = filenames++;
+				}
+				tree.push(mapped_filenames[filename]);
+
+			}
+
+			commit.tree = tree;
+
+			// Search added
+			// commit_hashes[commit.parent[0]].files;
+
+
 			i++;
+			loop(i);
 
-		} else if (log.trim() =='') {
+		});
+}
 
-		} else {
-			e = regex.exec(log)
-			// if (e)
-			// 	o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
-			// else
-			// 	console.log('Error at line ' + i, logs[i-1], logs[i], logs[i+1]);
-			if (e.length) {
-				o.files.push([e[6], e[5], e[3], e[4]].join('|'))
+
+function get_git_raw() {
+	var rawlogs = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
+	function (error, stdout, stderr) {
+		if (error !== null) {
+			console.log('exec error: ' + error);
+			return;
+		}
+		var logs = stdout.split('\n');
+		var o = {};
+		var log, line2;
+
+		var regex = /(.*)[ ](.*)[ ](\w+)[.]+[ ](\w+)[.]+[ ](.)\t(.*)/;
+		// sample format - ":000000 100644 0000000... e69de29... A\tREADME"
+
+		for (i=0,il=logs.length;i<il;i++) {
+			log = logs[i];
+
+			if (log.substring(0, 5)=='user:') {
+				line2 = logs[i+1].split('!');
+				hash = line2[1]
+
+				if (hash!=o.hash) {
+					o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
+					commits.push(o);
+					commit_hashes[hash] = o;
+				} else {
+					// console.log('.')
+					// commits.pop();
+					// o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
+					// commits.push(o);
+					// commit_hashes[hash] = o;
+				}
+				i++;
+
+			} else if (log.trim() =='') {
+
+			} else {
+				e = regex.exec(log)
+				// if (e)
+				// 	o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
+				// else
+				// 	console.log('Error at line ' + i, logs[i-1], logs[i], logs[i+1]);
+				if (e.length) {
+					o.files.push([e[6], e[5], e[3], e[4]].join('|'))
+				}
+
 			}
 
 		}
 
-	}
+		console.log('Found ' + commits.length + ' commits');
 
-	console.log('Found ' + commits.length + ' commits');
-
-	// json = JSON.stringify(commits, null, '\t');
-	// fs.writeFileSync('data/files.json', json, 'utf8');
-	get_git_log();
-	console.log('done');
-	// console.log(stdout);
-});
+		// json = JSON.stringify(commits, null, '\t');
+		// fs.writeFileSync('data/files.json', json, 'utf8');
+		get_git_log();
+		console.log('done');
+		// console.log(stdout);
+	});
+}
 
 /*
 a90c4e1:
@@ -160,7 +218,7 @@ function convert() {
 	var result = fs.readFileSync(cwd + 'result.json', 'utf8');
 	fs.unlinkSync(cwd + 'result.json');
 
-	var log = [];
+	commits = [];
 	var lines = result.split(LINE_DELIMTER+'\n');
 	// lines.pop();
 	for (var i=0;i<lines.length;i++) {
@@ -169,31 +227,46 @@ function convert() {
 		for (var j=0;j<line.length;j++) {
 			o[json_keys[j]] = line[j];
 		}
-		log.push(o);
+		commits.push(o);
 	}
 
-	console.log('log length: '  + log.length);
+	console.log('commits number: '  + commits.length);
+	console.time('tree');
+	loop(0);
 
+}
+
+function loop(i) {
 	var commit;
-	for (var i=0;i<log.length;i++) {
-		commit = log[i];
-		if (!(commit.hash in commit_hashes)) {
-			// console.log('too bad', commit);
-			commit.files= [];
-		} else {
-			commit.files = commit_hashes[commit.hash].files;
-			// commit.files = commits[i].files;
-		}
+	if (i<commits.length) {
+		commit = commits[i];
+		// getTree(commit.hash, commit, i);
 		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
+
+		if (!(commit.hash in commit_hashes)) {
+			commit.files = [];
+		} else {
+			commit.files = commit_hashes[commit.hash].files;
+		}
+
+		loop(++i)
+
+	} else {
+		done();
 	}
+}
 
-	if (pack_json) log = json_pack(log);
+function done() {
+	console.log('done!!');
+	console.timeEnd('tree');
 
-	var json = JSON.stringify(log, null,
+	if (pack_json) commits = json_pack(commits);
+
+	var json = JSON.stringify(commits, null,
 		pretty_json ? '\t' : '');
 
 	fs.writeFileSync(target, json, 'utf8');
-
+	fs.writeFileSync('filenames.json', JSON.stringify(indexed_filenames), 'utf8');
 
 }
