@@ -7,7 +7,7 @@ function requestLog(url, callback) {
 		var files, file, i,il, j,jl;
 		for (i=0, il=timeline.length;i<il;i++) {
 			files = timeline[i].files;
-			for (j=0,jl=files.length;j<jl;j++) {
+			if (files) for (j=0,jl=files.length;j<jl;j++) {
 				file = files[j].split('|')
 				files[j] = {
 					file: file[0],
