@@ -50,19 +50,12 @@
 	    return 0;
 	}
 
-	function debugo(array, key) {
-		var moo = [];
-		for (var i=0;i<array.length;i++) {
-			moo.push(array[i][key]);
-		}
-		return moo.join(',');
-	}
 
 	function readTimeline(timeline) {
 		// TEST STUFF HERE
 		// timeline = timeline.sort(compare);
 		console.time('done');
-		timeline = timeline.reverse();
+		// timeline = timeline.reverse();
 
 		console.log(timeline);
 		window.t = timeline;
@@ -80,14 +73,69 @@
 
 		for (i=0, il=timeline.length;i<il;i++) {
 			commit = timeline[i];
+			commit.tree = [];
 			commits_hash[commit.hash] = commit;
 		}
 
 
-		for (i=0;i<timeline.length;i++) { //timeline.length
-		// for (i=timeline.length;i--;) { //timeline.length
+		// for (i=0;i<timeline.length;i++) { //timeline.length
+		for (i=timeline.length;i--;) { //timeline.length
 			commit = timeline[i];
+			change = commit.change;
+
+			if (commit.parents.length) {
+				parent = commits_hash[commit.parents[0]].tree
+			} else {
+				parent = [];
+			}
+
+			tree = commit.tree = commit.tree.concat(parent);
+
+			// slog(0.01, 'i', i, commit, parent, commit.parents[0]); //change
+
+			// change = change.sort(amdSort);
+
+			for (j=change.length;j--;) {
+				file = change[j];
+				filename = file.file;
+
+				switch (file.op) {
+					case 'A':
+						adding = true;
+						removing = false;
+						break;
+					case 'M':
+						// adding = true;
+						// removing = true;
+						adding = removing = false;
+						break;
+					case 'D':
+						adding = false;
+						removing = true;
+						break;
+				}
+
+				// tree[current_hash] = filename;
+				if (removing) {
+					var found;
+					found = tree.indexOf(filename)
+					if (found < 0) {
+						console.log('warning');
+						// some sanity check
+					} else {
+						tree.splice(found, 1);
+					}
+				}
+
+				if (adding) {
+					tree.push(filename);
+				}
+
+
+			}
 		}
+
+		console.timeEnd('done');
 
 
 	}
@@ -107,7 +155,6 @@
 				u++;
 			}
 		}
-
 		console.log('Files: ' + il, u)
 	}
 

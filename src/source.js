@@ -7,6 +7,8 @@ function requestLog(url, callback) {
 		var files, file, i,il, j,jl;
 		for (i=0, il=timeline.length;i<il;i++) {
 			files = timeline[i].files;
+			changes = timeline[i].change;
+
 			if (files) for (j=0,jl=files.length;j<jl;j++) {
 				file = files[j].split('|')
 				files[j] = {
@@ -16,6 +18,16 @@ function requestLog(url, callback) {
 					to: file[3]
 				};
 			}
+
+			if (changes) for (j=0,jl=changes.length;j<jl;j++) {
+				change = changes[j].split('|')
+				changes[j] = {
+					file: change[0],
+					op: change[1]
+				};
+			}
+
+
 		}
 		console.timeEnd('decode');
 		callback(timeline);
@@ -53,4 +65,10 @@ function json_unpack(packed) {
 	}
 	return unpacked;
 
+}
+
+function slog() {
+	var args = Array.prototype.slice.call(arguments);
+	var sample = args.shift();
+	(Math.random() < sample) && console.log.apply(console, args);
 }

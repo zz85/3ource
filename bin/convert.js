@@ -179,16 +179,16 @@ a90c4e1:
      'A\tsrc/cameras/Camera.js',
 */
 
-function json_pack(a) {
+function json_pack(a, schema) {
 	// From [{a, b, c}, {a, b, c}] => {a:[], b:[], c:[]}
 	var packed = {}, k;
-	for (k in json_format) {
+	for (k in schema) {
 		packed[k] = [];
 	}
 	var i,il, e;
 	for (i=0, il=a.length; i<il; i++) {
 		e = a[i];
-		for (k in json_format) {
+		for (k in schema) {
 			packed[k].push(e[k]);
 		}
 	}
@@ -310,7 +310,7 @@ function done() {
 
 	console.log('done!!');
 
-	if (pack_json) commits = json_pack(commits);
+	if (pack_json) commits = json_pack(commits, json_format);
 
 	var json = JSON.stringify(commits, null,
 		pretty_json ? '\t' : '');
