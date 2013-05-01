@@ -21,7 +21,8 @@ var json_format = {
 	"date":"%at",
 	"message":"%s",
 	"commitDate":"%ct",
-	"files":"",
+	// "files":"",
+	"change":""
 	// "tree": ""
 };
 
@@ -42,13 +43,12 @@ var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
 var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
 var RAW_FILES = 'git log --raw -m --pretty=format:user:%aN%n%ct\!%h --encoding=UTF-8';
+var GIT_TREE_LS = 'git ls-tree -r --name-only ';
 // whatchanged -m --first-parent
 
 
 var commits = [];
 var commit_hashes = {};
-
-var commits;
 
 var mapped_filenames = {};
 var indexed_filenames = [];
@@ -75,7 +75,7 @@ function slog() {
 }
 
 function getTree(name, commit, i) {
-	var ls_cmd =  'git ls-tree -r --name-only ' + name;
+	var ls_cmd =  GIT_TREE_LS + name;
 	slog(0.01, ls_cmd, i, 'unique filenames' + filenames);
 	var ls_tree = exec(ls_cmd, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
 		function(error, stdout, stderr) {
@@ -85,7 +85,7 @@ function getTree(name, commit, i) {
 			}
 			var files = stdout.split('\n');
 			var filename;
-			var tree = [];
+			var tree = commit.tree;
 			for (var j=0;j<files.length;j++) {
 				filename = files[j];
 				if (filename.trim() == '') continue;
@@ -97,11 +97,7 @@ function getTree(name, commit, i) {
 
 			}
 
-			commit.tree = tree;
-
-			// Search added
-			// commit_hashes[commit.parent[0]].files;
-
+			commit_hashes[commit.hash].tree = tree;
 
 			i++;
 			loop(i);
@@ -132,8 +128,14 @@ function get_git_raw() {
 				hash = line2[1]
 
 				if (hash!=o.hash) {
-					o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
-					commits.push(o);
+					o = {
+						user: log.substring(5),
+						time: line2[0],
+						hash: line2[1],
+						files: [],
+						change: []
+					};
+					// commits.push(o);
 					commit_hashes[hash] = o;
 				} else {
 					// console.log('.')
@@ -154,6 +156,7 @@ function get_git_raw() {
 				// 	console.log('Error at line ' + i, logs[i-1], logs[i], logs[i+1]);
 				if (e.length) {
 					o.files.push([e[6], e[5], e[3], e[4]].join('|'))
+					if (e[5]=='M') o.change.push([e[6], 'M'].join('|'));
 				}
 
 			}
@@ -240,26 +243,72 @@ function loop(i) {
 	var commit;
 	if (i<commits.length) {
 		commit = commits[i];
-		// getTree(commit.hash, commit, i);
 		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
+		commit.tree = [];
+		commit.change = [];
+
+		getTree(commit.hash, commit, i);
 
 		if (!(commit.hash in commit_hashes)) {
 			commit.files = [];
 		} else {
 			commit.files = commit_hashes[commit.hash].files;
+			commit.change = commit_hashes[commit.hash].change;
 		}
 
-		loop(++i)
+// user: log.substring(5),
+// time: line2[0],
+// hash: line2[1],
+// files: [],
+// change: []
+		// loop(++i)
 
 	} else {
 		done();
 	}
 }
 
+function generateChangeset(change, tree1, tree2) {
+	if (tree2==undefined) tree2 = [];
+
+	// slog(0.001, 'trees', tree1, tree2)
+
+	var added = [], f, deleted = [];
+	for (var i=0;i<tree1.length;i++) {
+		f = tree1[i];
+		if (tree2.indexOf(f) == -1) {
+			// added.push(indexed_filenames[f]);
+			change.push([
+				indexed_filenames[f], 'A'
+				].join('|'));
+		}
+	}
+
+	for (var i=0;i<tree2.length;i++) {
+		f = tree2[i];
+		if (tree1.indexOf(f) == -1) {
+			// deleted.push(indexed_filenames[f]);
+			change.push([
+				indexed_filenames[f], 'D'
+				].join('|'));
+		}
+	}
+
+}
+
 function done() {
-	console.log('done!!');
+
 	console.timeEnd('tree');
+
+	for (i=0;i<commits.length;i++) {
+		commit = commits[i];
+		parentTree = commit_hashes[commit.parents[0]]
+		if (parentTree) parentTree = parentTree.tree;
+		generateChangeset(commit.change, commit.tree, parentTree);
+	}
+
+	console.log('done!!');
 
 	if (pack_json) commits = json_pack(commits);
 
