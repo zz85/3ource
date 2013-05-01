@@ -4,7 +4,8 @@ var fs = require('fs');
 // Options
 var cwd = './'; // target git repository directory
 cwd = '../three.js/'
-var target = 'data/test.json';
+var OUTPUT_JSON = 'data/test.json';
+var FILENAMES_JSON = 'data/filenames.json';
 var pretty_json = true;
 var pack_json = true;
 // End Options
@@ -27,24 +28,21 @@ var json_format = {
 };
 
 var DELIMITER = '|^@^|';
-var LINE_DELIMTER = '';
 var DELIMITER2 = '|';
 var DOWNLOAD_GRAVATAR = false;
 
-//\\#>.<#/
+
+
 var json_keys = [];
 var pretty_format2 = [];;
 for (var k in json_format) {
 	json_keys.push(k);
 	pretty_format2.push(json_format[k]);
 }
-pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 
-var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
+var pretty_format2 = pretty_format2.join(DELIMITER);
 
-var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
-var RAW_FILES = 'git log --raw -m --pretty=format:"user:%aN%n' + pretty_format2 + '" --encoding=UTF-8';
-// var RAW_FILES = 'git log --raw -m --pretty=format:user:%aN%n%ct\!%h --encoding=UTF-8';
+var RAW_FILES = 'git log --raw -m --pretty=format:"user:%n' + pretty_format2 + '" --encoding=UTF-8';
 var GIT_TREE_LS = 'git ls-tree -r --name-only ';
 var GIT_SHORTLOG = 'git shortlog --summary --email --numbered'
 // whatchanged -m --first-parent %aE
@@ -94,13 +92,6 @@ function get_git_raw() {
 					o.change = [];
 					o.tree = [];
 					o.modified = [];
-					// o = {
-					// 	user: log.substring(5),
-					// 	time: line2[0],
-					// 	hash: line2[1],
-					// 	files: [],
-					// 	change: []
-					// };
 					commit_hashes[hash] = o;
 					commits.push(o);
 				}
@@ -123,7 +114,6 @@ function get_git_raw() {
 
 		console.log('Found ' + commits.length + ' commits');
 
-		// get_git_log();
 		console.log('done');
 		console.time('tree');
 		loop(0);
@@ -131,40 +121,6 @@ function get_git_raw() {
 	});
 }
 
-function get_git_log() {
-	var child = exec(CMD, {cwd: cwd},
-		function (error, stdout, stderr) {
-		if (error !== null) {
-			console.log('exec error: ' + error);
-			return;
-		}
-		convert();
-	});
-
-}
-
-function convert() {
-
-	var result = fs.readFileSync(cwd + 'result.json', 'utf8');
-	fs.unlinkSync(cwd + 'result.json');
-
-	commits = [];
-	var lines = result.split(LINE_DELIMTER+'\n');
-	// lines.pop();
-	for (var i=0;i<lines.length;i++) {
-		var line = lines[i].split(DELIMITER);
-		var o = {};
-		for (var j=0;j<line.length;j++) {
-			o[json_keys[j]] = line[j];
-		}
-		commits.push(o);
-	}
-
-	console.log('commits number: '  + commits.length);
-	console.time('tree');
-	loop(0);
-
-}
 
 function slog() {
 	var args = Array.prototype.slice.call(arguments);
@@ -194,8 +150,6 @@ function getTree(name, commit, i) {
 				tree.push(mapped_filenames[filename]);
 
 			}
-
-			// commit_hashes[commit.hash].tree = tree;
 
 			i++;
 			loop(i);
@@ -251,25 +205,7 @@ function loop(i) {
 		commit = commits[i];
 		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
-		// commit.tree = [];
-		// commit.change = [];
-
 		getTree(commit.hash, commit, i);
-
-		// if (!(commit.hash in commit_hashes)) {
-		// 	commit.files = [];
-		// } else {
-		// 	commit.files = commit_hashes[commit.hash].files;
-		// 	commit.change = commit_hashes[commit.hash].change;
-		// }
-
-// user: log.substring(5),
-// time: line2[0],
-// hash: line2[1],
-// files: [],
-// change: []
-		// loop(++i)
-
 	} else {
 		done();
 	}
@@ -278,7 +214,6 @@ function loop(i) {
 function generateChangeset(commit, tree1, tree2) {
 	var change = commit.change;
 	var modified = commit.modified;
-
 
 	for (var i=0;i<modified.length;i++) {
 		change.push(mapped_filenames[modified[i]] + DELIMITER2 + 'M');
@@ -323,7 +258,7 @@ function done() {
 	var json = JSON.stringify(commits, null,
 		pretty_json ? '\t' : '');
 
-	fs.writeFileSync(target, json, 'utf8');
-	fs.writeFileSync('filenames.json', JSON.stringify(indexed_filenames), 'utf8');
+	fs.writeFileSync(OUTPUT_JSON, json, 'utf8');
+	fs.writeFileSync(FILENAMES_JSON, JSON.stringify(indexed_filenames), 'utf8');
 
 }

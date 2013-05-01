@@ -28,11 +28,7 @@
 
 	var url = '../data/test.json';
 
-	var filenames;
-	getJSON('../filenames.json', function(e) {
-		filenames = JSON.parse(e);
-		requestLog(url, readTimeline);
-	});
+	getLog('../data/filenames.json', url, readTimeline);
 
 	var target = new THREE.Vector3( 0, 0, 0 );
 
@@ -54,10 +50,9 @@
 	function readTimeline(timeline) {
 		// TEST STUFF HERE
 		// timeline = timeline.sort(compare);
-		console.time('done');
 		// timeline = timeline.reverse();
-
-		console.log(timeline);
+		console.time('done');
+		// console.log(timeline);
 		window.t = timeline;
 		var i,il, commit, j, entry, filename;
 
@@ -77,9 +72,8 @@
 			commits_hash[commit.hash] = commit;
 		}
 
-
-		// for (i=0;i<timeline.length;i++) { //timeline.length
-		for (i=timeline.length;i--;) { //timeline.length
+		// Build tree structure
+		for (i=timeline.length;i--;) { // Run from earilest to latest
 			commit = timeline[i];
 			change = commit.change;
 
@@ -142,13 +136,13 @@
 	function treelog(tree) {
 		var uniq = {}, u =0;
 		tree = tree.sort(function(a,b){
-	    if(a.file<b.file) return -1;
-	    if(a.file>b.file) return 1;
-	    return 0;
-	});
+		    if(a<b) return -1;
+		    if(a>b) return 1;
+		    return 0;
+		});
 
-	for (var i=0, il=tree.length; i<il;i++) {
-			filename = tree[i].file
+		for (var i=0, il=tree.length; i<il;i++) {
+			filename = tree[i];
 			console.log(filename);
 			if (!(filename in uniq)) {
 				uniq[filename] = null;

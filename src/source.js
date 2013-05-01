@@ -1,4 +1,11 @@
-function requestLog(url, callback) {
+function getLog(fileUrl, logUrl, callback) {
+	getJSON(fileUrl, function(e) {
+		var filenames = JSON.parse(e);
+		requestLog(logUrl, callback, filenames);
+	});
+}
+
+function requestLog(url, callback, filenames) {
 	getJSON(url, function(results) {
 		console.time('decode');
 		var timeline = JSON.parse(results);
@@ -9,24 +16,13 @@ function requestLog(url, callback) {
 			files = timeline[i].files;
 			changes = timeline[i].change;
 
-			if (files) for (j=0,jl=files.length;j<jl;j++) {
-				file = files[j].split('|')
-				files[j] = {
-					file: file[0],
-					op: file[1],
-					from: file[2],
-					to: file[3]
-				};
-			}
-
-			if (changes) for (j=0,jl=changes.length;j<jl;j++) {
+			for (j=0,jl=changes.length;j<jl;j++) {
 				change = changes[j].split('|')
 				changes[j] = {
-					file: change[0],
+					file: filenames[change[0]],
 					op: change[1]
 				};
 			}
-
 
 		}
 		console.timeEnd('decode');
