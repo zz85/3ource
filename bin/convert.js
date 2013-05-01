@@ -17,10 +17,10 @@ var pack_json = true;
 var json_format = {
 	"hash":"%h",
 	"parents":"%p",
-	"author":"%an",
+	"author":"%aN",
 	"date":"%at",
 	"message":"%s",
-	"commitDate":"%ct",
+	// "commitDate":"%ct",
 	// "files":"",
 	"change":""
 	// "tree": ""
@@ -28,6 +28,7 @@ var json_format = {
 
 var DELIMITER = '|^@^|';
 var LINE_DELIMTER = '';
+var DELIMITER2 = '|';
 var DOWNLOAD_GRAVATAR = false;
 
 //\\#>.<#/
@@ -42,9 +43,11 @@ pretty_format2 = pretty_format2.join(DELIMITER) + LINE_DELIMTER;
 var pretty_format = JSON.stringify(json_format).replace(/\"/g, DELIMITER);
 
 var CMD = 'git log --encoding=UTF-8 --pretty=format:"' + pretty_format2 + '" > result.json';
-var RAW_FILES = 'git log --raw -m --pretty=format:user:%aN%n%ct\!%h --encoding=UTF-8';
+var RAW_FILES = 'git log --raw -m --pretty=format:"user:%aN%n' + pretty_format2 + '" --encoding=UTF-8';
+// var RAW_FILES = 'git log --raw -m --pretty=format:user:%aN%n%ct\!%h --encoding=UTF-8';
 var GIT_TREE_LS = 'git ls-tree -r --name-only ';
-// whatchanged -m --first-parent
+var GIT_SHORTLOG = 'git shortlog --summary --email --numbered'
+// whatchanged -m --first-parent %aE
 
 
 var commits = [];
@@ -56,6 +59,78 @@ var filenames = 0;
 
 get_git_raw();
 
+function get_git_raw() {
+	var rawlogs = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
+	function (error, stdout, stderr) {
+		if (error !== null) {
+			console.log('exec error: ' + error);
+			return;
+		}
+
+		var logs = stdout.split('\n');
+		var o = {};
+		var log, line2;
+		commits = [];
+
+		var regex = /(.*)[ ](.*)[ ](\w+)[.]+[ ](\w+)[.]+[ ](.)\t(.*)/;
+		// sample format - ":000000 100644 0000000... e69de29... A\tREADME"
+
+		for (i=0,il=logs.length;i<il;i++) {
+			log = logs[i];
+
+			if (log.substring(0, 5)=='user:') {
+				line = logs[i+1].split(DELIMITER);
+
+				var tmp = {};
+				for (var j=0;j<line.length;j++) {
+					tmp[json_keys[j]] = line[j];
+				}
+
+				hash = tmp.hash;
+
+				if (hash!=o.hash) {
+					o = tmp;
+					o.files = [];
+					o.change = [];
+					o.tree = [];
+					o.modified = [];
+					// o = {
+					// 	user: log.substring(5),
+					// 	time: line2[0],
+					// 	hash: line2[1],
+					// 	files: [],
+					// 	change: []
+					// };
+					commit_hashes[hash] = o;
+					commits.push(o);
+				}
+				i++;
+
+			} else if (log.trim() =='') {
+
+			} else {
+				e = regex.exec(log)
+				// if (e)
+				// 	o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
+				if (e.length) {
+					o.files.push([e[6], e[5], e[3], e[4]].join(DELIMITER2))
+					if (e[5]=='M') o.modified.push(e[6]);
+				}
+
+			}
+
+		}
+
+		console.log('Found ' + commits.length + ' commits');
+
+		// get_git_log();
+		console.log('done');
+		console.time('tree');
+		loop(0);
+		// console.log(stdout);
+	});
+}
+
 function get_git_log() {
 	var child = exec(CMD, {cwd: cwd},
 		function (error, stdout, stderr) {
@@ -65,6 +140,29 @@ function get_git_log() {
 		}
 		convert();
 	});
+
+}
+
+function convert() {
+
+	var result = fs.readFileSync(cwd + 'result.json', 'utf8');
+	fs.unlinkSync(cwd + 'result.json');
+
+	commits = [];
+	var lines = result.split(LINE_DELIMTER+'\n');
+	// lines.pop();
+	for (var i=0;i<lines.length;i++) {
+		var line = lines[i].split(DELIMITER);
+		var o = {};
+		for (var j=0;j<line.length;j++) {
+			o[json_keys[j]] = line[j];
+		}
+		commits.push(o);
+	}
+
+	console.log('commits number: '  + commits.length);
+	console.time('tree');
+	loop(0);
 
 }
 
@@ -97,80 +195,12 @@ function getTree(name, commit, i) {
 
 			}
 
-			commit_hashes[commit.hash].tree = tree;
+			// commit_hashes[commit.hash].tree = tree;
 
 			i++;
 			loop(i);
 
 		});
-}
-
-
-function get_git_raw() {
-	var rawlogs = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
-	function (error, stdout, stderr) {
-		if (error !== null) {
-			console.log('exec error: ' + error);
-			return;
-		}
-		var logs = stdout.split('\n');
-		var o = {};
-		var log, line2;
-
-		var regex = /(.*)[ ](.*)[ ](\w+)[.]+[ ](\w+)[.]+[ ](.)\t(.*)/;
-		// sample format - ":000000 100644 0000000... e69de29... A\tREADME"
-
-		for (i=0,il=logs.length;i<il;i++) {
-			log = logs[i];
-
-			if (log.substring(0, 5)=='user:') {
-				line2 = logs[i+1].split('!');
-				hash = line2[1]
-
-				if (hash!=o.hash) {
-					o = {
-						user: log.substring(5),
-						time: line2[0],
-						hash: line2[1],
-						files: [],
-						change: []
-					};
-					// commits.push(o);
-					commit_hashes[hash] = o;
-				} else {
-					// console.log('.')
-					// commits.pop();
-					// o = {user: log.substring(5), time: line2[0], hash: line2[1], files:[]};
-					// commits.push(o);
-					// commit_hashes[hash] = o;
-				}
-				i++;
-
-			} else if (log.trim() =='') {
-
-			} else {
-				e = regex.exec(log)
-				// if (e)
-				// 	o.files.push({file: e[6], op: e[5], from: e[3], to: e[4]});
-				// else
-				// 	console.log('Error at line ' + i, logs[i-1], logs[i], logs[i+1]);
-				if (e.length) {
-					o.files.push([e[6], e[5], e[3], e[4]].join('|'))
-					if (e[5]=='M') o.change.push([e[6], 'M'].join('|'));
-				}
-
-			}
-
-		}
-
-		console.log('Found ' + commits.length + ' commits');
-
-		// json = JSON.stringify(commits, null, '\t');
-		// fs.writeFileSync('data/files.json', json, 'utf8');
-		get_git_log();
-		console.log('done');
-		// console.log(stdout);
-	});
 }
 
 /*
@@ -215,47 +245,23 @@ function json_unpack(packed) {
 
 }
 
-
-function convert() {
-
-	var result = fs.readFileSync(cwd + 'result.json', 'utf8');
-	fs.unlinkSync(cwd + 'result.json');
-
-	commits = [];
-	var lines = result.split(LINE_DELIMTER+'\n');
-	// lines.pop();
-	for (var i=0;i<lines.length;i++) {
-		var line = lines[i].split(DELIMITER);
-		var o = {};
-		for (var j=0;j<line.length;j++) {
-			o[json_keys[j]] = line[j];
-		}
-		commits.push(o);
-	}
-
-	console.log('commits number: '  + commits.length);
-	console.time('tree');
-	loop(0);
-
-}
-
 function loop(i) {
 	var commit;
 	if (i<commits.length) {
 		commit = commits[i];
 		commit.parents = commit.parents != '' ? commit.parents.split(' '): [];
 		commit.date = parseInt(commit.date);
-		commit.tree = [];
-		commit.change = [];
+		// commit.tree = [];
+		// commit.change = [];
 
 		getTree(commit.hash, commit, i);
 
-		if (!(commit.hash in commit_hashes)) {
-			commit.files = [];
-		} else {
-			commit.files = commit_hashes[commit.hash].files;
-			commit.change = commit_hashes[commit.hash].change;
-		}
+		// if (!(commit.hash in commit_hashes)) {
+		// 	commit.files = [];
+		// } else {
+		// 	commit.files = commit_hashes[commit.hash].files;
+		// 	commit.change = commit_hashes[commit.hash].change;
+		// }
 
 // user: log.substring(5),
 // time: line2[0],
@@ -269,7 +275,15 @@ function loop(i) {
 	}
 }
 
-function generateChangeset(change, tree1, tree2) {
+function generateChangeset(commit, tree1, tree2) {
+	var change = commit.change;
+	var modified = commit.modified;
+
+
+	for (var i=0;i<modified.length;i++) {
+		change.push(mapped_filenames[modified[i]] + DELIMITER2 + 'M');
+	}
+
 	if (tree2==undefined) tree2 = [];
 
 	// slog(0.001, 'trees', tree1, tree2)
@@ -278,20 +292,14 @@ function generateChangeset(change, tree1, tree2) {
 	for (var i=0;i<tree1.length;i++) {
 		f = tree1[i];
 		if (tree2.indexOf(f) == -1) {
-			// added.push(indexed_filenames[f]);
-			change.push([
-				indexed_filenames[f], 'A'
-				].join('|'));
+			change.push(f + DELIMITER2 + 'A');
 		}
 	}
 
 	for (var i=0;i<tree2.length;i++) {
 		f = tree2[i];
 		if (tree1.indexOf(f) == -1) {
-			// deleted.push(indexed_filenames[f]);
-			change.push([
-				indexed_filenames[f], 'D'
-				].join('|'));
+			change.push(f + DELIMITER2 + 'D');
 		}
 	}
 
@@ -305,7 +313,7 @@ function done() {
 		commit = commits[i];
 		parentTree = commit_hashes[commit.parents[0]]
 		if (parentTree) parentTree = parentTree.tree;
-		generateChangeset(commit.change, commit.tree, parentTree);
+		generateChangeset(commit, commit.tree, parentTree);
 	}
 
 	console.log('done!!');
