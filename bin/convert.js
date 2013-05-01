@@ -1,11 +1,14 @@
 var exec = require('child_process').exec;
 var fs = require('fs');
+var md5 = require('../src/lib/md5baseJS.js').md5
 
 // Options
 var cwd = './'; // target git repository directory
 cwd = '../three.js/'
 var OUTPUT_JSON = 'data/test.json';
 var FILENAMES_JSON = 'data/filenames.json';
+var AVATAR_DESTINATION = 'data/avatars/';
+var DOWNLOAD_GRAVATAR = true;
 var pretty_json = true;
 var pack_json = true;
 // End Options
@@ -29,7 +32,7 @@ var json_format = {
 
 var DELIMITER = '|^@^|';
 var DELIMITER2 = '|';
-var DOWNLOAD_GRAVATAR = false;
+
 
 
 
@@ -44,7 +47,7 @@ var pretty_format2 = pretty_format2.join(DELIMITER);
 
 var RAW_FILES = 'git log --raw -m --pretty=format:"user:%n' + pretty_format2 + '" --encoding=UTF-8';
 var GIT_TREE_LS = 'git ls-tree -r --name-only ';
-var GIT_SHORTLOG = 'git shortlog --summary --email --numbered'
+var GIT_SHORTLOG = 'git shortlog --summary --email --numbered  < /dev/tty'
 // whatchanged -m --first-parent %aE
 
 
@@ -55,7 +58,75 @@ var mapped_filenames = {};
 var indexed_filenames = [];
 var filenames = 0;
 
-get_git_raw();
+// get_git_raw();
+getUser();
+
+// console.log(md5('abc'));
+
+function getUser() {
+	exec(GIT_SHORTLOG, {cwd: cwd, maxBuffer: 1024 * 1024 * 10},
+		function (error, stdout, stderr) {
+		if (error !== null) {
+			console.log('exec error: ' + error);
+			return;
+		}
+		console.log('Getting contributors via git shortstat');
+		var users = stdout.split('\n');
+		var emailRegex = /[<](.*)[>]/
+		var emails = [];
+		var hashes = [];
+		var email;
+		for (var i=0;i<users.length;i++) {
+			user = users[i];
+			tokens = emailRegex.exec(user);
+			if (!tokens) continue;
+			email = tokens[1];
+			emails.push(email);
+			// hashes.push(md5(email))
+			if (DOWNLOAD_GRAVATAR) gravatar(email, 256);
+			// 200 - 3.6MB 512 - 10.6MB
+
+		}
+		console.log(emails.length);
+		// console.log('hashes', hashes);
+		// console.log('emails', emails);
+	});
+}
+
+
+var http = require('http')
+  , fs = require('fs');
+
+
+
+function gravatar(email, size) {
+	size = size || 80;
+	var hash = md5(email);
+
+	var options = {
+		host: 'www.gravatar.com',
+		port: 80,
+		path: '/avatar/' + hash + '.jpg?s=' + size
+	};
+
+	var request = http.get(options, function(res){
+		var imagedata = ''
+		res.setEncoding('binary')
+
+		res.on('data', function(chunk){
+			imagedata += chunk
+		})
+
+		res.on('end', function(){
+			fs.writeFile(AVATAR_DESTINATION + hash + '.jpg', imagedata, 'binary', function(err){
+				if (err) throw err
+				console.log('Gravatar saved. ' + hash);
+			})
+		})
+
+	})
+	// return 'http://www.gravatar.com/
+}
 
 function get_git_raw() {
 	var rawlogs = exec(RAW_FILES, {cwd: cwd, maxBuffer: 1024 * 1024 * 200},
@@ -160,7 +231,7 @@ function getTree(name, commit, i) {
 /*
 a90c4e1:
    [ 'A\tsrc/Class.js',
-     'A\tsrc/cameras/Camera.js',
+	 'A\tsrc/cameras/Camera.js',
 */
 
 function json_pack(a, schema) {
