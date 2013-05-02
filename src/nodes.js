@@ -51,6 +51,14 @@ var TreeNodeMixin = {
 		return node;
 	},
 
+	rm: function(name) {
+		var node = this.fsChildren[name];
+		if (!node) console.log('warning, cant remove', name);
+		delete this.fsChildren[name];
+		this.remove(node);
+		allnodes.splice(allnodes.indexOf(node), 1);
+	},
+
 	ls: function() {
 		var names = [];
 		for (var i in this.fsChildren) {
@@ -66,14 +74,6 @@ var TreeNodeMixin = {
 	isEmpty: function() {
 		return this.ls().length == 0;
 	},
-
-	rm: function(name) {
-		var node = this.fsChildren[name];
-		delete this.fsChildren[name];
-		this.remove(node);
-		allnodes.splice(allnodes.indexOf(node), 1);
-	},
-
 
 	addPath: function(filename) {
 		var paths, i, il, path, node;
@@ -111,22 +111,23 @@ var TreeNodeMixin = {
 		var paths, i, il, path, node;
 		paths = filename.split('/');
 		node = this;
-		var nodes = [root];
+		var nodes = [node];
 		for (i=0, il=paths.length;i<il;i++) {
 			path = paths[i];
 			if (i<il-1) {
-				node = node.getOrCreate(path + '/'); // getOrCreate get
-				nodes.push(node);
+				node = node.get(path + '/'); // getOrCreate get
 			} else {
-				node = node.getOrCreate(path);
+				node = node.get(path);
 			}
+			if (!node) console.log('cant find node', path, paths);
+			nodes.push(node);
 		}
 		var parent;
-		for (i=nodes.length;i--;) {
-			parent = nodes.pop();
+		for (i=nodes.length;i-- > 1;) {
+			node = nodes[i];
+			parent = nodes[i-1]
 			parent.rm(node.name);
 			if (!parent.isEmpty()) break;
-			node = parent;
 		}
 
 	},

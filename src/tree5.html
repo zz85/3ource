@@ -73,7 +73,7 @@
 		}
 
 		// Build tree structure
-		for (i=timeline.length;i--;) { // Run from earilest to latest
+		for (i=timeline.length;i-->2000;) { // Run from earilest to latest
 			commit = timeline[i];
 			change = commit.change;
 
@@ -88,6 +88,7 @@
 			// slog(0.01, 'i', i, commit, parent, commit.parents[0]); //change
 
 			// change = change.sort(amdSort);
+			// change = change.reverse();
 
 			for (j=change.length;j--;) {
 				file = change[j];
@@ -119,12 +120,15 @@
 					} else {
 						tree.splice(found, 1);
 					}
+					root.removePath(filename);
+					checkTree(tree)
 				}
 
 				if (adding) {
 					tree.push(filename);
+					root.addPath(filename);
+					checkTree(tree)
 				}
-
 
 			}
 		}
@@ -132,6 +136,17 @@
 		console.timeEnd('done');
 
 
+	}
+
+	function checkTree(tree) {
+		var x = 0;
+		allnodes.forEach(function(node) {
+			if (node instanceof FileNode) x++}
+		);
+		if (x!=tree.length) {
+			console.log(tree.length, x);
+			debugger;
+		};
 	}
 	function treelog(tree) {
 		var uniq = {}, u =0;
