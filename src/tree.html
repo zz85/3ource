@@ -38,7 +38,7 @@
 	var tmp = new THREE.Vector3();
 
 	var url = '../data/test.json';
-	requestLog(url, readTimeline);
+	getLog('../data/filenames.json', url, readTimeline);
 
 	var target = new THREE.Vector3( 0, 0, 0 );
 
@@ -51,61 +51,16 @@
 		// Date order vs Ancestor order
 		// timeline.sort(compare);
 
-		var i,il, commit, j, entry, filename;
-		var file_hashes = {};
-		var pending = {};
-		// for (i=0;i<timeline.length;i++) { //timeline.length
-		for (i=timeline.length;i--;) { //timeline.length
-			commit = timeline[i];
-			files = commit.files;
+		var commit = t[3700];
+		var tree = commit.tree;
 
-			for (f in pending) {
-				files.push(pending[f]);
-				// delete pending[f];
-			}
+		var i, il, file;
 
-			for (j=files.length;j--;) {
-				file = files[j];
-
-				prev_hash = file.from;
-				current_hash = file.to;
-				filename = file.file;
-
-				if (prev_hash in pending) delete pending[prev_hash];
-
-				switch (file.op) {
-					case 'A':
-						node = root.addPath(filename);
-						file_hashes[current_hash] = filename;
-						// node;
-						break;
-					case 'M':
-						if (!(prev_hash in file_hashes)) {
-							console.log('Warning... Cant find hash', file, i, commit);
-							pending[prev_hash] = file;
-							return;
-						}
-
-						file_hashes[current_hash] = file_hashes[prev_hash]
-						delete file_hashes[prev_hash]
-
-						// check renames
-
-						break;
-					case 'D':
-						if (!(prev_hash in file_hashes)) {
-							console.log('Warning,...', file);
-						}
-						root.removePath(filename);
-						delete file_hashes[prev_hash]
-
-						break;
-
-				}
-			}
-
+		for (i=0, il=tree.length;i<il;i++) {
+			file = tree[i];
+			root.addPath(file);
 		}
-		console.log('moo');
+
 		initScene();
 
 	}

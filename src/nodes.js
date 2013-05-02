@@ -205,7 +205,7 @@ function layout(files, force, distance) {
 			// Forces away from each other
 
 			distance = Math.max(n.radius, n2.radius, 10);
-			(Math.random() < 0.001) && console.log(distance);
+			// (Math.random() < 0.001) && console.log(distance);
 
 			tmp.subVectors(n2.position, n.position);
 			d = tmp.length();
