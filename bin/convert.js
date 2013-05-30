@@ -2,6 +2,9 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 var md5 = require('../src/lib/md5baseJS.js').md5
 
+var http = require('http'),
+	fs = require('fs');
+
 // Options
 var cwd = './'; // target git repository directory
 cwd = '../three.js/'
@@ -92,12 +95,6 @@ function getUser() {
 		// console.log('emails', emails);
 	});
 }
-
-
-var http = require('http')
-  , fs = require('fs');
-
-
 
 function gravatar(email, size) {
 	size = size || 80;
@@ -227,12 +224,6 @@ function getTree(name, commit, i) {
 
 		});
 }
-
-/*
-a90c4e1:
-   [ 'A\tsrc/Class.js',
-	 'A\tsrc/cameras/Camera.js',
-*/
 
 function json_pack(a, schema) {
 	// From [{a, b, c}, {a, b, c}] => {a:[], b:[], c:[]}

@@ -6,12 +6,13 @@ var TreeNodeMixin = {
 	init2: function(name) {
 		this.name = name;
 		this.fsChildren = {};
+		this.fsFiles = [];
+		this.fsFolders = [];
 
-		// this.position2 = new THREE.Vector3();
-		// this.position2.x = this.position.x = (Math.random() - .5) * 100;
-		// this.position2.y = this.position.y = (Math.random() - .5) * 100;
-		this.position.dx = Math.random() - .5;
-		this.position.dy = Math.random() - .5;
+		this.position2 = new THREE.Vector3();
+		// this.position.dx = Math.random() - .5;
+		// this.position.dy = Math.random() - .5;
+		// this.position2.copy(this.position);
 
 		var geo = new THREE.Geometry();
 		geo.vertices.push(new THREE.Vector3( 0, 0, 0 ));
@@ -45,9 +46,17 @@ var TreeNodeMixin = {
 		} else {
 			node = new FileNode(path, plane, materials[Math.random() * materials.length]);
 		}
+
 		this.add(node);
 		this.fsChildren[path] = node;
 		allnodes.push(node);
+
+		if (node instanceof FileNode) {
+			this.fsFiles.push(node);
+		} else if (node instanceof TreeNode) {
+			this.fsFolders.push(node);
+		}
+
 		return node;
 	},
 
@@ -55,7 +64,13 @@ var TreeNodeMixin = {
 		var node = this.fsChildren[name];
 		if (!node) console.log('warning, cant remove', name);
 		delete this.fsChildren[name];
+
 		this.remove(node);
+		if (node instanceof FileNode) {
+			this.fsFiles.splice(this.fsFiles.indexOf(node), 1);
+		} else if (node instanceof TreeNode) {
+			this.fsFolders.splice(this.fsFolders.indexOf(node), 1);
+		}
 		allnodes.splice(allnodes.indexOf(node), 1);
 	},
 
@@ -134,18 +149,13 @@ var TreeNodeMixin = {
 
 	simulate: function() {
 		var child, children = this.children;
-		var files = [];
-		var folders = [];
+		var files = this.fsFiles;
+		var folders = this.fsFolders;
 		var i, il, j;
-		for (i=0, il=children.length;i<il;i++) {
-			child = children[i];
 
-			if (child instanceof FileNode) {
-				files.push(child);
-			} else if (child instanceof TreeNode) {
-				folders.push(child);
-				child.simulate();
-			}
+		for (i=folders.length;i--;) {
+			child = folders[i];
+			child.simulate();
 		}
 
 		var n, n2;
@@ -176,14 +186,17 @@ var TreeNodeMixin = {
 
 		this.radius = Math.max(this.box.max.distanceTo(this.box.min), 10);
 
-
-
 	}
 };
 
 function layout(files, force, distance) {
 	for (i=files.length; i--; ) {
 		n = files[i];
+
+		n.position.x -= n.position.x * 0.5;
+		n.position.y -= n.position.y * 0.5;
+
+
 		// Gravity towards center
 		// n.position.dx -= n.position.x * 0.001;
 		// n.position.dy -= n.position.y * 0.001;
