@@ -7,6 +7,20 @@ It was intended to be a Time-based visualization of git repositories renderered 
 
 It was also inspired by [Gource](https://code.google.com/p/gource/).
 
+## Warning: Not Production Quality Yet.
+
+## Usage
+
+
+```js
+node utils/process.js
+```
+for generating data files of git directory.
+
+go poke into /src
+
+## History
+
 I was joined by Xuanji and Chernjie at [SuperHappyDevHouse Singapore](https://www.facebook.com/shdhsg) [last year](http://www.superhappydevhouse.sg/w/page/65152011/SHDH%203%20Current%20Projects) but unfortunately didn't managed to finish it then.
 
 Some Components
