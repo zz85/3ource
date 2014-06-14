@@ -10,9 +10,6 @@ var TreeNodeMixin = {
 		this.fsFolders = [];
 
 		this.position2 = new THREE.Vector3();
-		// this.position.dx = Math.random() - .5;
-		// this.position.dy = Math.random() - .5;
-		// this.position2.copy(this.position);
 
 		var geo = new THREE.Geometry();
 		geo.vertices.push(new THREE.Vector3( 0, 0, 0 ));
@@ -25,6 +22,11 @@ var TreeNodeMixin = {
 		this.box = new THREE.Box3();
 		this.radius = 10;
 		this.history = [];
+	},
+
+	initPos: function(x, y, z) {
+		this.position2.set(x, y, z);
+		this.position.set(x, y, z);
 	},
 
 	get: function(path) {
@@ -159,81 +161,151 @@ var TreeNodeMixin = {
 		}
 
 		var n, n2;
-		// n = this;
-		// n.position.dx -= n.position.x * 0.001;
-		// n.position.dy -= n.position.y * 0.001;
 		var d;
 
-		layout(files, 1/8000, 10);
 
-		this.box.makeEmpty();
+		integrate(files, true);
+		constrains(files);
 
-		for (i=files.length;i--;) {
+		var radius = Math.sqrt(files.length) * 10;
 
-			this.box.expandByPoint(files[i].position);
+		integrate(folders, false);
 
-		}
+		// for (i=nodes.length; i--; ) {
+		// 	n1 = nodes[i];
 
-		var radius = Math.max(this.box.max.distanceTo(this.box.min), 10);
+		// 	sd2 = radius * radius;
+		// 	current_d = (n1.position.x * n1.position.x +  n1.position.y * n1.position.y);
+		// 	(sd2 - current_d ) /sd2 * sometjing
+		// }
 
-		layout(folders, 1/200, radius);
+		// this.box.makeEmpty();
 
-		for (i=folders.length;i--;) {
+		// for (i=files.length;i--;) {
 
-			this.box.expandByPoint(folders[i].position);
+		// 	this.box.expandByPoint(files[i].position);
 
-		}
+		// }
 
-		this.radius = Math.max(this.box.max.distanceTo(this.box.min), 10);
+		// var radius = Math.max(this.box.max.distanceTo(this.box.min), 10);
+
+		// constrains(folders, 1/200, radius);
+
+		// for (i=folders.length;i--;) {
+
+		// 	this.box.expandByPoint(folders[i].position);
+
+		// }
+
+		// this.radius = Math.max(this.box.max.distanceTo(this.box.min), 10);
 
 	}
 };
 
-function layout(files, force, distance) {
-	for (i=files.length; i--; ) {
-		n = files[i];
+var DAMPING = 0.02;
+var K = 0.5;
+var SL = 1 * K ;
+
+// Constrains
+// Integrate
+
+
+// function gravity(nodes) {
+
+// 	var dx, dy, k;
+
+// 	for (i=nodes.length; i--; ) {
+// 		n = nodes[i];
+
+
+function integrate(nodes, gravity) {
+
+	var dx, dy, k;
+
+	for (i=nodes.length; i--; ) {
+		n = nodes[i];
+
+		dx = n.position.x - n.position2.x;
+		dy = n.position.y - n.position2.y;
+
+		if (gravity) {
+			// Gravity
+			k = -0.001 * K;
+			dx += n.position.x;
+			dy += n.position.y;
+		}
+
+		// Damping
+		dx *= 1 - DAMPING * K;
+		dy *= 1 - DAMPING * K;
+
+		// Speed Limits
 
 		n.position.x -= n.position.x * 0.5;
 		n.position.y -= n.position.y * 0.5;
 
 
-		// Gravity towards center
-		// n.position.dx -= n.position.x * 0.001;
-		// n.position.dy -= n.position.y * 0.001;
+		if (Math.abs(dx) > SL) dx = dx / Math.abs(dx) * SL;
+		if (Math.abs(dy) > SL) dy = dy / Math.abs(dy) * SL;
 
-		tmp.set(n.position.x, n.position.y, 0);
-		d = tmp.length();
-		tmp.multiplyScalar(force / d * 10);
-		if (d<distance) tmp.multiplyScalar(-1);
+		n.position2.x = n.position.x;
+		n.position2.y = n.position.y;
 
-		// if (d>distance) {
-			n.position.dx -= tmp.x;
-			n.position.dy -= tmp.y;
-		// }
+		n.position2.copy( n.position );
+
+		n.position.x = n.position2.x + dx;
+		n.position.y = n.position2.y + dy;
+	}
+
+}
+
+function constraining(n1, n2, sd2, stiffness, any) {
+	var dx, dy, k;
+	var mx, my;
+
+	dx = n.position.x - n2.position.x;
+	dy = n.position.y - n2.position.y;
+	d2 = dx * dx + dy * dy;
+
+	if (d2 == 0) {
+		d2 = 0.001;
+	}
+
+	if (any || (d2 < sd2)) {
+
+		sd = (sd2 - d2) / d2 * stiffness;
+		// (Math.random() < 0.01) && console.log(sd);
+
+		// sd = (sd - d) / d * 0.5 * K;
+		mx = sd * dx;
+		my = sd * dy;
+
+		// sd = sd - d;
+		// mx = dx / d * sd * 0.45 * K;
+		// my = dy / d * sd * 0.45 * K;
+
+		n1.position.x += mx;
+		n1.position.y += my;
+		n2.position.x -= mx;
+		n2.position.y -= my;
 
 
-		for (j=0;j<i;j++) {
-			n2 = files[j];
-			if (i==j) continue;
-			// Forces away from each other
+	}
+}
 
-			distance = Math.max(n.radius, n2.radius, 10);
-			// (Math.random() < 0.001) && console.log(distance);
+function constrains(nodes, force, distance) {
 
-			tmp.subVectors(n2.position, n.position);
-			d = tmp.length();
-			tmp.normalize().multiplyScalar(d/distance);
+	var dx, dy, k, n1, n2;
+	var d2, sd, sd2;
+	for (i=nodes.length; i--; ) {
+		n1 = nodes[i];
+		for (j=nodes.length;j-- > i;) {
+			n2 = nodes[j];
 
-			if (d < distance) {
-				tmp.multiplyScalar(-1 );
-				// n2.position.add(tmp);
-				// n.position.sub(tmp);
-			}
-
-			n2.position.dx += tmp.x;
-			n2.position.dy += tmp.y;
-			n.position.dx -= tmp.x;
-			n.position.dy -= tmp.y;
+			sd = n1.radius + n2.radius;
+			sd *= 1.2;
+			sd2 = sd * sd;
+			constraining(n1, n2, sd2, 0.24 * K)
 
 		}
 	}

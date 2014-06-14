@@ -81,6 +81,18 @@
 		// moo = new THREE.Mesh(plane, material);
 		// scene.add(moo);
 
+
+		var W = 400, H = 400;
+		for (var i=0, il=allnodes.length;i<il;i++) {
+			node = allnodes[i];
+
+			node.initPos(Math.random() * W - W / 2,
+				Math.random() * H - H / 2,
+				0
+				);
+		}
+
+
 		render();
 
 	}
@@ -89,13 +101,20 @@
 	function render() {
 		var node;
 
+
+
+		// integrate(allnodes);
+
 		for (var i=0, il=allnodes.length;i<il;i++) {
 			node = allnodes[i];
 
-			node.position.dx *= 0.95;
-			node.position.dy *= 0.95;
-			node.position.x += node.position.dx;
-			node.position.y += node.position.dy;
+
+			// console.log(node);
+
+			// node.position.dx *= 0.95;
+			// node.position.dy *= 0.95;
+			// node.position.x += node.position.dx;
+			// node.position.y += node.position.dy;
 
 			node.start.y = -node.position.y;
 			node.start.x = -node.position.x;
@@ -113,6 +132,7 @@
 		renderer.render( scene, camera );
 		requestAnimationFrame(render);
 	}
+
 
 	</script>
 </body>
