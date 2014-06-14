@@ -11,22 +11,46 @@
 	}
 
 	#container {
+		/*display: none;*/
 		position: absolute;
 		left: 120px;
 		white-space: nowrap; /*pre*/
 		font-size: 12px;
 	}
 
-	 {
-		height: 25px;
-		
+	#timeline_panel {
+		border: 1px solid white;
+		height: 600px;
+		overflow: auto;
+		position: relative;
+		width: 100%;
 	}
 
+	#panel_spacer {
+		height: 14000px;
+	}
+
+	#sliding_window {
+		position: absolute;
+		top: 0
+	}
 
 	</style>
-	<div id="container"></div>
+
+	<div id="timeline_panel">
+		<div id="sliding_window">
+			<div id="container"></div>
+		</div>
+
+		<div id="panel_spacer"></div>
+	</div>
+	
 	<script src="source.js"></script>
 	<script>
+
+	"use strict"
+
+
 
 	// TODO grep linkable commit messages, urls, authors, commits numbers
 	// TODO virtual rendering for resizing viewport
@@ -36,11 +60,12 @@
 
 	var TRACK_WIDTH = 13;
 	var DOT_SIZE = 3;
-	var ROW_HEIGHT = 20;
+	var ROW_HEIGHT = 20 * 3;
 
-	var currentRow = 0;
-	var targetRows = 200;
-	var scrollIncrement = 1; // 2 10
+	var currentRow = 0; // Current Row to Render from
+	var targetRows = 30;
+	var bufferRows = 0;
+	var scrollIncrement = 0;
 
 	// Pwn CSS
 	var sheet = document.styleSheets[document.styleSheets.length - 1];
@@ -240,6 +265,7 @@
 				nodeTrack = 0;
 			}
 
+			var j;
 			// Merge current parents into a pending array
 			for (j=0;j<currentParents.length;j++) {
 				p = currentParents[j];
@@ -283,19 +309,47 @@
 			maxTracks = Math.max(maxTracks, nodeTracks[i]);
 		}
 
+
+		var container = document.getElementById('container');
+		var timeline_panel = document.getElementById('timeline_panel');
+		var panel_spacer = document.getElementById('panel_spacer');
+		var sliding_window = document.getElementById('sliding_window');
+
+		timeline_panel.addEventListener('scroll', function(e) {
+			
+			var sa = this.scrollHeight - this.clientHeight; // scrollable height
+			var p = timeline_panel.scrollTop / sa; // percentage scrolled
+			var rows = sa / this.scrollHeight * timeline.length; // actual scrollable rows
+			
+			var sliding = timeline_panel.scrollTop % ROW_HEIGHT;
+			sliding_window.style.top = timeline_panel.scrollTop - sliding; //  - bufferRows * ROW_HEIGHT
+
+			currentRow = p * rows | 0;
+
+			console.log(timeline.length, rows, currentRow, sa, sliding_window.style.top);
+			panel_spacer.style.height = ROW_HEIGHT * timeline.length;
+
+
+			// console.log('scroll', e)
+			// timeline_panel.offsetTop
+			// offsetHeight clientHeight clientTop
+		});
+
+		/***** Setup DOMs ************/
+
 		var canvas = document.createElement('canvas');
 		canvas.id = 'graph';
 		canvas.width = (maxTracks + 1) * TRACK_WIDTH;
-		canvas.height = (targetRows + 20) * 25;
-		document.body.appendChild(canvas);
+		canvas.height = (targetRows + bufferRows * 2) * 25;
+		sliding_window.insertBefore(canvas, container);
 
-		ctx = canvas.getContext('2d');
+		var ctx = canvas.getContext('2d');
 		ctx.lineWidth = 1.5;
 
 		var divs = [], d;
 
 
-		for (j=0;j<(targetRows+20);j++) {
+		for (var j=0;j<(targetRows + bufferRows * 2);j++) {
 			d = document.createElement('div');
 			d.className = 'log';
 			container.appendChild(d);
@@ -317,17 +371,21 @@
 		}
 
 		function draw() {
+			
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.save();
-			currentRow += scrollIncrement;
-			var minRow = Math.max(currentRow - 10, 0);
-			var maxRow = Math.min(currentRow + targetRows + 10, timeline.length-1);
+			
+			var minRow = Math.max(currentRow - bufferRows, 0);
+			var maxRow = Math.min(currentRow + targetRows + bufferRows, timeline.length-1);
 
 			ctx.translate(0, getRowY(0)-getRowY(minRow));
 
 			var track, entry;
 			// Draw commit tracks
-			for (i=0,il=tracks.length;i<il;i++) {
+
+			var i, il, j, jl;
+
+			for (var i=0,il=tracks.length;i<il;i++) {
 				track = tracks[i];
 
 				// ctx.strokeStyle = 'black';
@@ -383,8 +441,10 @@
 
 			ctx.restore();
 
-			// if (currentRow<timeline.length)
-			// 	setTimeout(draw, 100);
+			if (currentRow<timeline.length) {
+				setTimeout(draw, 100);
+				// currentRow += scrollIncrement;
+			}
 		}
 
 	}
