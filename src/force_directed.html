@@ -1,0 +1,285 @@
+<html>
+<body>
+	<style>
+	body {
+		font-family: monospace;
+	}
+
+	</style>
+	<canvas id="canvas"></canvas>
+	<script>
+
+
+	// 2. start flatten root
+	// 2b. start flatten positions at start
+	// 2c. repel + attract
+	// 2d. tweak
+	// 2e. local repel
+	// 2f. global repel + tweaks to dydx
+	// 2g. animation
+	// 2h. fix bug with attraction! (hooks)
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
+	ctx = canvas.getContext('2d');
+
+
+	function Dir(x, y) {
+		if (!x) x = (Math.random() - 0.5) * 50;
+		if (!y) y = (Math.random() - 0.5) * 50;
+		this.x = x;
+		this.y = y;
+
+		this.x2 = this.x;
+		this.y2 = this.y;
+
+		this.children = [];
+		this.childClr = '#' + (~~(Math.random() * 0xfff)).toString(16);
+	}
+
+	Dir.prototype.add = function(child) {
+		this.children.push(child);
+
+
+		child.x += this.x;
+		child.y += this.y;
+
+		child.x2 = child.x;
+		child.y2 = child.y;
+
+		child.clr = this.childClr;
+
+	}
+
+	var root = new Dir();
+
+	var a = new Dir();
+	var b = new Dir();
+	var c = new Dir();
+	var dd = new Dir();
+
+	var a1 = new Dir();
+	var a2 = new Dir();
+
+	a.add(a1);
+	a.add(a2);
+
+	var bs = [];
+	for (var i=0; i<5; i++) b.add(new Dir());
+	for (var i=0; i<5; i++) a2.add(new Dir());
+	for (var i=0; i<5; i++) dd.add(new Dir());
+
+
+	var flatten = [];
+	var links = [];
+
+	
+	
+	setTimeout(function() { for (var i=0; i<5; i++) c.add(new Dir()) }, 6000);
+	
+	root2 = new Dir();
+
+	setTimeout(function() { root2.add(a); }, 1000);
+	setTimeout(function() { root2.add(b); }, 2000);
+	setTimeout(function() { root2.add(c); }, 3000);
+	setTimeout(function() { root2.add(dd); }, 4000);
+	setTimeout(function() { root2.add(new Dir()) }, 5000);
+
+
+	root.add(root2);
+	
+
+	function animate(x, y) {
+
+		ctx.save();
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.translate(canvas.width/2, canvas.height/2);
+		
+		var i;
+
+		flatten = [];
+		links = [];
+		for (i=0;i<root.children.length;i++) {
+			draw(root.children[i]);
+		}
+
+		var d;
+
+		for (i=0;i<flatten.length;i++) {
+			d = flatten[i];
+			if (d.clr) ctx.fillStyle = d.clr;
+			ctx.beginPath();
+			ctx.arc(d.x, d.y, 5, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
+
+		// Force direct
+		var j, e;
+		var dx, dy;
+		var d2; // distance squared
+		var mx, my;
+
+
+	// verlet
+
+	// p2, p1
+	// p3 = p2 + p2 - p1, p2
+
+		for (i=flatten.length;i--;) {
+			d = flatten[i];
+
+			d.tx = d.x;
+			d.ty = d.y;
+
+			d.dx = d.x - d.x2;
+			d.dy = d.y - d.y2;
+		}
+
+		// Repel
+		for (i=flatten.length;i--;) {
+			d = flatten[i];
+
+			for (j=i;j--;) {
+				e = flatten[j];
+				
+				repel(d, e)
+			}
+			
+		}
+
+		// repelInto(root);
+
+		// calculate verlet
+		for (i=flatten.length;i--;) {
+			d = flatten[i];
+
+			d.dx *= 0.9;
+			d.dy *= 0.9;
+
+			d.dx = d.dx > 0 ? Math.min(10, d.dx) : Math.max(-10, d.dx)
+			d.dy = d.dy > 0 ? Math.min(10, d.dy) : Math.max(-10, d.dy)
+
+			d.x += d.dx;
+			d.y += d.dy;			
+
+			d.x2 = d.tx;
+			d.y2 = d.ty;
+
+		}
+
+		var eq = 50, eq2 = eq * eq;
+		// Attraction as constrains
+		for (i=0;i<links.length;i++) {
+			d = links[i];
+			e = d.to;
+			d = d.from;
+				dx = d.x - e.x;
+				dy = d.y - e.y;
+
+				d2 = dx * dx + dy * dy;
+
+				d3 = Math.sqrt(d2);
+
+				// && d2 < 5000
+				if (d3) {
+					k = (d3 - eq) / eq;
+					mx = k * eq * dx / d3 * 0.2; // d3
+					my = k * eq * dy / d3 * 0.2;
+
+					// mx = 10 / d2 * 2 ;
+					// my = 10 / d2 * 2 ;
+					d.x -= mx;
+					d.y -= my;
+					e.x += mx;
+					e.y += my;
+				}
+		}
+
+
+
+		for (i=0;i<links.length;i++) {
+			d = links[i];
+
+			ctx.moveTo(d.from.x, d.from.y)
+			ctx.lineTo(d.to.x, d.to.y);
+			ctx.stroke();
+
+		}		
+
+		ctx.restore();
+	}
+
+
+	function repelInto(c) {
+
+		var i;
+
+		var flatten = c.children ;
+
+
+		for (i=flatten.length;i--;) {
+			d = flatten[i];
+
+			for (j=i;j--;) {
+				e = flatten[j];
+				
+				repel(d, e)
+			}
+
+			repelInto(d);
+			
+		}
+		
+	}
+
+
+	function repel(d, e) {
+		dx = d.x - e.x;
+		dy = d.y - e.y;
+
+		d2 = dx * dx + dy * dy;
+		// d3 = Math.sqrt(d2);
+		if (!d2) {
+			dx = Math.random() - 0.5;
+			dy = Math.random() - 0.5;
+			d2 = 1;
+		}
+		if (d2 < 5000) {
+			mx = dx / d2 * 6; // d3
+			my = dy / d2 * 6;
+
+			// mx = 10 / d2 * 2 ;
+			// my = 10 / d2 * 2 ;
+			d.dx += mx;
+			d.dy += my;
+			e.dx -= mx;
+			e.dy -= my;
+		}
+
+	}
+
+	function draw(c) {
+
+		flatten.push(c);
+
+		var i;
+
+		for (i=0;i<c.children.length;i++) {
+			d = c.children[i]
+
+			links.push({from: c, to: d});
+			draw(d);
+		}
+		
+	}
+
+	// animate();
+	setInterval(animate, 50);
+
+
+
+
+	</script>
+</body>
+</html>
