@@ -5,6 +5,7 @@
 		font-family: monospace;
 		background: #202020;
 		color: #979797;
+		overflow: hidden;
 	}
 	#graph {
 		position: absolute;
@@ -60,10 +61,10 @@
 
 	var TRACK_WIDTH = 13;
 	var DOT_SIZE = 3;
-	var ROW_HEIGHT = 20 * 3;
+	var ROW_HEIGHT = 20;
 
 	var currentRow = 0; // Current Row to Render from
-	var targetRows = 30;
+	var targetRows = 50;
 	var bufferRows = 0;
 	var scrollIncrement = 0;
 
@@ -131,6 +132,16 @@
 	var url = '../data/test.json';
 	getLog('../data/filenames.json', url, readTimeline);
 
+
+	// utils
+	function replacer(w) {
+		return function() { return w };
+	}
+
+	function compare(a, b) {
+		return b.date - a.date;
+	}
+
 	function readTimeline(timeline) {
 		// console.log(timeline);
 		window.t = timeline;
@@ -138,9 +149,7 @@
 		var i, il, v;
 		var hashes = {};
 
-		function compare(a, b) {
-			return b.date - a.date;
-		}
+
 		// Date order vs Ancestor order
 		// timeline.sort(compare);
 
@@ -302,6 +311,8 @@
 
 		console.timeEnd('graphing');
 
+
+
 		console.time('draw');
 
 		var maxTracks = 0
@@ -309,11 +320,19 @@
 			maxTracks = Math.max(maxTracks, nodeTracks[i]);
 		}
 
+		maxTracks = Math.min(8, maxTracks);
+
+		console.log(maxTracks);
 
 		var container = document.getElementById('container');
 		var timeline_panel = document.getElementById('timeline_panel');
 		var panel_spacer = document.getElementById('panel_spacer');
 		var sliding_window = document.getElementById('sliding_window');
+
+		container.style.left = (maxTracks + 2) * TRACK_WIDTH + 'px';
+
+		panel_spacer.style.height = ROW_HEIGHT * timeline.length;
+
 
 		timeline_panel.addEventListener('scroll', function(e) {
 			
@@ -326,9 +345,9 @@
 
 			currentRow = p * rows | 0;
 
-			console.log(timeline.length, rows, currentRow, sa, sliding_window.style.top);
-			panel_spacer.style.height = ROW_HEIGHT * timeline.length;
+			// console.log(timeline.length, rows, currentRow, sa, sliding_window.style.top);
 
+			draw();
 
 			// console.log('scroll', e)
 			// timeline_panel.offsetTop
@@ -356,32 +375,51 @@
 			divs.push(d);
 		}
 
-		draw();
+		var minRow, maxRow;
+		var lastRenderered = 0;
 
+		draw();
 		console.timeEnd('draw');
 
 
 
 		function getTrackX(t) {
-			return (~~((6 - t) * TRACK_WIDTH + 8)+0.5);
+			return (~~((maxTracks - t) * TRACK_WIDTH + 8)+0.5);
 		}
 
 		function getRowY(t) {
 			return t * ROW_HEIGHT + ROW_HEIGHT / 3; //+ offsetY
 		}
 
+
 		function draw() {
-			
+
+			var now = Date.now();
+			if (now - lastRenderered < 16) {
+				console.log('skip');
+				setTimeout(draw, 16);
+				return;
+			}
+
+			minRow = Math.max(currentRow - bufferRows, 0);
+			maxRow = Math.min(currentRow + targetRows + bufferRows, timeline.length-1);
+
+			drawGraph();
+			updateRows();
+
+			lastRenderered = now;
+
+		}
+
+		function drawGraph() {
+			// Draw commit tracks
+
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.save();
 			
-			var minRow = Math.max(currentRow - bufferRows, 0);
-			var maxRow = Math.min(currentRow + targetRows + bufferRows, timeline.length-1);
-
 			ctx.translate(0, getRowY(0)-getRowY(minRow));
 
 			var track, entry;
-			// Draw commit tracks
 
 			var i, il, j, jl;
 
@@ -422,10 +460,10 @@
 				ctx.stroke();
 			}
 
+			ctx.restore();
+		}
 
-			function replacer(w) {
-				return function() { return w };
-			}
+		function updateRows() {
 
 			// Display commit messages
 			for (i=minRow, j=0;i<maxRow;i++,j++) {
@@ -439,12 +477,6 @@
 					.replace(/%author/, replacer(v.author))
 			}
 
-			ctx.restore();
-
-			if (currentRow<timeline.length) {
-				setTimeout(draw, 100);
-				// currentRow += scrollIncrement;
-			}
 		}
 
 	}
