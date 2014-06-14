@@ -36,3 +36,4 @@ If I were to implement this today, I might also consider
 - nodegit [https://github.com/nodegit/nodegit](https://github.com/nodegit/nodegit)
 - jsgit [https://github.com/creationix/jsgit](https://github.com/creationix/jsgit)
 - grapheen [https://github.com/nashira/grapheen](https://github.com/nashira/grapheen)
+- commits-graph [https://github.com/tclh123/commits-graph](https://github.com/tclh123/commits-graph)

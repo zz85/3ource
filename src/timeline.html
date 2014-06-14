@@ -3,6 +3,8 @@
 	<style>
 	body {
 		font-family: monospace;
+		background: #202020;
+		color: #979797;
 	}
 	#graph {
 		position: absolute;
@@ -12,22 +14,94 @@
 		position: absolute;
 		left: 120px;
 		white-space: nowrap; /*pre*/
+		font-size: 12px;
 	}
 
-	.log {
-		/*border: 1px solid blue;*/
+	 {
 		height: 25px;
+		
 	}
+
+
 	</style>
 	<div id="container"></div>
 	<script src="source.js"></script>
 	<script>
+
+	// TODO grep linkable commit messages, urls, authors, commits numbers
+	// TODO virtual rendering for resizing viewport
+	// TODO nicer graphs
+
 	/*OPTIONS*/
+
+	var TRACK_WIDTH = 13;
+	var DOT_SIZE = 3;
+	var ROW_HEIGHT = 20;
 
 	var currentRow = 0;
 	var targetRows = 200;
 	var scrollIncrement = 1; // 2 10
-	/*OPTIONS*/
+
+	// Pwn CSS
+	var sheet = document.styleSheets[document.styleSheets.length - 1];
+	function addRule(selector, styles) {
+		if (sheet.insertRule) sheet.insertRule(selector + " {" + styles + "}", sheet.cssRules.length);
+		else if (sheet.addRule) sheet.addRule(selector, styles);
+	}
+	/* CUSTOMIZATIONS */
+	// Text colors (http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs)
+	var Bright = 0, Bold = 1;
+	var Scheme = {
+		Black: '#202020/#555555'.split('/'),
+		Red: '#5d1a14/#da4939'.split('/'),
+		Green: '#424e24/#a5c261,'.split('/'),
+		Yellow: '#6f5028/#ffc66d'.split('/'),
+		Blue: '#263e4e/#6d9cbe'.split('/'),
+		Magenta: '#3e1f50/#a256c7'.split('/'),
+		Cyan: '#234e3f/#62c1a1'.split('/'),
+		White: '#979797/#ffffff'.split('/')
+	};
+
+	addRule('.log', 'height: ' + ROW_HEIGHT + 'px;')
+	addRule('.hash', 'color: ' + Scheme.Blue[Bold] + ';')
+	addRule('.time', 'color: ' + Scheme.Green[Bold] + ';')
+	addRule('.author', 'color: ' + Scheme.Cyan[Bold] + ';')
+	addRule('.message', 'color: ' + Scheme.White[Bold] + ';')
+
+	// Steal colors from https://github.com/tclh123/commits-graph/blob/master/js/dist/jquery.commits-graph.js#L152
+	var colors =[
+		"#e11d21",
+		//"#eb6420",
+		"#fbca04",
+		"#009800",
+		"#006b75",
+		"#207de5",
+		"#0052cc",
+		"#5319e7",
+		"#f7c6c7",
+		"#fad8c7",
+		"#fef2c0",
+		"#bfe5bf",
+		"#c7def8",
+		"#bfdadc",
+		"#bfd4f2",
+		"#d4c5f9",
+		"#cccccc",
+		"#84b6eb",
+		"#e6e6e6",
+		"#ffffff",
+		"#cc317c"
+	];
+
+	// Classic Style
+	// var colors = ['black', '#ee8', 'red', 'green', 'blue'];
+
+	/*
+	Styles
+	- Solid Dot
+	- Empty Dot
+	- Outlined Dot / Black White
+	*/
 
 	var url = '../data/test.json';
 	getLog('../data/filenames.json', url, readTimeline);
@@ -211,20 +285,15 @@
 
 		var canvas = document.createElement('canvas');
 		canvas.id = 'graph';
-		canvas.width = getTrackX(maxTracks + 1);
+		canvas.width = (maxTracks + 1) * TRACK_WIDTH;
 		canvas.height = (targetRows + 20) * 25;
 		document.body.appendChild(canvas);
 
 		ctx = canvas.getContext('2d');
+		ctx.lineWidth = 1.5;
 
-
-		ctx.lineWidth = 2.5;
-
-		// ctx.fillStyle = 'hsl(10%, 80%, 80%)';
-		ctx.fillStyle = 'violet'; // lime
-
-		var colors = ['black', '#ee8', 'red', 'green', 'blue'];
 		var divs = [], d;
+
 
 		for (j=0;j<(targetRows+20);j++) {
 			d = document.createElement('div');
@@ -237,12 +306,14 @@
 
 		console.timeEnd('draw');
 
+
+
 		function getTrackX(t) {
-			return ~~(t * 16 + 8)+0.5;
+			return (~~((6 - t) * TRACK_WIDTH + 8)+0.5);
 		}
 
 		function getRowY(t) {
-			return t * 25 + 10; //+ offsetY
+			return t * ROW_HEIGHT + ROW_HEIGHT / 3; //+ offsetY
 		}
 
 		function draw() {
@@ -260,7 +331,7 @@
 				track = tracks[i];
 
 				// ctx.strokeStyle = 'black';
-				ctx.strokeStyle = colors[i % colors.length];
+				ctx.fillStyle = ctx.strokeStyle = colors[i % colors.length];
 
 				for (j=0, jl=track.length;j<jl;j++) {
 					entry = track[j];
@@ -278,7 +349,8 @@
 			}
 
 			ctx.lineWidth = 1.5;
-			ctx.strokeStyle = '#000';
+			ctx.fillStyle = Scheme.Black[0];
+			ctx.strokeStyle = Scheme.White[1];
 
 			// Draw nodes
 			// for (i=0,il=tracks.length;i<il;i++) {
@@ -287,22 +359,32 @@
 				nodeTrack = nodeTracks[i];
 
 				ctx.beginPath();
-				ctx.arc(getTrackX(nodeTrack), getRowY(i), 6, 0, Math.PI * 2);
+				ctx.arc(getTrackX(nodeTrack), getRowY(i), DOT_SIZE, 0, Math.PI * 2);
 				ctx.fill();
 				ctx.stroke();
+			}
+
+
+			function replacer(w) {
+				return function() { return w };
 			}
 
 			// Display commit messages
 			for (i=minRow, j=0;i<maxRow;i++,j++) {
 				v = timeline[i];
 				d = divs[j];
-				d.innerHTML =  (timeline.length-i) + '. ' + v.message + " - " + new Date(v.date * 1000).toDateString() + ' - ' + v.hash + ' - ' + v.author;
+				d.innerHTML = '<span class="id">%id</span>. <span class="message">%message</span> - <span class="time">%time</span> - <span class="hash">%hash</span> - <span class="author">%author</span>'
+					.replace(/%id/, replacer(timeline.length-i))
+					.replace(/%message/, replacer(v.message))
+					.replace(/%time/, replacer(new Date(v.date * 1000).toDateString()))
+					.replace(/%hash/, replacer(v.hash))
+					.replace(/%author/, replacer(v.author))
 			}
 
 			ctx.restore();
 
-			if (currentRow<timeline.length)
-				setTimeout(draw, 100);
+			// if (currentRow<timeline.length)
+			// 	setTimeout(draw, 100);
 		}
 
 	}
