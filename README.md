@@ -18,6 +18,7 @@ Then state of node.js and git wasn't probably the best then, but it got us exper
 
 We experimented with the Github REST API, and node.js git bindings. I opt instead then to use node.js to exec() git commands that outputs a json format that can be read by browsers more effeciently.
 
-If I were to implement this today, I might also consider at
+If I were to implement this today, I might also consider
+- nodegit [https://github.com/nodegit/nodegit](https://github.com/nodegit/nodegit)
 - jsgit [https://github.com/creationix/jsgit](https://github.com/creationix/jsgit)
 - grapheen [https://github.com/nashira/grapheen](https://github.com/nashira/grapheen)
