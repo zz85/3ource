@@ -120,15 +120,9 @@
 	// Classic Style
 	// var colors = ['black', '#ee8', 'red', 'green', 'blue'];
 
-	/*
-	Styles
-	- Solid Dot
-	- Empty Dot
-	- Outlined Dot / Black White
-	*/
 
-
-	// TODO handle retina dipslays
+	// TODO handle retina displays
+    // TODO click handlers
 	// window.devicePixelRatio
 
 	var url = '../data/test.json';
@@ -151,9 +145,8 @@
 		var i, il, commit;
 		var hashes = {};
 
-
 		// Date order vs Ancestor order
-		// timeline.sort(compare);
+		timeline.sort(compare);
 
 		// create hashes
 		for (i=0,il=timeline.length;i<il;i++) {
@@ -276,18 +269,17 @@
                 } // parent's row at node track
 
                 if (currentLane != p.prevLane) {
-                    currentTrack.push({lane: currentLane, row: p.row});
-//                    For creating angular cut off
+                    // For creating angular cut off
+                    if (currentLane != endTrack) {
+                        // reduce ugliness
+                        currentTrack.push({lane: endTrack, row: p.row});
+                    } else {
+                        currentTrack.push({lane: currentLane, row: p.row});
+                    }
                     // parent's row at previous track's lane
                 }
 
-
                 currentTrack.push({lane: endTrack, row: i}); // child's row
-
-				// ctx.lineTo(getTrackX(currentLane), getRowY(p.row + LINK_PORTION));
-				// ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
-				// ctx.lineTo(getTrackX(endTrack), getRowY(i));
-
 				p.row = i;
 
 			}
@@ -350,14 +342,25 @@
 
 		panel_spacer.style.height = ROW_HEIGHT * timeline.length;
 
+        var sa, rows;
+
+        function initDimensions() {
+            // calculations for viewport or new row count changes.
+            sa = timeline_panel.scrollHeight - timeline_panel.clientHeight;
+            rows = sa / timeline_panel.scrollHeight * timeline.length; // actual scrollable rows
+        }
+
+        initDimensions();
+
+        window.addEventListener('resize', function() {
+            console.log('resizing');
+            initDimensions();
+        })
 
 		timeline_panel.addEventListener('scroll', function(e) {
-			
-			var sa = this.scrollHeight - this.clientHeight; // scrollable height
 			var p = timeline_panel.scrollTop / sa; // percentage scrolled
-			var rows = sa / this.scrollHeight * timeline.length; // actual scrollable rows
-			
 			var sliding = timeline_panel.scrollTop % ROW_HEIGHT;
+
 			sliding_window.style.top = timeline_panel.scrollTop - sliding; //  - bufferRows * ROW_HEIGHT
 
 			currentRow = p * rows | 0;
@@ -365,10 +368,6 @@
 			// console.log(timeline.length, rows, currentRow, sa, sliding_window.style.top);
 
 			draw();
-
-			// console.log('scroll', e)
-			// timeline_panel.offsetTop
-			// offsetHeight clientHeight clientTop
 		});
 
 		/***** Setup DOMs ************/
@@ -417,14 +416,13 @@
 			}
 
 			minRow = Math.max(currentRow - bufferRows, 0);
-			maxRow = Math.min(currentRow + targetRows + bufferRows, timeline.length-1);
+			maxRow = Math.min(currentRow + targetRows + bufferRows, timeline.length);
 
 			drawGraph();
 			updateRows();
 
 			lastRenderered = now;
 
-			// TODO precompute dimensions only on init or frame resizing.
 			// setTimeout(function() {
 			// 	timeline_panel.scrollTop += 50;
 			// 	draw();
@@ -461,37 +459,85 @@
 					entry = track[j];
 
 					ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
-					if (entry.row > maxRow) break;
+					if (entry.row >= maxRow) break;
 				}
 
-				ctx.stroke();
 
-				// debug track points.
-				ctx.fillStyle = colors[i % colors.length];
-				for (j=0, jl=track.length;j<jl;j++) {
-					entry = track[j];
+                // ctx.lineTo(getTrackX(currentLane), getRowY(p.row + LINK_PORTION));
+                // ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
+                // ctx.lineTo(getTrackX(endTrack), getRowY(i));
 
-					ctx.beginPath();
-					ctx.arc(getTrackX(entry.lane), getRowY(entry.row), 2, 0, Math.PI * 2);
-					ctx.fill();
+                ctx.stroke();
 
-					if (entry.row > maxRow) break;
-				}
+
+
+                /*
+                 Styles
+                 - Solid Dot
+                 - Empty Dot
+                 - Outlined Dot
+                 - Black White
+                 */
+
+                var colorScheme = 2;
+                switch (colorScheme) {
+                    case 0: // White outline, Black fill
+                        ctx.fillStyle = Scheme.Black[Bright];
+                        ctx.strokeStyle = Scheme.White[Bold];
+                        break;
+                    case 1: // Colored fill, empty outline
+                        ctx.fillStyle = colors[i % colors.length];
+                        ctx.strokeStyle = 'transparent';
+                        break;
+                    case 2: // Colored outline, empty fill
+                        ctx.fillStyle = Scheme.Black[Bright];
+                        ctx.strokeStyle = colors[i % colors.length];
+                        break;
+                    case 3: // Colored fill, empty outline
+                        ctx.fillStyle = colors[i % colors.length];
+                        ctx.strokeStyle = Scheme.White[Bold];
+                        break;
+                    case 4: // Black and white
+                        ctx.fillStyle = Scheme.Black[Bold];
+                        ctx.strokeStyle = Scheme.White[Bright];
+                        break;
+                }
+
+
+
+                // Draw nodes
+                for (j=0, jl=track.length;j<jl;j++) {
+                    entry = track[j];
+                    if (nodeTracks[entry.row] != entry.lane) continue;
+                    ctx.beginPath();
+                    ctx.arc(getTrackX(entry.lane), getRowY(entry.row), DOT_SIZE, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // debug track points.
+//				for (j=0, jl=track.length;j<jl;j++) {
+//					entry = track[j];
+//
+//					ctx.beginPath();
+//					ctx.arc(getTrackX(entry.lane), getRowY(entry.row), 2, 0, Math.PI * 2);
+//					ctx.fill();
+//
+//					if (entry.row >= maxRow) break;
+//				}
 			}
 
 			ctx.lineWidth = 1.5;
-			ctx.fillStyle = Scheme.Black[0];
-			ctx.strokeStyle = Scheme.White[1];
 
 			// Draw nodes dots
-			for (i=minRow;i<maxRow;i++) {
-				nodeTrack = nodeTracks[i];
-
-				ctx.beginPath();
-				ctx.arc(getTrackX(nodeTrack), getRowY(i), DOT_SIZE, 0, Math.PI * 2);
-				ctx.fill();
-				ctx.stroke();
-			}
+//			for (i=minRow;i<maxRow;i++) {
+//				nodeTrack = nodeTracks[i];
+//
+//				ctx.beginPath();
+//				ctx.arc(getTrackX(nodeTrack), getRowY(i), DOT_SIZE, 0, Math.PI * 2);
+//				ctx.fill();
+//				ctx.stroke();
+//			}
 
 			ctx.restore();
 		}
@@ -502,7 +548,7 @@
 			for (i=minRow, j=0;i<maxRow;i++,j++) {
 				commit = timeline[i];
 				d = divs[j];
-				d.innerHTML = '<span class="id">%id</span>. <span class="message">%message</span> - <span class="time">%time</span> - <span class="hash">%hash</span> - <span class="author">%author</span>'
+				d.innerHTML = '<span class="id">%id</span>. <span class="hash">%hash</span> <span class="message">%message</span>  <span class="author">%author</span> <span class="time">%time</span>'
 					.replace(/%id/, replacer(timeline.length-i))
 					.replace(/%message/, replacer(commit.message))
 					.replace(/%time/, replacer(new Date(commit.date * 1000).toDateString()))
