@@ -45,15 +45,31 @@
 
 		<div id="panel_spacer"></div>
 	</div>
+
+	Graph line style:
+	<select onchange="graphStyle(this.value)">
+		<option value="0">Flat</option>
+		<option value="1">Slant</option>
+		<option value="2">Curved</option>
+	</select>
 	
+	Commit Dot style:
+	<select onchange="dotStyle(this.value)">
+		<option value="0">Black core, White outline</option>
+		<option value="1">Colored core, Empty outline</option>
+		<option value="2">Black core, Colored outline</option> 
+		<option value="3">Colored core, White outline</option>
+		<option value="4">Black core, White outline</option>
+	</select>
+
 	<script src="source.js"></script>
 	<script>
 
 	"use strict"
 	// TODO grep linkable commit messages, urls, authors, commits numbers
 	// TODO virtual rendering for resizing viewport
-	// TODO nicer graphs
 	// TODO refactor this into GitLogViewer class
+	// TODO filter / search / column features for GitLogViewer
 
 	/* OPTIONS */
 	var TRACK_WIDTH = 10;
@@ -73,17 +89,27 @@
 	var GRAPH_RECT_ENDS = 0,
 		GRAPH_SLANT_ENDS = 1,
 		GRAPH_CURVED_ENDS = 2;
-	// TODO: a mode which merges unnessary lanes
+		// TODO: a mode which merges unnessary lanes
 
 	/*
 	DOT Styles
 	0: - Black core, White outline
-	1: - Colored cored, Empty outline
+	1: - Colored core, Empty outline
 	2: - Black core, Colored outline, 
 	3: - Colored core, White outline
 	4: - Black core, White outline
 	 */
-	var dotColorScheme = 2;
+	var DOT_COLOR_SCHEME = 1;
+
+	function graphStyle(id) {
+		GRAPH_MODE = +id;
+		if (viewer) viewer.draw();
+	}
+
+	function dotStyle(id) {
+		DOT_COLOR_SCHEME = +id;
+		if (viewer) viewer.draw();
+	}
 
 	// Pwn CSS
 	var sheet = document.styleSheets[document.styleSheets.length - 1];
@@ -139,11 +165,6 @@
 	// Classic Style
 	// var colors = ['black', '#ee8', 'red', 'green', 'blue'];
 
-
-	// TODO handle retina displays
-	// TODO click handlers
-	// window.devicePixelRatio
-
 	var url = '../data/test.json';
 	getLog('../data/filenames.json', url, readTimeline);
 
@@ -157,7 +178,17 @@
 		return b.date - a.date;
 	}
 
+	var viewer;
+
 	function readTimeline(timeline) {
+
+		viewer = new GitLogViewer(timeline);
+
+	}
+
+
+	function GitLogViewer(timeline) {
+
 		// console.log(timeline);
 		window.t = timeline;
 
@@ -190,7 +221,7 @@
 		// 1. pending parents first (gitk, jetbrains, git log --graph)
 		// 2. Current node first, pending parents, remaining parents (sourcetree, gitx)
 		// 3. Current parent, remaining parents, pending parents. (soucetree)
-		// 4. force layout (vizgraph)
+		// 4. Perhaps one which has a fill space algorithm
 
 		// TODO Mouse over interactivity
 
@@ -222,7 +253,6 @@
 		for (i=0, il=timeline.length; i<il; i++) {
 			commit = timeline[i];
 
-//			if (i > 100) break;
 			var currentPaths = [];
 			for (j=0; j<commit.parents.length; j++) {
 				// parents == where you came from
@@ -381,6 +411,12 @@
 
 		/***** Setup DOMs ************/
 
+		// TODO test if this works on retina displays
+		var ratio = 1;
+		if (window.devicePixelRatio) {
+			ratio = window.devicePixelRatio;
+		}
+
 		var canvas = document.createElement('canvas');
 		canvas.id = 'graph';
 		canvas.width = (maxTracks + 1) * TRACK_WIDTH;
@@ -391,17 +427,30 @@
 		ctx.lineWidth = 1.5;
 
 		var divs = [], d;
+		var links = [];
 
+		function onClick(e, id) {
+			var commit = timeline[id];
+			// console.log(id, commit);
+		}
 
 		for (var j=0;j<(targetRows + bufferRows * 2);j++) {
 			d = document.createElement('div');
 			d.className = 'log';
+			d.onclick = (function(j) {
+				return function(e) {
+					onClick(e, links[j]);
+				}
+			})(j)
+			
 			container.appendChild(d);
 			divs.push(d);
 		}
 
 		var minRow, maxRow;
 		var lastRenderered = 0;
+
+		this.draw = draw;
 
 		draw();
 		console.timeEnd('draw');
@@ -443,6 +492,7 @@
 			// Draw commit tracks
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.save();
+			ctx.scale(ratio, ratio);
 			
 			ctx.translate(0, getRowY(0)-getRowY(minRow));
 
@@ -507,7 +557,7 @@
 
 				ctx.stroke();
 
-				switch (dotColorScheme) {
+				switch (DOT_COLOR_SCHEME) {
 					case 0: // White outline, Black fill
 						ctx.fillStyle = Scheme.Black[Bright];
 						ctx.strokeStyle = Scheme.White[Bold];
@@ -564,6 +614,7 @@
 			// Display commit messages
 			for (i=minRow, j=0;i<maxRow;i++,j++) {
 				commit = timeline[i];
+				links[j] = i;
 				d = divs[j];
 				d.innerHTML = '<span class="id">%id</span>. <span class="hash">%hash</span> <span class="message">%message</span>  <span class="author">%author</span> <span class="time">%time</span>'
 					.replace(/%id/, replacer(timeline.length-i))
