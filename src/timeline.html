@@ -57,7 +57,7 @@
 
 	/*OPTIONS*/
 
-	var TRACK_WIDTH = 13;
+	var TRACK_WIDTH = 10;
 	var DOT_SIZE = 3;
 	var ROW_HEIGHT = 20;
 
@@ -148,7 +148,7 @@
 		// console.log(timeline);
 		window.t = timeline;
 		// u = timeline.reverse();
-		var i, il, v;
+		var i, il, commit;
 		var hashes = {};
 
 
@@ -157,20 +157,20 @@
 
 		// create hashes
 		for (i=0,il=timeline.length;i<il;i++) {
-			v = timeline[i];
-			v.children = [];
-			hashes[v.hash] = v;
+			commit = timeline[i];
+			commit.children = [];
+			hashes[commit.hash] = commit;
 		}
 
 		var parents, hash;
 
 		// create reverse references
 		for (i=0;i<il;i++) {
-			v = timeline[i];
-			parents = v.parents;
+			commit = timeline[i];
+			parents = commit.parents;
 			for (j=0;j<parents.length;j++) {
 				hash = parents[j];
-				hashes[hash].children.push(v);
+				hashes[hash].children.push(commit);
 			}
 		}
 
@@ -187,7 +187,7 @@
 		// var ctx;
 
 		var e;
-		var pendingParents = [];
+		var pendingPaths = [];
 		var p;
 		var LINK_PORTION = 0.28;
 
@@ -197,100 +197,94 @@
 		var nodeTrack; // Lane the node is on
 		var nodeTracks = []; // Track which lane the node is at for every row
 
-
-
 		var tracks = []; // Array of Arrays
 		var trackCounter = 0; // Unique Tracks
 
 
-		/*
-		function Parent {
-			hash: bla
-			row: 0
-			length: 0
+		function CommitPath(hash, row) {
+			this.targetHash = hash; // hash for matching parent
+			this.row = row; // commit sequence id
+			this.length = length;
 		}
-
-		PendingParents {
-			id:
-			track // middleTrack
-			targetHash:
-		}
-
-		Track {
-			id: 
-		}*/
 
 		// Start with childrens / latest.
 		/* Compute Graph Tracks */
-		for (i=0, il=timeline.length; i<il; i++) {
-			v = timeline[i];
 
-			if (i > 100) break;
+		var commit;
+		for (i=0, il=timeline.length; i<il; i++) {
+			commit = timeline[i];
+
+//			if (i > 100) break;
 
 			// current parents == where you came from
-			var currentParents = [];
-			for (j=0; j<v.parents.length; j++) {
-				currentParents.push({
-					targetHash: v.parents[j],
-					row: i,
-					length: 0
-				});
+			var currentPaths = [];
+			for (j=0; j<commit.parents.length; j++) {
+				currentPaths.push(new CommitPath(commit.parents[j], i))
 			}
 
 			nodeTrack = null;
 			var merges = 0;
-			// pending tracks
-			for (j=0;j<pendingParents.length;j++) {
 
-				p = pendingParents[j];
+			// Pending Tracks
+			for (j=0;j<pendingPaths.length;j++) {
+
+				p = pendingPaths[j];
 
 				var currentTrack = tracks[p.id];
 
-				var middleTrack;
-				var endTrack;
+				var currentLane;
+				var endTrack = null;
 				var first;
 				var tmp;
 
-				middleTrack = p.track;
+				currentLane = p.lane;
 
-				if (p.targetHash==v.hash) {
-					// previous track is a child of current commit
+				if (p.targetHash==commit.hash) {
+                    // this commit track path ends here
 					first = nodeTrack === null;
-					// this track ends here
-					if (first) nodeTrack = j;
 
+					if (first) nodeTrack = j;
 					endTrack = nodeTrack;
 
-					if (first && currentParents.length) {
+					if (first && currentPaths.length) {
 
-						tmp = currentParents.shift()
-						tmp.track = j;
-						tmp.id = pendingParents[j].id;
-						pendingParents[j] = tmp;
+						tmp = currentPaths.shift()
+						tmp.lane = j;
+						tmp.id = pendingPaths[j].id;
+						pendingPaths[j] = tmp;
 
 
 					} else {
-
-						if (p.length==0 && p.prevTrack!=p.track) {
-							middleTrack = p.prevTrack;
+                        // p.length==0 &&
+						if (p.prevLane!=p.lane) {
+							currentLane = p.prevLane;
 						}
 
-						pendingParents.splice(j, 1);
+						pendingPaths.splice(j, 1);
 						merges++;
 						j--;
 					}
 
 				} else {
-					p.track -= merges;
-					endTrack = p.track;
+					p.lane -= merges;
+					endTrack = p.lane;
 					p.length++;
 				}
 
-				currentTrack.push({track: p.prevTrack, row: p.row});
-				currentTrack.push({track: middleTrack, row: p.row});
-				currentTrack.push({track: endTrack, row: i});
+                if (!currentTrack.length) {
+                    currentTrack.push({lane: p.prevLane, row: p.row});
+                } // parent's row at node track
 
-				// ctx.lineTo(getTrackX(middleTrack), getRowY(p.row + LINK_PORTION));
+                if (currentLane != p.prevLane) {
+                    currentTrack.push({lane: currentLane, row: p.row});
+//                    For creating angular cut off
+                    // parent's row at previous track's lane
+                }
+
+
+                currentTrack.push({lane: endTrack, row: i}); // child's row
+
+				// ctx.lineTo(getTrackX(currentLane), getRowY(p.row + LINK_PORTION));
 				// ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
 				// ctx.lineTo(getTrackX(endTrack), getRowY(i));
 
@@ -302,28 +296,26 @@
 				nodeTrack = 0;
 			}
 
-			var j;
-
 			// Merge current parents into a pending array
-			for (j=0;j<currentParents.length;j++) {
-				p = currentParents[j];
+			for (j=0;j<currentPaths.length;j++) {
+				p = currentPaths[j];
 
 				p.id = trackCounter++;
-				p.track = pendingParents.length;
+				p.lane = pendingPaths.length;
 				tracks[p.id] = [];
 
-				pendingParents.push(p);
+				pendingPaths.push(p);
 			}
 
 			// All
-			for (j=0;j<pendingParents.length;j++) {
-				p = pendingParents[j];
+			for (j=0;j<pendingPaths.length;j++) {
+				p = pendingPaths[j];
 
 				// Draw connecting lines
 				if (p.length==0) {
-					p.prevTrack = nodeTrack;
+					p.prevLane = nodeTrack;
 				} else {
-					p.prevTrack = p.track;
+					p.prevLane = p.lane;
 				}
 
 			}
@@ -331,16 +323,12 @@
 			nodeTracks.push(nodeTrack);
 		}
 
-		// console.log(pendingParents, tracks);
-		// for (j=0;j<pendingParents.length;j++) {
-		// 	p = pendingParents[j];
-		// 	var currentTrack = tracks[p.id];
-		// 	currentTrack.push({row: p.row + 1, track: p.prevTrack});
-		// }
-
 		console.timeEnd('graphing');
 
-
+		// POST PROCESS Tracks
+		for (var t=0;t<tracks.length; t++) {
+			// console.log(tracks[t]);
+		}
 
 		console.time('draw');
 
@@ -349,7 +337,7 @@
 			maxTracks = Math.max(maxTracks, nodeTracks[i]);
 		}
 
-		maxTracks = Math.min(8, maxTracks);
+		maxTracks = Math.min(10, maxTracks);
 
 		console.log(maxTracks);
 
@@ -410,10 +398,8 @@
 		draw();
 		console.timeEnd('draw');
 
-
-
 		function getTrackX(t) {
-			return (~~((maxTracks - t) * TRACK_WIDTH + 8)+0.5);
+			return ( maxTracks - t) * TRACK_WIDTH | 0.5 + 0.5;
 		}
 
 		function getRowY(t) {
@@ -469,12 +455,12 @@
 
 				ctx.beginPath();
 				
-				ctx.moveTo(getTrackX(entry.track), getRowY(entry.row));
+				ctx.moveTo(getTrackX(entry.lane), getRowY(entry.row));
 				
 				for (j=j+1, jl=track.length;j<jl;j++) {
 					entry = track[j];
 
-					ctx.lineTo(getTrackX(entry.track), getRowY(entry.row));
+					ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
 					if (entry.row > maxRow) break;
 				}
 
@@ -486,7 +472,7 @@
 					entry = track[j];
 
 					ctx.beginPath();
-					ctx.arc(getTrackX(entry.track), getRowY(entry.row), 2, 0, Math.PI * 2);
+					ctx.arc(getTrackX(entry.lane), getRowY(entry.row), 2, 0, Math.PI * 2);
 					ctx.fill();
 
 					if (entry.row > maxRow) break;
@@ -514,14 +500,14 @@
 
 			// Display commit messages
 			for (i=minRow, j=0;i<maxRow;i++,j++) {
-				v = timeline[i];
+				commit = timeline[i];
 				d = divs[j];
 				d.innerHTML = '<span class="id">%id</span>. <span class="message">%message</span> - <span class="time">%time</span> - <span class="hash">%hash</span> - <span class="author">%author</span>'
 					.replace(/%id/, replacer(timeline.length-i))
-					.replace(/%message/, replacer(v.message))
-					.replace(/%time/, replacer(new Date(v.date * 1000).toDateString()))
-					.replace(/%hash/, replacer(v.hash))
-					.replace(/%author/, replacer(v.author))
+					.replace(/%message/, replacer(commit.message))
+					.replace(/%time/, replacer(new Date(commit.date * 1000).toDateString()))
+					.replace(/%hash/, replacer(commit.hash))
+					.replace(/%author/, replacer(commit.author))
 			}
 
 		}
