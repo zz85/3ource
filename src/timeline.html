@@ -55,16 +55,35 @@
 	// TODO nicer graphs
 	// TODO refactor this into GitLogViewer class
 
-	/*OPTIONS*/
-
+	/* OPTIONS */
 	var TRACK_WIDTH = 10;
 	var DOT_SIZE = 3;
 	var ROW_HEIGHT = 20;
 
-	var currentRow = 0; // Current Row to Render from
-	var targetRows = 50;
+	var targetRows = 50; // Number of dom elements
 	var bufferRows = 0;
-	var scrollIncrement = 0;
+
+	var x_fact = 0.15, y_fact = 0.5; // factors for bezier curve graph lines
+
+	var currentRow = 0; // Current Row to Render from
+
+	/* Graph Line Style */
+	var GRAPH_MODE = 2;
+
+	var GRAPH_RECT_ENDS = 0,
+		GRAPH_SLANT_ENDS = 1,
+		GRAPH_CURVED_ENDS = 2;
+	// TODO: a mode which merges unnessary lanes
+
+	/*
+	DOT Styles
+	0: - Black core, White outline
+	1: - Colored cored, Empty outline
+	2: - Black core, Colored outline, 
+	3: - Colored core, White outline
+	4: - Black core, White outline
+	 */
+	var dotColorScheme = 2;
 
 	// Pwn CSS
 	var sheet = document.styleSheets[document.styleSheets.length - 1];
@@ -145,9 +164,8 @@
 		var i, il, commit;
 		var hashes = {};
 
-		// TODO Buggy, dont use
 		// Date order vs Ancestor order
-		// timeline.sort(compare);
+		// timeline.sort(compare); // TODO Buggy, dont use
 
 		// create hashes
 		for (i=0,il=timeline.length;i<il;i++) {
@@ -174,9 +192,7 @@
 		// 3. Current parent, remaining parents, pending parents. (soucetree)
 		// 4. force layout (vizgraph)
 
-		// TODO
-		// Bezier
-		// Mouse over interactivity
+		// TODO Mouse over interactivity
 
 		var e;
 		var pendingPaths = [];
@@ -207,10 +223,9 @@
 			commit = timeline[i];
 
 //			if (i > 100) break;
-
-			// current parents == where you came from
 			var currentPaths = [];
 			for (j=0; j<commit.parents.length; j++) {
+				// parents == where you came from
 				currentPaths.push(new CommitPath(commit.parents[j], i))
 			}
 
@@ -219,7 +234,6 @@
 
 			// Pending Tracks
 			for (j=0;j<pendingPaths.length;j++) {
-
 				p = pendingPaths[j];
 
 				var currentTrack = tracks[p.id];
@@ -247,7 +261,6 @@
 
 
 					} else {
-						// p.length==0 &&
 						if (p.prevLane!=p.lane) {
 							currentLane = p.prevLane;
 						}
@@ -267,15 +280,17 @@
 					currentTrack.push({lane: p.prevLane, row: p.row});
 				} // parent's row at node track
 
-				if (currentLane != p.prevLane) {
+				var ANGULAR_TRACK_ENDS = GRAPH_MODE != GRAPH_CURVED_ENDS;
+
+				if (ANGULAR_TRACK_ENDS && currentLane != p.prevLane) {
 					// For creating angular cut off
 					if (currentLane != endTrack) {
 						// reduce ugliness
 						currentTrack.push({lane: endTrack, row: p.row});
 					} else {
-						// currentTrack.push({lane: currentLane, row: p.row});
+						if (GRAPH_MODE != GRAPH_SLANT_ENDS)
+							currentTrack.push({lane: currentLane, row: p.row});
 					}
-					// parent's row at previous track's lane
 				}
 
 				currentTrack.push({lane: endTrack, row: i}); // child's row
@@ -313,13 +328,8 @@
 
 			nodeTracks.push(nodeTrack);
 		}
-
 		console.timeEnd('graphing');
 
-		// POST PROCESS Tracks
-		for (var t=0;t<tracks.length; t++) {
-			// console.log(tracks[t]);
-		}
 
 		console.time('draw');
 
@@ -440,7 +450,8 @@
 
 			var i, il, j, jl;
 
-			for (var i=0,il=tracks.length; i<il; i++) {
+			// for (i=0,il=tracks.length; i<il; i++) {
+			for (i=tracks.length; i--;) {
 				track = tracks[i];
 
 				ctx.strokeStyle = colors[i % colors.length];
@@ -454,31 +465,49 @@
 				
 				ctx.moveTo(getTrackX(entry.lane), getRowY(entry.row));
 				
+				var prev;
 				for (j=j+1, jl=track.length;j<jl;j++) {
 					entry = track[j];
+					prev = track[j-1];
 
-					ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+					var from_x = getTrackX(prev.lane);
+					var from_y = getRowY(prev.row);
+					var to_x = getTrackX(entry.lane);
+					var to_y = getRowY(entry.row);
+
+					switch (GRAPH_MODE) {
+						case GRAPH_RECT_ENDS:
+							ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+							break;
+						case GRAPH_SLANT_ENDS:
+							if (j == jl - 1) {
+								ctx.lineTo(getTrackX(prev.lane), getRowY(entry.row-LINK_PORTION));
+							} else {
+								ctx.lineTo(getTrackX(entry.lane), getRowY(prev.row+LINK_PORTION));
+							}
+
+							ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+							break;
+						case GRAPH_CURVED_ENDS:
+							if (entry.lane != prev.lane) {
+								ctx.bezierCurveTo(
+									from_x - TRACK_WIDTH * x_fact, from_y + ROW_HEIGHT * y_fact,
+									to_x + TRACK_WIDTH * x_fact, to_y - ROW_HEIGHT * y_fact,
+									to_x, to_y
+								);
+							} else {
+								ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+							}
+
+							break;
+					}
+					
 					if (entry.row >= maxRow) break;
 				}
 
-				// ctx.lineTo(getTrackX(currentLane), getRowY(p.row + LINK_PORTION));
-				// ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
-				// ctx.lineTo(getTrackX(endTrack), getRowY(i));
-
 				ctx.stroke();
 
-
-
-				/*
-				 Styles
-				 - Solid Dot
-				 - Empty Dot
-				 - Outlined Dot
-				 - Black White
-				 */
-
-				var colorScheme = 2;
-				switch (colorScheme) {
+				switch (dotColorScheme) {
 					case 0: // White outline, Black fill
 						ctx.fillStyle = Scheme.Black[Bright];
 						ctx.strokeStyle = Scheme.White[Bold];
@@ -491,13 +520,9 @@
 						ctx.fillStyle = Scheme.Black[Bright];
 						ctx.strokeStyle = colors[i % colors.length];
 						break;
-					case 3: // Colored fill, empty outline
+					case 3: // Colored fill, white outline
 						ctx.fillStyle = colors[i % colors.length];
 						ctx.strokeStyle = Scheme.White[Bold];
-						break;
-					case 4: // Black and white
-						ctx.fillStyle = Scheme.Black[Bold];
-						ctx.strokeStyle = Scheme.White[Bright];
 						break;
 				}
 
@@ -513,19 +538,22 @@
 					ctx.fill();
 					ctx.stroke();
 
-					// if (entry.row >= maxRow) break;
+					// if (entry.row > maxRow) break;
 				}
 
+				/*
 				// debug track points.
-//				for (j=0, jl=track.length;j<jl;j++) {
-//					entry = track[j];
-//
-//					ctx.beginPath();
-//					ctx.arc(getTrackX(entry.lane), getRowY(entry.row), 2, 0, Math.PI * 2);
-//					ctx.fill();
-//
-//					if (entry.row >= maxRow) break;
-//				}
+				ctx.fillStyle = colors[i % colors.length];
+				for (j=0, jl=track.length;j<jl;j++) {
+					entry = track[j];
+
+					ctx.beginPath();
+					ctx.arc(getTrackX(entry.lane), getRowY(entry.row), 2, 0, Math.PI * 2);
+					ctx.fill();
+
+					if (entry.row >= maxRow) break;
+				}
+				*/
 			}
 
 			ctx.restore();
