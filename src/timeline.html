@@ -50,12 +50,10 @@
 	<script>
 
 	"use strict"
-
-
-
 	// TODO grep linkable commit messages, urls, authors, commits numbers
 	// TODO virtual rendering for resizing viewport
 	// TODO nicer graphs
+	// TODO refactor this into GitLogViewer class
 
 	/*OPTIONS*/
 
@@ -129,6 +127,10 @@
 	- Outlined Dot / Black White
 	*/
 
+
+	// TODO handle retina dipslays
+	// window.devicePixelRatio
+
 	var url = '../data/test.json';
 	getLog('../data/filenames.json', url, readTimeline);
 
@@ -186,22 +188,48 @@
 
 		var e;
 		var pendingParents = [];
-		var nodeTrack = 0;
 		var p;
 		var LINK_PORTION = 0.28;
 
 		console.time('graphing');
 
-		var nodeTracks = [];
-		var tracks = [];
-		var trackCounter = 0;
+		
+		var nodeTrack; // Lane the node is on
+		var nodeTracks = []; // Track which lane the node is at for every row
 
-		for (i=0, il=timeline.length;i<il;i++) {
+
+
+		var tracks = []; // Array of Arrays
+		var trackCounter = 0; // Unique Tracks
+
+
+		/*
+		function Parent {
+			hash: bla
+			row: 0
+			length: 0
+		}
+
+		PendingParents {
+			id:
+			track // middleTrack
+			targetHash:
+		}
+
+		Track {
+			id: 
+		}*/
+
+		// Start with childrens / latest.
+		/* Compute Graph Tracks */
+		for (i=0, il=timeline.length; i<il; i++) {
 			v = timeline[i];
 
-			// current parents
+			if (i > 100) break;
+
+			// current parents == where you came from
 			var currentParents = [];
-			for (j=0;j<v.parents.length;j++) {
+			for (j=0; j<v.parents.length; j++) {
 				currentParents.push({
 					targetHash: v.parents[j],
 					row: i,
@@ -227,8 +255,8 @@
 
 				if (p.targetHash==v.hash) {
 					// previous track is a child of current commit
-					first = nodeTrack===null;
-
+					first = nodeTrack === null;
+					// this track ends here
 					if (first) nodeTrack = j;
 
 					endTrack = nodeTrack;
@@ -275,6 +303,7 @@
 			}
 
 			var j;
+
 			// Merge current parents into a pending array
 			for (j=0;j<currentParents.length;j++) {
 				p = currentParents[j];
@@ -283,10 +312,10 @@
 				p.track = pendingParents.length;
 				tracks[p.id] = [];
 
-
 				pendingParents.push(p);
 			}
 
+			// All
 			for (j=0;j<pendingParents.length;j++) {
 				p = pendingParents[j];
 
@@ -396,7 +425,7 @@
 
 			var now = Date.now();
 			if (now - lastRenderered < 16) {
-				console.log('skip');
+				// console.log('skip');
 				setTimeout(draw, 16);
 				return;
 			}
@@ -409,11 +438,16 @@
 
 			lastRenderered = now;
 
+			// TODO precompute dimensions only on init or frame resizing.
+			// setTimeout(function() {
+			// 	timeline_panel.scrollTop += 50;
+			// 	draw();
+			// }, 20);
+
 		}
 
 		function drawGraph() {
 			// Draw commit tracks
-
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.save();
 			
@@ -423,35 +457,48 @@
 
 			var i, il, j, jl;
 
-			for (var i=0,il=tracks.length;i<il;i++) {
+			for (var i=0,il=tracks.length; i<il; i++) {
 				track = tracks[i];
 
-				// ctx.strokeStyle = 'black';
-				ctx.fillStyle = ctx.strokeStyle = colors[i % colors.length];
+				ctx.strokeStyle = colors[i % colors.length];
 
 				for (j=0, jl=track.length;j<jl;j++) {
 					entry = track[j];
 					if (entry.row >= minRow) break;
 				}
+
 				ctx.beginPath();
+				
 				ctx.moveTo(getTrackX(entry.track), getRowY(entry.row));
+				
 				for (j=j+1, jl=track.length;j<jl;j++) {
 					entry = track[j];
 
 					ctx.lineTo(getTrackX(entry.track), getRowY(entry.row));
 					if (entry.row > maxRow) break;
 				}
+
 				ctx.stroke();
+
+				// debug track points.
+				ctx.fillStyle = colors[i % colors.length];
+				for (j=0, jl=track.length;j<jl;j++) {
+					entry = track[j];
+
+					ctx.beginPath();
+					ctx.arc(getTrackX(entry.track), getRowY(entry.row), 2, 0, Math.PI * 2);
+					ctx.fill();
+
+					if (entry.row > maxRow) break;
+				}
 			}
 
 			ctx.lineWidth = 1.5;
 			ctx.fillStyle = Scheme.Black[0];
 			ctx.strokeStyle = Scheme.White[1];
 
-			// Draw nodes
-			// for (i=0,il=tracks.length;i<il;i++) {
+			// Draw nodes dots
 			for (i=minRow;i<maxRow;i++) {
-
 				nodeTrack = nodeTracks[i];
 
 				ctx.beginPath();
