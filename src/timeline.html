@@ -122,7 +122,7 @@
 
 
 	// TODO handle retina displays
-    // TODO click handlers
+	// TODO click handlers
 	// window.devicePixelRatio
 
 	var url = '../data/test.json';
@@ -141,12 +141,13 @@
 	function readTimeline(timeline) {
 		// console.log(timeline);
 		window.t = timeline;
-		// u = timeline.reverse();
+
 		var i, il, commit;
 		var hashes = {};
 
+		// TODO Buggy, dont use
 		// Date order vs Ancestor order
-		timeline.sort(compare);
+		// timeline.sort(compare);
 
 		// create hashes
 		for (i=0,il=timeline.length;i<il;i++) {
@@ -176,8 +177,6 @@
 		// TODO
 		// Bezier
 		// Mouse over interactivity
-
-		// var ctx;
 
 		var e;
 		var pendingPaths = [];
@@ -233,7 +232,7 @@
 				currentLane = p.lane;
 
 				if (p.targetHash==commit.hash) {
-                    // this commit track path ends here
+					// this commit track path ends here
 					first = nodeTrack === null;
 
 					if (first) nodeTrack = j;
@@ -248,7 +247,7 @@
 
 
 					} else {
-                        // p.length==0 &&
+						// p.length==0 &&
 						if (p.prevLane!=p.lane) {
 							currentLane = p.prevLane;
 						}
@@ -264,22 +263,22 @@
 					p.length++;
 				}
 
-                if (!currentTrack.length) {
-                    currentTrack.push({lane: p.prevLane, row: p.row});
-                } // parent's row at node track
+				if (!currentTrack.length) {
+					currentTrack.push({lane: p.prevLane, row: p.row});
+				} // parent's row at node track
 
-                if (currentLane != p.prevLane) {
-                    // For creating angular cut off
-                    if (currentLane != endTrack) {
-                        // reduce ugliness
-                        currentTrack.push({lane: endTrack, row: p.row});
-                    } else {
-                        currentTrack.push({lane: currentLane, row: p.row});
-                    }
-                    // parent's row at previous track's lane
-                }
+				if (currentLane != p.prevLane) {
+					// For creating angular cut off
+					if (currentLane != endTrack) {
+						// reduce ugliness
+						currentTrack.push({lane: endTrack, row: p.row});
+					} else {
+						// currentTrack.push({lane: currentLane, row: p.row});
+					}
+					// parent's row at previous track's lane
+				}
 
-                currentTrack.push({lane: endTrack, row: i}); // child's row
+				currentTrack.push({lane: endTrack, row: i}); // child's row
 				p.row = i;
 
 			}
@@ -342,20 +341,20 @@
 
 		panel_spacer.style.height = ROW_HEIGHT * timeline.length;
 
-        var sa, rows;
+		var sa, rows;
 
-        function initDimensions() {
-            // calculations for viewport or new row count changes.
-            sa = timeline_panel.scrollHeight - timeline_panel.clientHeight;
-            rows = sa / timeline_panel.scrollHeight * timeline.length; // actual scrollable rows
-        }
+		function initDimensions() {
+			// calculations for viewport or new row count changes.
+			sa = timeline_panel.scrollHeight - timeline_panel.clientHeight;
+			rows = sa / timeline_panel.scrollHeight * timeline.length; // actual scrollable rows
+		}
 
-        initDimensions();
+		initDimensions();
 
-        window.addEventListener('resize', function() {
-            console.log('resizing');
-            initDimensions();
-        })
+		window.addEventListener('resize', function() {
+			console.log('resizing');
+			initDimensions();
+		})
 
 		timeline_panel.addEventListener('scroll', function(e) {
 			var p = timeline_panel.scrollTop / sa; // percentage scrolled
@@ -462,60 +461,62 @@
 					if (entry.row >= maxRow) break;
 				}
 
+				// ctx.lineTo(getTrackX(currentLane), getRowY(p.row + LINK_PORTION));
+				// ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
+				// ctx.lineTo(getTrackX(endTrack), getRowY(i));
 
-                // ctx.lineTo(getTrackX(currentLane), getRowY(p.row + LINK_PORTION));
-                // ctx.lineTo(getTrackX(endTrack), getRowY(i-LINK_PORTION));
-                // ctx.lineTo(getTrackX(endTrack), getRowY(i));
-
-                ctx.stroke();
-
-
-
-                /*
-                 Styles
-                 - Solid Dot
-                 - Empty Dot
-                 - Outlined Dot
-                 - Black White
-                 */
-
-                var colorScheme = 2;
-                switch (colorScheme) {
-                    case 0: // White outline, Black fill
-                        ctx.fillStyle = Scheme.Black[Bright];
-                        ctx.strokeStyle = Scheme.White[Bold];
-                        break;
-                    case 1: // Colored fill, empty outline
-                        ctx.fillStyle = colors[i % colors.length];
-                        ctx.strokeStyle = 'transparent';
-                        break;
-                    case 2: // Colored outline, empty fill
-                        ctx.fillStyle = Scheme.Black[Bright];
-                        ctx.strokeStyle = colors[i % colors.length];
-                        break;
-                    case 3: // Colored fill, empty outline
-                        ctx.fillStyle = colors[i % colors.length];
-                        ctx.strokeStyle = Scheme.White[Bold];
-                        break;
-                    case 4: // Black and white
-                        ctx.fillStyle = Scheme.Black[Bold];
-                        ctx.strokeStyle = Scheme.White[Bright];
-                        break;
-                }
+				ctx.stroke();
 
 
 
-                // Draw nodes
-                for (j=0, jl=track.length;j<jl;j++) {
-                    entry = track[j];
-                    if (nodeTracks[entry.row] != entry.lane) continue;
-                    ctx.beginPath();
-                    ctx.arc(getTrackX(entry.lane), getRowY(entry.row), DOT_SIZE, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
-                }
+				/*
+				 Styles
+				 - Solid Dot
+				 - Empty Dot
+				 - Outlined Dot
+				 - Black White
+				 */
 
-                // debug track points.
+				var colorScheme = 2;
+				switch (colorScheme) {
+					case 0: // White outline, Black fill
+						ctx.fillStyle = Scheme.Black[Bright];
+						ctx.strokeStyle = Scheme.White[Bold];
+						break;
+					case 1: // Colored fill, empty outline
+						ctx.fillStyle = colors[i % colors.length];
+						ctx.strokeStyle = 'transparent';
+						break;
+					case 2: // Colored outline, empty fill
+						ctx.fillStyle = Scheme.Black[Bright];
+						ctx.strokeStyle = colors[i % colors.length];
+						break;
+					case 3: // Colored fill, empty outline
+						ctx.fillStyle = colors[i % colors.length];
+						ctx.strokeStyle = Scheme.White[Bold];
+						break;
+					case 4: // Black and white
+						ctx.fillStyle = Scheme.Black[Bold];
+						ctx.strokeStyle = Scheme.White[Bright];
+						break;
+				}
+
+				ctx.lineWidth = 1.5;
+
+				// Draw nodes
+				for (j=0, jl=track.length;j<jl;j++) {
+					entry = track[j];
+					if (nodeTracks[entry.row] != entry.lane
+						|| entry.row < minRow ) continue;
+					ctx.beginPath();
+					ctx.arc(getTrackX(entry.lane), getRowY(entry.row), DOT_SIZE, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.stroke();
+
+					// if (entry.row >= maxRow) break;
+				}
+
+				// debug track points.
 //				for (j=0, jl=track.length;j<jl;j++) {
 //					entry = track[j];
 //
@@ -526,18 +527,6 @@
 //					if (entry.row >= maxRow) break;
 //				}
 			}
-
-			ctx.lineWidth = 1.5;
-
-			// Draw nodes dots
-//			for (i=minRow;i<maxRow;i++) {
-//				nodeTrack = nodeTracks[i];
-//
-//				ctx.beginPath();
-//				ctx.arc(getTrackX(nodeTrack), getRowY(i), DOT_SIZE, 0, Math.PI * 2);
-//				ctx.fill();
-//				ctx.stroke();
-//			}
 
 			ctx.restore();
 		}
