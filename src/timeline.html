@@ -38,13 +38,12 @@
 
 	</style>
 
-	<div id="timeline_panel">
-		<div id="sliding_window">
-			<div id="container"></div>
-		</div>
-
-		<div id="panel_spacer"></div>
+	<div class="message">
+	This demostrates a git log viewer with pretty log graph done in js.
+	Both canvas and commit messages are renderered with virtual viewports.
 	</div>
+
+	<br/>
 
 	Graph line style:
 	<select onchange="graphStyle(this.value)">
@@ -62,10 +61,18 @@
 		<option value="4">Black core, White outline</option>
 	</select>
 
+	<div id="timeline_panel">
+		<div id="sliding_window">
+			<div id="container"></div>
+		</div>
+
+		<div id="panel_spacer"></div>
+	</div>
+
 	<script src="source.js"></script>
 	<script>
 
-	"use strict"
+	"use strict";
 	// TODO grep linkable commit messages, urls, authors, commits numbers
 	// TODO virtual rendering for resizing viewport
 	// TODO refactor this into GitLogViewer class
@@ -79,12 +86,11 @@
 	var targetRows = 50; // Number of dom elements
 	var bufferRows = 0;
 
+	var LINK_PORTION = 0.28;
 	var x_fact = 0.15, y_fact = 0.5; // factors for bezier curve graph lines
 
-	var currentRow = 0; // Current Row to Render from
-
 	/* Graph Line Style */
-	var GRAPH_MODE = 2;
+	var GRAPH_MODE = 0;
 
 	var GRAPH_RECT_ENDS = 0,
 		GRAPH_SLANT_ENDS = 1,
@@ -103,7 +109,10 @@
 
 	function graphStyle(id) {
 		GRAPH_MODE = +id;
-		if (viewer) viewer.draw();
+		if (viewer) {
+			viewer.regenerate();
+			viewer.draw();
+		}
 	}
 
 	function dotStyle(id) {
@@ -131,11 +140,11 @@
 		White: '#979797/#ffffff'.split('/')
 	};
 
-	addRule('.log', 'height: ' + ROW_HEIGHT + 'px;')
-	addRule('.hash', 'color: ' + Scheme.Blue[Bold] + ';')
-	addRule('.time', 'color: ' + Scheme.Green[Bold] + ';')
-	addRule('.author', 'color: ' + Scheme.Cyan[Bold] + ';')
-	addRule('.message', 'color: ' + Scheme.White[Bold] + ';')
+	addRule('.log', 'height: ' + ROW_HEIGHT + 'px;');
+	addRule('.hash', 'color: ' + Scheme.Blue[Bold] + ';');
+	addRule('.time', 'color: ' + Scheme.Green[Bold] + ';');
+	addRule('.author', 'color: ' + Scheme.Cyan[Bold] + ';');
+	addRule('.message', 'color: ' + Scheme.White[Bold] + ';');
 
 	// Steal colors from https://github.com/tclh123/commits-graph/blob/master/js/dist/jquery.commits-graph.js#L152
 	var colors =[
@@ -192,6 +201,8 @@
 		// console.log(timeline);
 		window.t = timeline;
 
+		this.currentRow = 0; // Current Row to Render from
+
 		var i, il, commit;
 		var hashes = {};
 
@@ -226,138 +237,147 @@
 		// TODO Mouse over interactivity
 
 		var e;
-		var pendingPaths = [];
+		
 		var p;
-		var LINK_PORTION = 0.28;
 
 		console.time('graphing');
-
-		
-		var nodeTrack; // Lane the node is on
-		var nodeTracks = []; // Track which lane the node is at for every row
-
-		var tracks = []; // Array of Arrays
-		var trackCounter = 0; // Unique Tracks
 
 
 		function CommitPath(hash, row) {
 			this.targetHash = hash; // hash for matching parent
 			this.row = row; // commit sequence id
-			this.length = length;
+			this.length = 0;
 		}
 
-		// Start with childrens / latest.
-		/* Compute Graph Tracks */
-
-		var commit;
-		for (i=0, il=timeline.length; i<il; i++) {
-			commit = timeline[i];
-
-			var currentPaths = [];
-			for (j=0; j<commit.parents.length; j++) {
-				// parents == where you came from
-				currentPaths.push(new CommitPath(commit.parents[j], i))
-			}
-
-			nodeTrack = null;
-			var merges = 0;
-
-			// Pending Tracks
-			for (j=0;j<pendingPaths.length;j++) {
-				p = pendingPaths[j];
-
-				var currentTrack = tracks[p.id];
-
-				var currentLane;
-				var endTrack = null;
-				var first;
-				var tmp;
-
-				currentLane = p.lane;
-
-				if (p.targetHash==commit.hash) {
-					// this commit track path ends here
-					first = nodeTrack === null;
-
-					if (first) nodeTrack = j;
-					endTrack = nodeTrack;
-
-					if (first && currentPaths.length) {
-
-						tmp = currentPaths.shift()
-						tmp.lane = j;
-						tmp.id = pendingPaths[j].id;
-						pendingPaths[j] = tmp;
+		var nodeTracks; // Track which lane the node is at for every row
+		var tracks;
 
 
-					} else {
-						if (p.prevLane!=p.lane) {
-							currentLane = p.prevLane;
+		this.regenerate = function() {
+
+			var nodeTrack; // Lane the node is on
+			nodeTracks = []; // Track which lane the node is at for every row
+			var pendingPaths = [];
+
+			tracks = []; // Array of Arrays
+			var trackCounter = 0; // Unique Tracks
+
+			// Start with childrens / latest.
+			/* Compute Graph Tracks */
+			for (i=0, il=timeline.length; i<il; i++) {
+				commit = timeline[i];
+
+				var currentPaths = [];
+				for (j=0; j<commit.parents.length; j++) {
+					// parents == where you came from
+					currentPaths.push(new CommitPath(commit.parents[j], i))
+				}
+
+				nodeTrack = null;
+				var merges = 0;
+
+				// Pending Tracks
+				for (j=0;j<pendingPaths.length;j++) {
+					p = pendingPaths[j];
+
+					var currentTrack = tracks[p.id];
+
+					var currentLane;
+					var endTrack = null;
+					var first;
+					var tmp;
+
+					currentLane = p.lane;
+
+					if (p.targetHash==commit.hash) {
+						// this commit track path ends here
+						first = nodeTrack === null;
+
+						if (first) nodeTrack = j;
+						endTrack = nodeTrack;
+
+						if (first && currentPaths.length) {
+
+							tmp = currentPaths.shift()
+							tmp.lane = j;
+							tmp.id = pendingPaths[j].id;
+							pendingPaths[j] = tmp;
+
+
+						} else {
+							if (p.prevLane!=p.lane) {
+								currentLane = p.prevLane;
+							}
+
+							pendingPaths.splice(j, 1);
+							merges++;
+							j--;
 						}
 
-						pendingPaths.splice(j, 1);
-						merges++;
-						j--;
-					}
-
-				} else {
-					p.lane -= merges;
-					endTrack = p.lane;
-					p.length++;
-				}
-
-				if (!currentTrack.length) {
-					currentTrack.push({lane: p.prevLane, row: p.row});
-				} // parent's row at node track
-
-				var ANGULAR_TRACK_ENDS = GRAPH_MODE != GRAPH_CURVED_ENDS;
-
-				if (ANGULAR_TRACK_ENDS && currentLane != p.prevLane) {
-					// For creating angular cut off
-					if (currentLane != endTrack) {
-						// reduce ugliness
-						currentTrack.push({lane: endTrack, row: p.row});
 					} else {
-						if (GRAPH_MODE != GRAPH_SLANT_ENDS)
-							currentTrack.push({lane: currentLane, row: p.row});
+						p.lane -= merges;
+						endTrack = p.lane;
+						p.length++;
 					}
+
+					if (!currentTrack.length) {
+						// Starting point of track
+						currentTrack.push({lane: p.prevLane, row: p.row});
+					}
+
+					var ANGULAR_TRACK_ENDS = GRAPH_MODE != GRAPH_CURVED_ENDS;
+
+					if (ANGULAR_TRACK_ENDS && currentLane != p.prevLane) {
+						// For creating angular cut off
+						if (currentLane != endTrack) {
+							// reduce ugliness
+							currentTrack.push({lane: endTrack, row: p.row});
+						} else {
+							if (GRAPH_MODE != GRAPH_SLANT_ENDS)
+								currentTrack.push({lane: currentLane, row: p.row});
+						}
+					}
+
+					currentTrack.push({lane: endTrack, row: i}); // child's row
+					p.row = i;
+
 				}
 
-				currentTrack.push({lane: endTrack, row: i}); // child's row
-				p.row = i;
-
-			}
-
-			if (nodeTrack===null) {
-				nodeTrack = 0;
-			}
-
-			// Merge current parents into a pending array
-			for (j=0;j<currentPaths.length;j++) {
-				p = currentPaths[j];
-
-				p.id = trackCounter++;
-				p.lane = pendingPaths.length;
-				tracks[p.id] = [];
-
-				pendingPaths.push(p);
-			}
-
-			// All
-			for (j=0;j<pendingPaths.length;j++) {
-				p = pendingPaths[j];
-
-				// Draw connecting lines
-				if (p.length==0) {
-					p.prevLane = nodeTrack;
-				} else {
-					p.prevLane = p.lane;
+				if (nodeTrack===null) {
+					nodeTrack = 0;
 				}
 
+				// Merge current parents into a pending array
+				for (j=0;j<currentPaths.length;j++) {
+					p = currentPaths[j];
+
+					p.id = trackCounter++;
+					p.lane = pendingPaths.length;
+					tracks[p.id] = [];
+
+					pendingPaths.push(p);
+				}
+
+				// All
+				for (j=0;j<pendingPaths.length;j++) {
+					p = pendingPaths[j];
+
+					// Draw connecting lines
+					if (p.length==0) {
+						p.prevLane = nodeTrack;
+					} else {
+						p.prevLane = p.lane;
+					}
+
+				}
+
+				nodeTracks.push(nodeTrack);
 			}
 
-			nodeTracks.push(nodeTrack);
 		}
+
+		this.regenerate();
+
 		console.timeEnd('graphing');
 
 
@@ -402,11 +422,11 @@
 
 			sliding_window.style.top = timeline_panel.scrollTop - sliding; //  - bufferRows * ROW_HEIGHT
 
-			currentRow = p * rows | 0;
+			viewer.currentRow = p * rows | 0;
 
 			// console.log(timeline.length, rows, currentRow, sa, sliding_window.style.top);
 
-			draw();
+			viewer.draw();
 		});
 
 		/***** Setup DOMs ************/
@@ -432,6 +452,7 @@
 		function onClick(e, id) {
 			var commit = timeline[id];
 			// console.log(id, commit);
+			console.log(JSON.stringify(commit.tree));
 		}
 
 		for (var j=0;j<(targetRows + bufferRows * 2);j++) {
@@ -452,7 +473,7 @@
 
 		this.draw = draw;
 
-		draw();
+		this.draw();
 		console.timeEnd('draw');
 
 		function getTrackX(t) {
@@ -473,8 +494,8 @@
 				return;
 			}
 
-			minRow = Math.max(currentRow - bufferRows, 0);
-			maxRow = Math.min(currentRow + targetRows + bufferRows, timeline.length);
+			minRow = Math.max(this.currentRow - bufferRows, 0);
+			maxRow = Math.min(this.currentRow + targetRows + bufferRows, timeline.length);
 
 			drawGraph();
 			updateRows();
@@ -621,7 +642,7 @@
 					.replace(/%message/, replacer(commit.message))
 					.replace(/%time/, replacer(new Date(commit.date * 1000).toDateString()))
 					.replace(/%hash/, replacer(commit.hash))
-					.replace(/%author/, replacer(commit.author))
+					.replace(/%author/, replacer(commit.author));
 			}
 
 		}
