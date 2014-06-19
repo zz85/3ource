@@ -50,6 +50,7 @@
 		<option value="0">Flat</option>
 		<option value="1">Slant</option>
 		<option value="2">Curved</option>
+		<option value="3">Flat2</option>
 	</select>
 	
 	Commit Dot style:
@@ -90,11 +91,12 @@
 	var x_fact = 0.15, y_fact = 0.5; // factors for bezier curve graph lines
 
 	/* Graph Line Style */
-	var GRAPH_MODE = 0;
+	var GRAPH_MODE = 3;
 
 	var GRAPH_RECT_ENDS = 0,
 		GRAPH_SLANT_ENDS = 1,
-		GRAPH_CURVED_ENDS = 2;
+		GRAPH_CURVED_ENDS = 2,
+		GRAPH_FLAT_ENDS = 3;
 		// TODO: a mode which merges unnessary lanes
 
 	/*
@@ -143,8 +145,8 @@
 	addRule('.log', 'height: ' + ROW_HEIGHT + 'px;');
 	addRule('.hash', 'color: ' + Scheme.Blue[Bold] + ';');
 	addRule('.time', 'color: ' + Scheme.Green[Bold] + ';');
-	addRule('.author', 'color: ' + Scheme.Cyan[Bold] + ';');
-	addRule('.message', 'color: ' + Scheme.White[Bold] + ';');
+	addRule('.author', 'color: ' + Scheme.Cyan[Bold] + '; width: 100px; display:inline-block; overflow: hidden;');
+	addRule('.message', 'color: ' + Scheme.White[Bold] + '; width: 400px; display:inline-block; overflow: hidden;');
 
 	// Steal colors from https://github.com/tclh123/commits-graph/blob/master/js/dist/jquery.commits-graph.js#L152
 	var colors =[
@@ -569,6 +571,16 @@
 							} else {
 								ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
 							}
+
+							break;
+						case GRAPH_FLAT_ENDS:
+							if (j == jl - 1) {
+								ctx.lineTo(getTrackX(prev.lane), getRowY(entry.row-LINK_PORTION));
+							} else {
+								// ctx.lineTo(getTrackX(entry.lane), getRowY(prev.row+LINK_PORTION));
+							}
+
+							ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
 
 							break;
 					}
