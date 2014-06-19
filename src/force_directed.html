@@ -1,4 +1,6 @@
+<!DOCTYPE html>
 <html>
+<meta charset="utf-8">
 <body>
 	<style>
 	body {
@@ -7,22 +9,63 @@
 
 	</style>
 	<canvas id="canvas"></canvas>
+	<script src="test_files.js"></script>
+	<script src="fs.js"></script>
+
 	<script>
+	// var files = ['test1.txt', 'test2.txt', 'test3.txt', '1/test1.txt', '1/test2.txt', '2/bla.txt', 'hoang/dang.txt'];
 
+	var fs = new FS();
 
-	// 2. start flatten root
-	// 2b. start flatten positions at start
-	// 2c. repel + attract
-	// 2d. tweak
-	// 2e. local repel
-	// 2f. global repel + tweaks to dydx
-	// 2g. animation
-	// 2h. fix bug with attraction! (hooks)
-	canvas.width = window.innerWidth;
+	var u = 0;
+	function onNodeAdd(node) {
+		// if (node.isFile()) return;
+		console.log(++u);
+		var graphNode = newNode(node.name, node.isFile()); // node.name
+		node.graphNode = graphNode;
+		node.onAdd.do(onNodeAdd);
+
+		newEdge(this.graphNode, node.graphNode);
+
+	}
+
+	function onNodeRemove(node) {
+		// graph.removeNode(node.graphNode);
+	}
+
+	var dnode = 0;
+
+	fs.root.graphNode = newNode('.');
+
+	function newNode(name, group) {
+		return new Dir();
+	}
+
+	function newEdge(node1, node2) {
+		node1.add(node2);
+	}
+
+	fs.root.onAdd.do(onNodeAdd);
+	fs.root.onRemove.do(onNodeRemove);
+
+	var z = 0;
+	setTimeout(function() { 
+		files.forEach(function(file) {
+			z++;
+			if (z > 400) return;
+			fs.touch(file);
+
+			// setTimeout(function() {
+			// 	fs.touch(file);
+			// 	console.log(z);
+			// }, 100 * z)
+		});
+	}, 1000);
+
+	canvas.width = innerWidth;
 	canvas.height = window.innerHeight;
 
 	ctx = canvas.getContext('2d');
-
 
 	function Dir(x, y) {
 		if (!x) x = (Math.random() - 0.5) * 50;
@@ -51,43 +94,27 @@
 
 	}
 
-	var root = new Dir();
-
-	var a = new Dir();
-	var b = new Dir();
-	var c = new Dir();
-	var dd = new Dir();
-
-	var a1 = new Dir();
-	var a2 = new Dir();
-
-	a.add(a1);
-	a.add(a2);
-
-	var bs = [];
-	for (var i=0; i<5; i++) b.add(new Dir());
-	for (var i=0; i<5; i++) a2.add(new Dir());
-	for (var i=0; i<5; i++) dd.add(new Dir());
+	var root = fs.root.graphNode;
 
 
 	var flatten = [];
 	var links = [];
 
 	
-	
-	setTimeout(function() { for (var i=0; i<5; i++) c.add(new Dir()) }, 6000);
-	
-	root2 = new Dir();
 
-	setTimeout(function() { root2.add(a); }, 1000);
-	setTimeout(function() { root2.add(b); }, 2000);
-	setTimeout(function() { root2.add(c); }, 3000);
-	setTimeout(function() { root2.add(dd); }, 4000);
-	setTimeout(function() { root2.add(new Dir()) }, 5000);
+	function draw(c) {
 
+		flatten.push(c);
 
-	root.add(root2);
-	
+		var i;
+
+		for (i=0;i<c.children.length;i++) {
+			d = c.children[i]
+
+			links.push({from: c, to: d});
+			draw(d);
+		}
+	}
 
 	function animate(x, y) {
 
@@ -142,10 +169,9 @@
 
 			for (j=i;j--;) {
 				e = flatten[j];
-				
-				repel(d, e)
+
+				repel(d, e);
 			}
-			
 		}
 
 		// repelInto(root);
@@ -157,8 +183,8 @@
 			d.dx *= 0.9;
 			d.dy *= 0.9;
 
-			d.dx = d.dx > 0 ? Math.min(10, d.dx) : Math.max(-10, d.dx)
-			d.dy = d.dy > 0 ? Math.min(10, d.dy) : Math.max(-10, d.dy)
+			d.dx = d.dx > 0 ? Math.min(10, d.dx) : Math.max(-10, d.dx);
+			d.dy = d.dy > 0 ? Math.min(10, d.dy) : Math.max(-10, d.dy);
 
 			d.x += d.dx;
 			d.y += d.dy;			
@@ -201,7 +227,7 @@
 		for (i=0;i<links.length;i++) {
 			d = links[i];
 
-			ctx.moveTo(d.from.x, d.from.y)
+			ctx.moveTo(d.from.x, d.from.y);
 			ctx.lineTo(d.to.x, d.to.y);
 			ctx.stroke();
 
@@ -259,26 +285,8 @@
 
 	}
 
-	function draw(c) {
-
-		flatten.push(c);
-
-		var i;
-
-		for (i=0;i<c.children.length;i++) {
-			d = c.children[i]
-
-			links.push({from: c, to: d});
-			draw(d);
-		}
-		
-	}
-
 	// animate();
 	setInterval(animate, 50);
-
-
-
 
 	</script>
 </body>
