@@ -1,26 +1,21 @@
-var fs = new FS();
-var nodes = [];
-var links = [];
+var nodes = []; // list of all graph nodes
+var links = []; // list of all constrained edges
+var clusters = []; // list for parent-children links
+var fileNodes = [];
 
-var u = 0;
 function onNodeAdd(node) {
 	// if (node.isFile()) return;
-	//console.log(++u);
 	var graphNode = newNode(node.name, node.isFile(), this.graphNode.x, this.graphNode.y); // node.name
 	node.graphNode = graphNode;
 	node.onAdd.do(onNodeAdd);
 
-	newEdge(this.graphNode, node.graphNode, node.isFile() ? 0.5 : 50, node.isFile());
-
+	newEdge(this.graphNode, node.graphNode, node.isFile());
 }
 
 function onNodeRemove(node) {
 	// TODO handle node removal
 	// graph.removeNode(node.graphNode);
 }
-
-var dnode = 0;
-fs.root.graphNode = newNode('.');
 
 function gNode(name, f, x, y) {
 	if (!x) x = 0;
@@ -36,6 +31,7 @@ function gNode(name, f, x, y) {
 	this.dx = 0;
 	this.dy = 0;
 	this.color = '#' + (~~(Math.random() * 0xfff)).toString(16);
+	this.children = 0;
 }
 
 function gLink(node1, node2, distance, hidden) {
@@ -54,22 +50,28 @@ gLink.prototype.resolve = function() {
 	var cy = node2.y - node1.y;
 
 	var distance = this.distance;
+	distance += Math.max(distanceForChildren(node1.children) * 2, distanceForChildren(node2.children) * 2);
+	// distance += distanceForChildren(Math.max(node1.children, 1)) + distanceForChildren(Math.max(node2.children, 1));
+
 	var lengthSquared = cx * cx + cy * cy;
 	if (lengthSquared==0) return;
 
 	var cl = Math.sqrt(lengthSquared);
 	var k, mx, my;
 	k = (distance - cl) / distance;
-  var mul = 0.015;
+ 	var mul = 0.015;
 	mx = k * cx * distance / cl * mul;
 	my = k * cy * distance / cl * mul;
 
-	// mx = 10 / d2 * 2 ;
-	// my = 10 / d2 * 2 ;
 	node1.dx -= mx;
 	node1.dy -= my;
 	node2.dx += mx;
 	node2.dy += my;
+
+	// node1.dx -= mx * 1 / (node1.children + 1);
+	// node1.dy -= my * 1 / (node1.children + 1);
+	// node2.dx += mx * 1 / (node2.children + 1);
+	// node2.dy += my * 1 / (node2.children + 1);
 
 };
 
@@ -79,14 +81,32 @@ function gravity(nodes, x, y) {
 	for (i=nodes.length; i--;) {
 		node = nodes[i];
 
-		cx = node.x;
-		cy = node.y;
+		cx = x - node.x;
+		cy = y - node.y;
 		cl = Math.sqrt(cx * cx + cy * cy);
-		if (cl == 0) continue;
+		if (cl === 0) continue;
 
-		node.dx -= cx / cl * 0.01;
-		node.dy -= cy / cl * 0.01;
+		node.dx += cx / cl * 0.1;
+		node.dy += cy / cl * 0.1 * (node.children * 0.1 + 1);
+		// node.dx += cx / cl * 0.1 * (node.children * 0.1 + 1);
+		// node.dy += cy / cl * 0.1 * (node.children * 0.1 + 1);
 	}
+}
+
+function gravityNode(node, x, y) {
+	var cx, cy, cl;
+
+	cx = x - node.x;
+	cy = y - node.y;
+	cl = Math.sqrt(cx * cx + cy * cy);
+	if (cl === 0) return;
+
+	node.x += cx * 0.5;
+	node.y += cy * 0.5;
+
+
+	// node.dx += cx / cl * 0.1;
+	// node.dy += cy / cl * 0.1;
 }
 
 function repel(node1, node2) {
@@ -98,9 +118,18 @@ function repel(node1, node2) {
 		for (j=i; j--;) {
 			node2 = nodes[j];
 
-      mul = node1.file && node2.file ?  0.5: 1.2 - 0.5;
+			mul = 1; //node1.file && node2.file ?  0.5: 1.2 - 0.5;
+			// mul += (node1.children + node2.children) * 0.1;
+
+			// var m1 = m2 = 1;
+			var m1 = node2.children * 0.5 + 1;
+			var m2 = node1.children * 0.5 + 1;
+			// m1 = mul * 1;
+			// m2 = mul * 1;
+
 			// if (!node1.file || !node1.file) continue;
 			// mul = 1.2;
+			// var m1 = node1.
 
 			cx = node2.x - node1.x;
 			cy = node2.y - node1.y;
@@ -118,10 +147,15 @@ function repel(node1, node2) {
 				mx = cx / cl * mul;
 				my = cy / cl * mul;
 
-				node1.dx -= mx;
-				node1.dy -= my;
-				node2.dx += mx;
-				node2.dy += my;
+				if (!node1.file) {
+					node1.dx -= mx * m1;
+					node1.dy -= my * m1;
+				}
+
+				if (!node2.file) {
+					node2.dx += mx * m2;
+					node2.dy += my * m2;
+				}
 			}
 		}
 	}
@@ -129,52 +163,63 @@ function repel(node1, node2) {
 }
 
 /* Graph functions */
-function newNode(name, group, x, y) {
-	var node = new gNode(name, group, x, y);
-	nodes.push(node);
+function newNode(name, isFile, x, y) {
+	var node = new gNode(name, isFile, x, y);
+	if (isFile) {
+		fileNodes.push(node);
+	} else {
+		nodes.push(node);
+	}
+
 	return node;
 }
 
-function newEdge(node1, node2, distance, hidden) {
-	links.push(new gLink(node1, node2, distance, hidden));
+function newEdge(parent, child, isFile) {
+	var distance = isFile ? 0.5 : 20;
+	if (isFile) {
+		clusters.push(new gLink(parent, child, distance, isFile));
+		parent.children++;
+	} else {
+		links.push(new gLink(parent, child, distance, isFile));
+	}
 }
 
-fs.root.onAdd.do(onNodeAdd);
-fs.root.onRemove.do(onNodeRemove);
+function distanceForChildren(c) {
+	return Math.pow(c * 1.618, 0.9);
+}
 
-var z = 0;
-files.forEach(function(file) {
-	z++;
-	// if (z > 200) return;
-	// fs.touch(file);
-
-	setTimeout(function() {
-		fs.touch(file);
-		console.log(z);
-	}, 10 * z);
-});
-
-canvas.width = innerWidth;
-canvas.height = window.innerHeight;
-
-ctx = canvas.getContext('2d');
-
-function siate() {
+function simulate() {
 
 	repel(nodes);
-	//gravity(nodes, 0, 0);
+	gravity(nodes, 0, 0);
 
-	var link;
-	for (i=links.length; i--;) {
+	var link, i;
+	for (i=links.length; i-- > 0;) {
 		link = links[i];
 		link.resolve();
 	}
 
-  var DAMPING = 0.96;
+	for (i=nodes.length; i-- > 0;) {
+		nodes[i].count = 0;
+	}
+
+	for (i=clusters.length; i-- > 0;) {
+		link = clusters[i];
+		var c = link.from.count++;
+		var d = distanceForChildren(c);
+		c = c * 1.618 / 2;
+
+		gravityNode(link.to, link.from.x + Math.cos(c) * d, link.from.y + Math.sin(c) * d);
+
+	}
+
+	var DAMPING = 0.96;
+	var SPEED_LIMIT = 5;
 
 	// move
 	for (i=nodes.length; i--;) {
 		node = nodes[i];
+		// if (node.file) continue;
 
 		// Damping, speed limits.
 		node.x += node.dx;
@@ -183,22 +228,23 @@ function siate() {
 		node.dx *= DAMPING;
 		node.dy *= DAMPING;
 
-		// d.dx = d.dx > 0 ? Math.min(10, d.dx) : Math.max(-10, d.dx);
-		// d.dy = d.dy > 0 ? Math.min(10, d.dy) : Math.max(-10, d.dy);
+		node.dx = node.dx > SPEED_LIMIT ? SPEED_LIMIT : node.dx < - SPEED_LIMIT ? - SPEED_LIMIT : node.dx;
+		node.dy = node.dy > SPEED_LIMIT ? SPEED_LIMIT : node.dy < - SPEED_LIMIT ? - SPEED_LIMIT : node.dy;
 	}
 
 }
 
 function paint() {
 	ctx.save();
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+	ctx.fillStyle = '#000';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	//ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.translate(canvas.width/2, canvas.height/2);
 
 	var node, link;
 
-  ctx.strokeStyle = '#fff';
+	ctx.strokeStyle = '#ccc';
+	ctx.lineWidth = 2;
 	for (i=0;i<links.length;i++) {
 		link = links[i];
 
@@ -216,17 +262,59 @@ function paint() {
 		ctx.fill();
 	}
 
+	for (i=0;i<fileNodes.length;i++) {
+		node = fileNodes[i];
+		ctx.fillStyle = node.color;
+		ctx.beginPath();
+		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+		ctx.fill();
+	}
+
 	ctx.restore();
 }
 
 
 function animate() {
-	siate();
+	simulate();
 
 	if (Math.random() > 0.8)
-	paint();
+		paint();
 }
 
 
-// animate();
-setInterval(animate, 50);
+function initDrawings() {
+	canvas.width = innerWidth;
+	canvas.height = window.innerHeight;
+
+	ctx = canvas.getContext('2d');
+
+	// animate();
+	setInterval(animate, 30);
+}
+
+function initSimulations() {
+	var fs = new FS();
+	fs.root.graphNode = newNode('.');
+
+	fs.root.onAdd.do(onNodeAdd);
+	fs.root.onRemove.do(onNodeRemove);
+
+	var z = 0;
+	files.forEach(function(file) {
+		z++;
+		// if (z > 500) return;
+		// fs.touch(file);
+
+		setTimeout(function() {
+			fs.touch(file);
+			console.log(z);
+		}, 10 * z);
+	});
+}
+
+function init() {
+	initSimulations();
+	initDrawings();
+}
+
+init();
