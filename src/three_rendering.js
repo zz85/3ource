@@ -23,7 +23,7 @@ function newNode(name, isFile, x, y) {
 
 	node.ref = geometry.count++;
 
-	geometry.setSprite( 'offsets', node.ref, node.x, node.y, 0 );
+	geometry.setSprite( 'offsets', node.ref, node.x, node.y, 0);
 	if (isFile) {
 		color.setHSL(0.45 + Math.random(), 0.7, 0.8);
 		geometry.setSprite( 'colors', node.ref, color.r, color.g, color.b);
@@ -36,10 +36,10 @@ function newEdge(parent, child, isFile) {
 	var distance = isFile ? 0.5 : 10;
 	if (isFile) {
 		clusters.push(new gLink(parent, child, distance, isFile));
-		parent.children++;
 	} else {
 		var link = new gLink(parent, child, distance, isFile);
 		links.push(link);
+
 		link.ref = line.count++;
 
 		line.geometry.vertices[link.ref * 2 + 0].x = parent.x;
@@ -49,8 +49,6 @@ function newEdge(parent, child, isFile) {
 		line.geometry.vertices[link.ref * 2 + 1].x = child.x;
 		line.geometry.vertices[link.ref * 2 + 1].y = child.y;
 		line.geometry.vertices[link.ref * 2 + 1].z = 0;
-
-
 
 	}
 }

@@ -20,8 +20,8 @@ function gNode(name, f, x, y) {
 	if (!x) x = 0;
 	if (!y) y = 0;
 	this.file = f;
-	x += (Math.random() - 0.5) * 4;
-	y += (Math.random() - 0.5) * 4;
+	x += (Math.random() - 0.5) * 5;
+	y += (Math.random() - 0.5) * 5;
 	this.name = name;
 	this.x = x;
 	this.y = y;
@@ -50,10 +50,10 @@ gLink.prototype.resolve = function() {
 
 	var distance = this.distance;
 	distance += Math.max(distanceForChildren(node1.children) * 2, distanceForChildren(node2.children) * 2);
-	// distance += distanceForChildren(Math.max(node1.children, 1)) + distanceForChildren(Math.max(node2.children, 1));
+	// distance += distanceForChildren(Math.max(node1.children, 1)) + distanceForChildren(Math.max(node2.children, 1))  * 1.5;
 
 	var lengthSquared = cx * cx + cy * cy;
-	if (lengthSquared==0) return;
+	if (lengthSquared === 0) return;
 
 	var cl = Math.sqrt(lengthSquared);
 	var k, mx, my;
@@ -86,7 +86,7 @@ function gravity(nodes, x, y) {
 		if (cl === 0) continue;
 
 		node.dx += cx / cl * 0.1;
-		node.dy += cy / cl * 0.1 * (node.children * 0.1 + 1);
+		node.dy += cy / cl * 0.1;
 		// node.dx += cx / cl * 0.1 * (node.children * 0.1 + 1);
 		// node.dy += cy / cl * 0.1 * (node.children * 0.1 + 1);
 	}
@@ -177,12 +177,12 @@ function simulate() {
 	}
 
 	for (i=nodes.length; i-- > 0;) {
-		nodes[i].count = 0;
+		nodes[i].children = 0;
 	}
 
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
-		var c = link.from.count++;
+		var c = link.from.children++;
 		var d = distanceForChildren(c);
 		c = (16 + c) * 1.618 / 2;
 
@@ -191,7 +191,7 @@ function simulate() {
 	}
 
 	var DAMPING = 0.96;
-	var SPEED_LIMIT = 5;
+	var SPEED_LIMIT = 2;
 
 	// move
 	for (i=nodes.length; i--;) {

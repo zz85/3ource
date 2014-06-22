@@ -16,7 +16,6 @@ function newEdge(parent, child, isFile) {
 	var distance = isFile ? 0.5 : 10;
 	if (isFile) {
 		clusters.push(new gLink(parent, child, distance, isFile));
-		parent.children++;
 	} else {
 		links.push(new gLink(parent, child, distance, isFile));
 	}
