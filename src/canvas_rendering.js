@@ -1,4 +1,28 @@
 
+
+/* Graph functions */
+function newNode(name, isFile, x, y) {
+	var node = new gNode(name, isFile, x, y);
+	if (isFile) {
+		fileNodes.push(node);
+	} else {
+		nodes.push(node);
+	}
+
+	return node;
+}
+
+function newEdge(parent, child, isFile) {
+	var distance = isFile ? 0.5 : 10;
+	if (isFile) {
+		clusters.push(new gLink(parent, child, distance, isFile));
+		parent.children++;
+	} else {
+		links.push(new gLink(parent, child, distance, isFile));
+	}
+}
+
+
 function paint() {
 	ctx.save();
 	ctx.fillStyle = '#000';
@@ -46,4 +70,11 @@ function initDrawings() {
 
 	// animate();
 	setInterval(animate, 30);
+}
+
+function animate() {
+	simulate();
+
+	if (Math.random() > 0.8)
+		paint();
 }

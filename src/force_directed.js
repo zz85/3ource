@@ -101,8 +101,8 @@ function gravityNode(node, x, y) {
 	cl = Math.sqrt(cx * cx + cy * cy);
 	if (cl === 0) return;
 
-	node.x += cx * 0.5;
-	node.y += cy * 0.5;
+	node.x += cx * 0.3;
+	node.y += cy * 0.3;
 
 
 	// node.dx += cx / cl * 0.1;
@@ -162,28 +162,6 @@ function repel(node1, node2) {
 
 }
 
-/* Graph functions */
-function newNode(name, isFile, x, y) {
-	var node = new gNode(name, isFile, x, y);
-	if (isFile) {
-		fileNodes.push(node);
-	} else {
-		nodes.push(node);
-	}
-
-	return node;
-}
-
-function newEdge(parent, child, isFile) {
-	var distance = isFile ? 0.5 : 10;
-	if (isFile) {
-		clusters.push(new gLink(parent, child, distance, isFile));
-		parent.children++;
-	} else {
-		links.push(new gLink(parent, child, distance, isFile));
-	}
-}
-
 function distanceForChildren(c) {
 	return Math.pow((17 + c) * 1.618, 0.8);
 }
@@ -234,14 +212,6 @@ function simulate() {
 
 }
 
-
-function animate() {
-	simulate();
-
-	if (Math.random() > 0.8)
-		paint();
-}
-
 function initSimulations() {
 	var fs = new FS();
 	fs.root.graphNode = newNode('.');
@@ -258,13 +228,13 @@ function initSimulations() {
 		setTimeout(function() {
 			fs.touch(file);
 			console.log(z);
-		}, 10 * z);
+		}, 100 * z);
 	});
 }
 
 function init() {
-	initSimulations();
 	initDrawings();
+	initSimulations();
 }
 
 init();
