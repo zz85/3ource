@@ -4,6 +4,7 @@ var container, stats;
 var camera, scene, renderer, particles, geometry, material, i, h, color, sprite, size;
 var mouseX = 0, mouseY = 0;
 
+
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 
@@ -37,7 +38,20 @@ function newEdge(parent, child, isFile) {
 		clusters.push(new gLink(parent, child, distance, isFile));
 		parent.children++;
 	} else {
-		links.push(new gLink(parent, child, distance, isFile));
+		var link = new gLink(parent, child, distance, isFile);
+		links.push(link);
+		link.ref = line.count++;
+
+		line.geometry.vertices[link.ref * 2 + 0].x = parent.x;
+		line.geometry.vertices[link.ref * 2 + 0].y = parent.y;
+		line.geometry.vertices[link.ref * 2 + 0].z = 0;
+
+		line.geometry.vertices[link.ref * 2 + 1].x = child.x;
+		line.geometry.vertices[link.ref * 2 + 1].y = child.y;
+		line.geometry.vertices[link.ref * 2 + 1].z = 0;
+
+
+
 	}
 }
 
@@ -73,8 +87,8 @@ function initDrawings() {
 		},
 		vertexShader: document.getElementById( 'vertexShader' ).textContent,
 		fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
-		side: THREE.DoubleSide
-		, transparent: true
+		side: THREE.DoubleSide,
+		transparent: true
 
 	};
 
@@ -93,6 +107,25 @@ function initDrawings() {
 
 
 	geometry.count = 0;
+
+
+	lineGeometry = new THREE.Geometry();
+
+	
+
+	lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 3, opacity: 1 } ); // , vertexColors: THREE.VertexColors
+	line = new THREE.Line( lineGeometry, lineMaterial, THREE.LinePieces);
+	scene.add( line );
+
+	for (i = 0; i < 500; i++) {
+		line.geometry.vertices.push(
+			new THREE.Vector3(0, 0, 0), 
+			new THREE.Vector3(0, 0, 0)
+		);
+	}
+	line.count = 0;
+
+	line.geometry.verticesNeedUpdate = true;
 
 	particleMesh = new THREE.Mesh( geometry, material );
 
@@ -190,14 +223,16 @@ function render() {
 
 	// camera.lookAt( scene.position );
 
-	// for (i=0;i<links.length;i++) {
-	// 	link = links[i];
+	for (i=0;i<links.length;i++) {
+		link = links[i];
 
-	// 	if (link.hidden) continue;
-	// 	ctx.moveTo(link.from.x, link.from.y);
-	// 	ctx.lineTo(link.to.x, link.to.y);
-	// 	ctx.stroke();
-	// }
+		var vertices = line.geometry.vertices;
+		vertices[link.ref * 2 + 0].x = link.from.x;
+		vertices[link.ref * 2 + 0].y = link.from.y;
+		vertices[link.ref * 2 + 1].x = link.to.x;
+		vertices[link.ref * 2 + 1].y = link.to.y;
+
+	}
 
 	for (i=0;i<nodes.length;i++) {
 		node = nodes[i];
@@ -208,6 +243,8 @@ function render() {
 		node = fileNodes[i];
 		geometry.setSprite( 'offsets', node.ref, node.x, node.y, 0 );
 	}
+
+	line.geometry.verticesNeedUpdate = true;
 
 	geometry.attributes.color.needsUpdate = true;
 	geometry.attributes.offset.needsUpdate = true;

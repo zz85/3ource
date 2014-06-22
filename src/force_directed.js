@@ -4,12 +4,11 @@ var clusters = []; // list for parent-children links
 var fileNodes = [];
 
 function onNodeAdd(node) {
-	// if (node.isFile()) return;
-	var graphNode = newNode(node.name, node.isFile(), this.graphNode.x, this.graphNode.y); // node.name
+	var graphNode = newNode(node.name, node.isFile(), this.graphNode.x, this.graphNode.y);
 	node.graphNode = graphNode;
-	node.onAdd.do(onNodeAdd);
+	newEdge(this.graphNode, node.graphNode, node.isFile());	
 
-	newEdge(this.graphNode, node.graphNode, node.isFile());
+	node.onAdd.do(onNodeAdd);
 }
 
 function onNodeRemove(node) {
@@ -121,9 +120,9 @@ function repel(node1, node2) {
 			mul = 1; //node1.file && node2.file ?  0.5: 1.2 - 0.5;
 			// mul += (node1.children + node2.children) * 0.1;
 
-			// var m1 = m2 = 1;
-			var m1 = node2.children * 0.5 + 1;
-			var m2 = node1.children * 0.5 + 1;
+			//var m1 = m2 = 1 + (node1.children + node2.children) * 0.6;
+			var m1 = node2.children * 0.8 + 1;
+			var m2 = node1.children * 0.8 + 1;
 			// m1 = mul * 1;
 			// m2 = mul * 1;
 
@@ -228,7 +227,7 @@ function initSimulations() {
 		setTimeout(function() {
 			fs.touch(file);
 			console.log(z);
-		}, 100 * z);
+		}, 10 * z);
 	});
 }
 
