@@ -47,6 +47,7 @@ function paint() {
 		ctx.fillStyle = node.color;
 		ctx.beginPath();
 		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+		if (ctx.isPointInPath(mouseX, mouseY)) console.log(node.name); //mouseDown && 
 		ctx.fill();
 	}
 
@@ -55,15 +56,36 @@ function paint() {
 		ctx.fillStyle = node.color;
 		ctx.beginPath();
 		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+		if (ctx.isPointInPath(mouseX, mouseY)) console.log(node.name); //mouseDown && 
 		ctx.fill();
 	}
 
 	ctx.restore();
 }
 
+var mouseX = 0, mouseY = 0, mouseDown = false;
+
+function onMouseMove(e) {
+	mouseX = e.offsetX;
+	mouseY = e.offsetY;
+}
+
+function onMouseDown(e) {
+	console.log('down');
+	mouseDown = true;
+}
+
+function onMouseUp(e) {
+	mouseDown = false;
+}
+
 function initDrawings() {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
+
+	canvas.addEventListener('mousemove', onMouseMove);
+	canvas.addEventListener('mousedown', onMouseDown);
+	canvas.addEventListener('mouseup', onMouseUp);
 
 	ctx = canvas.getContext('2d');
 
@@ -74,6 +96,6 @@ function initDrawings() {
 function animate() {
 	simulate();
 
-	if (Math.random() > 0.8)
+	// if (Math.random() > 0.8)
 		paint();
 }

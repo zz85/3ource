@@ -221,7 +221,7 @@ function initSimulations() {
 	var z = 0;
 	files.forEach(function(file) {
 		z++;
-		// if (z > 500) return;
+		if (z > 100) return;
 		// fs.touch(file);
 
 		setTimeout(function() {
