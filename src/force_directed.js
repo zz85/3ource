@@ -175,7 +175,7 @@ function newNode(name, isFile, x, y) {
 }
 
 function newEdge(parent, child, isFile) {
-	var distance = isFile ? 0.5 : 20;
+	var distance = isFile ? 0.5 : 10;
 	if (isFile) {
 		clusters.push(new gLink(parent, child, distance, isFile));
 		parent.children++;
@@ -185,7 +185,7 @@ function newEdge(parent, child, isFile) {
 }
 
 function distanceForChildren(c) {
-	return Math.pow(c * 1.618, 0.9);
+	return Math.pow((17 + c) * 1.618, 0.8);
 }
 
 function simulate() {
@@ -207,7 +207,7 @@ function simulate() {
 		link = clusters[i];
 		var c = link.from.count++;
 		var d = distanceForChildren(c);
-		c = c * 1.618 / 2;
+		c = (16 + c) * 1.618 / 2;
 
 		gravityNode(link.to, link.from.x + Math.cos(c) * d, link.from.y + Math.sin(c) * d);
 
