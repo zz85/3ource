@@ -148,7 +148,7 @@
 	addRule('.author', 'color: ' + Scheme.Cyan[Bold] + '; width: 100px; display:inline-block; overflow: hidden;');
 	addRule('.message', 'color: ' + Scheme.White[Bold] + '; width: 400px; display:inline-block; overflow: hidden;');
 
-	// Steal colors from https://github.com/tclh123/commits-graph/blob/master/js/dist/jquery.commits-graph.js#L152
+	// Colors from jquery commits-graph
 	var colors =[
 		"#e11d21",
 		//"#eb6420",
@@ -173,12 +173,69 @@
 		"#cc317c"
 	];
 
+	// Solarized
+	var colors = [
+		'#BC9357',
+		'#6D9CBD',
+		'#509E50',
+		'#CC7733',
+		'#CFCFFF',
+		'#A5C160',
+		'#FFC66D',
+		'#DA4938'
+	];
+
+	// Monokai = http://www.colourlovers.com/palette/1718713/Monokai
+	colors = [
+		'#F92672',
+		'#66D9EF',
+		'#A6E22E',
+		'#FD971F'
+	];
+
+	// Vibrant Ink http://eclipsecolorthemes.org/?view=theme&id=3
+	colors = [
+		'#FFFFFF',
+		'#8C3FC8',
+		'#9CF828',
+		'#F7C527',
+		'#EC691E',
+		'#477488',
+		'#FF0000',
+		'#D9B0AC'
+	];
+
+	// Monokai 2 - F92672
+	colors = [
+		'#E6DB74',
+		'#A6E22E',
+		'#F92672',
+		'#FFFFFF',
+		'#AE81FF',
+		'#79ABFF',
+		'#BFA4A4'
+	];
+
+	// https://github.com/tpope/vim-vividchalk/blob/master/colors/vividchalk.vim
+	var colors = [
+		"#339999", //"DarkCyan
+		"#CCFF33", //"Yellow
+		"#66FF00", //"LightGreen
+		"#FFCC00", //"Yellow
+		"#FF6600", //"Brown
+		"#AAFFFF", //"LightCyan
+		"#AACCFF", //"LightCyan
+		"#AAAA77", //"Grey
+		"#AAAAAA", //"Grey
+		"#33AA00", //"DarkGreen
+		"#44B4CC", //"DarkCyan
+		"#DDE93D", //"Yellow
+	];
 	// Classic Style
 	// var colors = ['black', '#ee8', 'red', 'green', 'blue'];
 
 	var url = '../data/test.json';
 	getLog('../data/filenames.json', url, readTimeline);
-
 
 	// utils
 	function replacer(w) {
