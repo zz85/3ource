@@ -4,16 +4,18 @@ var clusters = []; // list for parent-children links
 var fileNodes = [];
 
 function onNodeAdd(node) {
-	var graphNode = newNode(node.name, node.isFile(), this.graphNode.x, this.graphNode.y);
+	var graphNode = newNode(node.fullPath(), node.isFile(), this.graphNode.x, this.graphNode.y);
 	node.graphNode = graphNode;
 	newEdge(this.graphNode, node.graphNode, node.isFile());	
 
 	node.onAdd.do(onNodeAdd);
+	node.onRemove.do(onNodeRemove);
 }
 
 function onNodeRemove(node) {
-	// TODO handle node removal
-	// graph.removeNode(node.graphNode);
+	// Handle node removal
+	console.log('onNodeRemove', node);
+	removeNode(node, node.graphNode);
 }
 
 function gNode(name, f, x, y) {
@@ -211,29 +213,3 @@ function simulate() {
 
 }
 
-function initSimulations() {
-	var fs = new FS();
-	fs.root.graphNode = newNode('.');
-
-	fs.root.onAdd.do(onNodeAdd);
-	fs.root.onRemove.do(onNodeRemove);
-
-	var z = 0;
-	files.forEach(function(file) {
-		z++;
-		if (z > 100) return;
-		// fs.touch(file);
-
-		setTimeout(function() {
-			fs.touch(file);
-			console.log(z);
-		}, 10 * z);
-	});
-}
-
-function init() {
-	initDrawings();
-	initSimulations();
-}
-
-init();

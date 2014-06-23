@@ -14,5 +14,35 @@
 
 	<script src="canvas_rendering.js"></script>
 	<script src="force_directed.js"></script>
+
+	<script>
+	init();
+
+	function initSimulations() {
+		var fs = new FS();
+		fs.root.graphNode = newNode('.');
+
+		fs.root.onAdd.do(onNodeAdd);
+		fs.root.onRemove.do(onNodeRemove);
+
+		var z = 0;
+		files.forEach(function(file) {
+			z++;
+			if (z > 100) return;
+			// fs.touch(file);
+
+			setTimeout(function() {
+				fs.touch(file);
+				console.log(z);
+			}, 10 * z);
+		});
+	}
+
+	function init() {
+		initDrawings();
+		initSimulations();
+	}
+
+	</script>
 </body>
 </html>

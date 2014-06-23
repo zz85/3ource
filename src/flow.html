@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<body>
+	<style>
+	body {
+		font-family: monospace;
+	}
+
+	button {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	</style>
+	<button onclick="step()">Step</button>
+	<canvas id="canvas"></canvas>
+	<script src="source.js"></script>
+	<script src="test_files.js"></script>
+	<script src="fs.js"></script>
+
+	<script src="canvas_rendering.js"></script>
+	<script src="force_directed.js"></script>
+
+	<script>
+		var url = '../data/test.json';
+		getLog('../data/filenames.json', url, readTimeline);
+
+		var fs;
+		var t;
+		var at = 0;
+
+		function readTimeline(timeline) {
+			t = timeline.concat().reverse();
+		}
+
+		function step() {
+			// var 
+			commit = t[at++];
+
+			commit.change.forEach(function(modification) {
+				console.log(at, modification);
+
+				switch(modification.op) {
+					case 'A':
+						fs.touch(modification.file);
+						break;
+					case 'D':
+						fs.rm(modification.file);
+						break;
+					default:
+						console.log(modification.op, 'not supported');
+				}
+			});
+
+		}
+
+		function initSimulations() {
+			fs = new FS();
+			fs.root.graphNode = newNode('.');
+
+			fs.root.onAdd.do(onNodeAdd);
+			fs.root.onRemove.do(onNodeRemove);
+
+		}
+
+		function init() {
+			initDrawings();
+			initSimulations();
+		}
+
+		init();
+	</script>
+</body>
+</html>

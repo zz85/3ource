@@ -21,6 +21,36 @@ function newEdge(parent, child, isFile) {
 	}
 }
 
+function removeNode(node, graphNode) {
+	var indexOf, i;
+	if (node.isFile()) {
+		indexOf = fileNodes.indexOf(graphNode);
+		if (indexOf<0) {
+			console.warn('Cannot find index in fileNodes');
+		}
+		fileNodes.splice(indexOf, 1);
+
+		for (i=clusters.length; i-- > 0;) {
+			if (clusters[i].to == graphNode) {
+				clusters.splice(i, 1);
+			}
+		}
+
+	} else {
+		indexOf = nodes.indexOf(graphNode);
+		if (indexOf<0) {
+			console.warn('Cannot find index in nodes');
+		}
+		nodes.splice(indexOf, 1);
+
+		for (i=links.length; i-- > 0;) {
+			if (links[i].to == graphNode) {
+				links.splice(i, 1);
+			}
+		}
+	}
+}
+
 
 function paint() {
 	ctx.save();
@@ -28,6 +58,8 @@ function paint() {
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	//ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.translate(canvas.width/2, canvas.height/2);
+
+	ctx.scale(3, 3);
 
 	var node, link;
 
@@ -47,7 +79,14 @@ function paint() {
 		ctx.fillStyle = node.color;
 		ctx.beginPath();
 		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
-		if (ctx.isPointInPath(mouseX, mouseY)) console.log(node.name); //mouseDown && 
+		if (ctx.isPointInPath(mouseX, mouseY)) {
+			console.log(node.name);
+
+			// TODO node.name.lastIndexOf('/') make label
+		}
+		if (mouseDown && ctx.isPointInPath(mouseX, mouseY)) {
+			removeNode(fs.index[node.name], node);
+		}
 		ctx.fill();
 	}
 
@@ -56,7 +95,12 @@ function paint() {
 		ctx.fillStyle = node.color;
 		ctx.beginPath();
 		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
-		if (ctx.isPointInPath(mouseX, mouseY)) console.log(node.name); //mouseDown && 
+		if (ctx.isPointInPath(mouseX, mouseY)) {
+			console.log(node.name);
+		}
+		if (mouseDown && ctx.isPointInPath(mouseX, mouseY)) {
+			removeNode(fs.index[node.name], node);
+		}
 		ctx.fill();
 	}
 

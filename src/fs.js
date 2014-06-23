@@ -45,7 +45,7 @@ FS.prototype.rm = function(path) {
 FS.prototype.find = function(path) {
 	var node = this.index['./' + path];
 	if (!node) {
-		conole.warn('Cant find path', path);
+		console.warn('Cant find path', path);
 	}
 
 	return node;
@@ -98,18 +98,26 @@ function iNode(name, parent) {
 
 }
 
-iNode.prototype.rm = function() {
-	if (this.parent) return false;
+iNode.prototype.remove = function() {
+	if (!this.parent) {
+		console.warn('cannot remove as no parents');
+		return false;
+	}
+
 	if (this.isDirectory()) {
-		if (this.isEmpty()) {
+		if (this.empty()) {
 			console.warn('Directory not empty');
 			return false;
 		}
 	}
+
 	// Detach from parent
 	delete this.parent.children[this.name];
+
+	this.onRemove.notify(this);
+	// this.parent = null
 	return true;
-}
+};
 
 iNode.prototype.exists = function(name) {
 	return name in this.children;
@@ -127,7 +135,7 @@ iNode.prototype.isDirectory = function() {
 	return this.directory;
 };
 
-iNode.prototype.isEmpty = function() {
+iNode.prototype.empty = function() {
 	return Object.keys(this.children).length == 0;
 };
 
