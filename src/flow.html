@@ -49,6 +49,13 @@
 					case 'D':
 						fs.rm(modification.file);
 						break;
+					case 'M':
+						var g = fs.find(modification.file).graphNode;
+						// TODO highlight colors / nicer movements
+						// add forces / drag user
+						g.x += (Math.random() - 0.5) * 50;
+						g.y += (Math.random() - 0.5) * 50;
+						break;
 					default:
 						console.log(modification.op, 'not supported');
 				}

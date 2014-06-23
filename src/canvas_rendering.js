@@ -80,9 +80,11 @@ function paint() {
 	for (i=0;i<nodes.length;i++) {
 		node = nodes[i];
 		ctx.fillStyle = node.color;
+		ctx.globalAlpha = 0.3;
 		ctx.beginPath();
-		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+		ctx.arc(node.x, node.y, 15, 0, Math.PI * 2);
 		ctx.fill();
+		ctx.globalAlpha = 1;
 
 		if (ctx.isPointInPath(mouseX, mouseY)) {
 			ctx.fillStyle = 'white';
