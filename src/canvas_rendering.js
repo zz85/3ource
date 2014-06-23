@@ -59,7 +59,7 @@ function paint() {
 	//ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.translate(canvas.width/2, canvas.height/2);
 
-	ctx.scale(3, 3);
+	// ctx.scale(3, 3);
 	// ctx.font = '8pt Arial';
 	ctx.textBaseline = 'ideographic';
 
@@ -80,9 +80,11 @@ function paint() {
 	for (i=0;i<nodes.length;i++) {
 		node = nodes[i];
 		ctx.fillStyle = node.color;
-		ctx.globalAlpha = 0.3;
+		ctx.globalAlpha = 0.2;
 		ctx.beginPath();
-		ctx.arc(node.x, node.y, 15, 0, Math.PI * 2);
+		// TODO 5, 15, children size, or grandchildren size
+		var size = distanceForChildren(node.children) * 2;
+		ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
 		ctx.fill();
 		ctx.globalAlpha = 1;
 
@@ -97,6 +99,10 @@ function paint() {
 			if (mouseDown) removeNode(fs.index[node.name], node);
 
 		}
+
+		label = node.name.split('/');
+		label = label[label.length - 2] || 'three.js';
+		labelNode(node, label, false);
 		
 	}
 
@@ -118,17 +124,24 @@ function paint() {
 
 
 	if (selected) {
-		node = selected;
+		labelNode(selected, label, true);
+	}
 
-		var r = 10;
-		var width = ctx.measureText(label).width * 1;
-		var height = 10;
+	ctx.restore();
+}
 
-		ctx.fillStyle = '#fff';
+
+function labelNode(node, label, bubble) {
+	var r = 10;
+	var width = ctx.measureText(label).width * 1;
+	var height = 10;
+
+	ctx.fillStyle = '#fff';
+
+	if (bubble) {
 		ctx.beginPath();
 		ctx.moveTo(node.x, node.y - height);
 		ctx.lineTo(node.x + width, node.y - height);
-
 		ctx.quadraticCurveTo(node.x + width + r, node.y - height, node.x + width + r, node.y);
 		ctx.quadraticCurveTo(node.x + width + r, node.y + height, node.x + width, node.y + height);
 		ctx.lineTo(node.x, node.y + height);
@@ -138,17 +151,17 @@ function paint() {
 		ctx.closePath();
 		ctx.fill();
 
-		ctx.fillStyle = 'black';			
-		ctx.beginPath();
-		ctx.fillText(label, node.x + 5, node.y + 5);
-
-		ctx.fillStyle = node.color;
-		ctx.beginPath();
-		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
-		ctx.fill();
+		ctx.fillStyle = 'black';
 	}
 
-	ctx.restore();
+				
+	ctx.beginPath();
+	ctx.fillText(label, node.x + 5, node.y + 5);
+
+	ctx.fillStyle = node.color;
+	ctx.beginPath();
+	ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+	ctx.fill();
 }
 
 var mouseX = 0, mouseY = 0, mouseDown = false;
