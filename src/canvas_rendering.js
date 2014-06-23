@@ -64,6 +64,7 @@ function paint() {
 	ctx.textBaseline = 'ideographic';
 
 	var node, link;
+	var selected = null, label;
 
 	ctx.strokeStyle = '#ccc';
 	ctx.lineWidth = 2;
@@ -86,39 +87,10 @@ function paint() {
 		if (ctx.isPointInPath(mouseX, mouseY)) {
 			ctx.fillStyle = 'white';
 
-			var label = node.name.split('/');
+			selected = node;
+
+			label = node.name.split('/');
 			label = label[label.length - 2] || 'three.js';
-			var r = 10;
-			var width = ctx.measureText(label).width * 1;
-			var height = 10;
-
-			// ctx.beginPath();
-			// ctx.moveTo(node.x - r, node.y - height);
-			// ctx.lineTo(node.x + width + r, node.y - height);
-			// ctx.lineTo(node.x + width + r, node.y + height);
-			// ctx.lineTo(node.x - r, node.y + height);
-
-			ctx.beginPath();
-			ctx.moveTo(node.x, node.y - height);
-			ctx.lineTo(node.x + width, node.y - height);
-
-			ctx.quadraticCurveTo(node.x + width + r, node.y - height, node.x + width + r, node.y);
-			ctx.quadraticCurveTo(node.x + width + r, node.y + height, node.x + width, node.y + height);
-			ctx.lineTo(node.x, node.y + height);
-			ctx.quadraticCurveTo(node.x - r, node.y + height, node.x - r, node.y);
-			ctx.quadraticCurveTo(node.x - r, node.y - height, node.x, node.y - height);
-
-			ctx.closePath();
-			ctx.fill();
-
-			ctx.fillStyle = 'black';			
-			ctx.beginPath();
-			ctx.fillText(label, node.x + 5, node.y + 5);
-
-			ctx.fillStyle = node.color;
-			ctx.beginPath();
-			ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
-			ctx.fill();
 
 			if (mouseDown) removeNode(fs.index[node.name], node);
 
@@ -133,37 +105,45 @@ function paint() {
 		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
 		ctx.fill();
 		if (ctx.isPointInPath(mouseX, mouseY)) {
-			ctx.fillStyle = 'white';
-			var label = node.name.substring(node.name.lastIndexOf('/') + 1);
 			
-			var r = 10;
-			var width = ctx.measureText(label).width * 1;
-			var height = 10;
-			ctx.beginPath();
-			ctx.moveTo(node.x, node.y - height);
-			ctx.lineTo(node.x + width, node.y - height);
-
-			ctx.quadraticCurveTo(node.x + width + r, node.y - height, node.x + width + r, node.y);
-			ctx.quadraticCurveTo(node.x + width + r, node.y + height, node.x + width, node.y + height);
-			ctx.lineTo(node.x, node.y + height);
-			ctx.quadraticCurveTo(node.x - r, node.y + height, node.x - r, node.y);
-			ctx.quadraticCurveTo(node.x - r, node.y - height, node.x, node.y - height);
-
-			ctx.closePath();
-			ctx.fill();
-
-			ctx.fillStyle = 'black';
-			ctx.beginPath();
-			ctx.fillText(label, node.x + 5, node.y + 5);
-
-			ctx.fillStyle = node.color;
-			ctx.beginPath();
-			ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
-			ctx.fill();
+			label = node.name.substring(node.name.lastIndexOf('/') + 1);
+			selected = node;
 
 			if (mouseDown) removeNode(fs.index[node.name], node);
 		}
 		
+	}
+
+
+	if (selected) {
+		node = selected;
+
+		var r = 10;
+		var width = ctx.measureText(label).width * 1;
+		var height = 10;
+
+		ctx.fillStyle = '#fff';
+		ctx.beginPath();
+		ctx.moveTo(node.x, node.y - height);
+		ctx.lineTo(node.x + width, node.y - height);
+
+		ctx.quadraticCurveTo(node.x + width + r, node.y - height, node.x + width + r, node.y);
+		ctx.quadraticCurveTo(node.x + width + r, node.y + height, node.x + width, node.y + height);
+		ctx.lineTo(node.x, node.y + height);
+		ctx.quadraticCurveTo(node.x - r, node.y + height, node.x - r, node.y);
+		ctx.quadraticCurveTo(node.x - r, node.y - height, node.x, node.y - height);
+
+		ctx.closePath();
+		ctx.fill();
+
+		ctx.fillStyle = 'black';			
+		ctx.beginPath();
+		ctx.fillText(label, node.x + 5, node.y + 5);
+
+		ctx.fillStyle = node.color;
+		ctx.beginPath();
+		ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
+		ctx.fill();
 	}
 
 	ctx.restore();
