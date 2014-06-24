@@ -59,7 +59,7 @@ function paint() {
 	//ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.translate(canvas.width/2, canvas.height/2);
 
-	// ctx.scale(3, 3);
+	ctx.scale(1.5, 1.5);
 	// ctx.font = '8pt Arial';
 	ctx.textBaseline = 'ideographic';
 
@@ -172,7 +172,6 @@ function onMouseMove(e) {
 }
 
 function onMouseDown(e) {
-	console.log('down');
 	mouseDown = true;
 }
 

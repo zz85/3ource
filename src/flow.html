@@ -15,7 +15,7 @@
 
 	#commit {
 		position: absolute;
-		top: 150px;
+		top: 100px;
 		left: 100px;
 		font-size: 40px;
 		color: #fff;
@@ -46,14 +46,33 @@
 		var t;
 		var at = -1;
 
+		var previousTree = [];
+
 		function readTimeline(timeline) {
 			t = timeline.concat().reverse();
 		}
 
 		document.body.addEventListener('keydown', step);
 
-		function step() {
-			if (at < t.length - 1) at++;
+		function step(e) {
+			if (e.keyCode) { // which
+				switch (e.keyCode) {
+					case 74: // j
+					case 37: // left
+						at--;
+						break;
+
+					case 75: // k
+					// case 40: // down
+					case 39: // right
+						at++;
+						break;
+				}
+			} else {
+				at++;
+			}
+			if (at >= t.length) at = t.length - 1;
+			if (at < 0) at = 0;
 			display();
 		}
 
@@ -65,8 +84,7 @@
 				return modification.op == 'M';
 			});
 
-			var parentTree = (at > 0) ? t[at-1].tree : [];
-			var changeset = generateChangeset(commit.tree, parentTree);
+			var changeset = generateChangeset(commit.tree, previousTree);
 			changeset = changeset.concat(modified);
 			changeset.sort(amdSort);
 			changeset.forEach(function(modification) {
@@ -90,10 +108,11 @@
 				}
 			});
 
-			console.log(commit);
 			author.innerText = commit.author + ':\n';
 			message.innerText = commit.message;
 			time.innerText = new Date(commit.date * 1000);
+
+			previousTree = commit.tree;
 
 		}
 
