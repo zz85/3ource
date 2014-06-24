@@ -17,7 +17,7 @@ function requestLog(url, callback, filenames) {
 			changes = timeline[i].change;
 
 			for (j=0,jl=changes.length;j<jl;j++) {
-				change = changes[j].split('|')
+				change = changes[j].split('|');
 				changes[j] = {
 					file: filenames[change[0]],
 					op: change[1]
@@ -32,9 +32,10 @@ function requestLog(url, callback, filenames) {
 }
 
 
-var amd_priority = {A: 0, M: 1, D: 2}
+var amd_priority = {A: 0, M: 1, D: 2};
+
 function amdSort(a, b) {
-	a = amd_priority[a.op]
+	a = amd_priority[a.op];
 	b = amd_priority[b.op];
 
     if(a>b) return -1;
@@ -69,9 +70,14 @@ function processTrees(timeline) {
 		commit = timeline[i];
 		change = commit.change;
 
-		if (commit.parents.length) {
-			parent = commits_hash[commit.parents[0]].tree
-		} else {
+		// if (commit.parents.length) {
+		// 	parent = commits_hash[commit.parents[0]].tree;
+		// } else {
+		// 	parent = [];
+		// }
+
+		parent = timeline[i + 1];
+		if (!parent) {
 			parent = [];
 		}
 
@@ -105,7 +111,7 @@ function processTrees(timeline) {
 			// tree[current_hash] = filename;
 			if (removing) {
 				var found;
-				found = tree.indexOf(filename)
+				found = tree.indexOf(filename);
 				if (found < 0) {
 					console.log('warning');
 					// some sanity check
@@ -165,11 +171,12 @@ function getJSON(url, callback) {
 	request.open( 'GET', url, true );
 	request.onload = function(e) {
 		callback(request.response);
-	}
+	};
 	request.send(null);
 
 }
 
+// TODO move to seperate class
 function json_unpack(packed) {
 	// From {a:[], b:[], c:[]} => [{a, b, c}, {a, b, c}]
 	var unpacked = [], k, il;

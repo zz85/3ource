@@ -105,7 +105,7 @@ iNode.prototype.remove = function() {
 	}
 
 	if (this.isDirectory()) {
-		if (this.empty()) {
+		if (!this.empty()) {
 			console.warn('Directory not empty');
 			return false;
 		}

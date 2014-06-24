@@ -117,7 +117,7 @@ function initDrawings() {
 
 	for (i = 0; i < 500; i++) {
 		line.geometry.vertices.push(
-			new THREE.Vector3(0, 0, 0), 
+			new THREE.Vector3(0, 0, 0), // -5000 fails
 			new THREE.Vector3(0, 0, 0)
 		);
 	}
