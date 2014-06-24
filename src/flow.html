@@ -50,12 +50,13 @@
 
 		function readTimeline(timeline) {
 			t = timeline.concat().reverse();
+			step();
 		}
 
 		document.body.addEventListener('keydown', step);
 
 		function step(e) {
-			if (e.keyCode) { // which
+			if (e) { // which
 				switch (e.keyCode) {
 					case 74: // j
 					case 37: // left
@@ -108,7 +109,7 @@
 				}
 			});
 
-			author.innerText = commit.author + ':\n';
+			author.innerText = '#' + (at + 1) + ' ' + commit.author + ':\n';
 			message.innerText = commit.message;
 			time.innerText = new Date(commit.date * 1000);
 
