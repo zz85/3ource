@@ -13,8 +13,23 @@
 		left: 0;
 	}
 
+	#commit {
+		position: absolute;
+		top: 150px;
+		left: 100px;
+		font-size: 40px;
+		color: #fff;
+	}
+
 	</style>
 	<button onclick="step()">Step</button>
+
+	<div id="commit">
+		<div id="author"></div>
+		<div id="message"></div>
+		<div id="time"></div>
+	</div>
+	
 	<canvas id="canvas"></canvas>
 	<script src="source.js"></script>
 	<script src="test_files.js"></script>
@@ -29,23 +44,31 @@
 
 		var fs;
 		var t;
-		var at = 0;
+		var at = -1;
 
 		function readTimeline(timeline) {
 			t = timeline.concat().reverse();
 		}
 
+		document.body.addEventListener('keydown', step);
+
 		function step() {
+			if (at < t.length - 1) at++;
+			display();
+		}
+
+		function display() {
 			// var 
-			commit = t[at++];
+			commit = t[at];
 
 			var modified = commit.change.filter(function(modification) {
 				return modification.op == 'M';
 			});
 
-			var parentTree = (at > 1) ? t[at-2].tree : [];
-			var changeset = generateChangeset(commit.tree, parentTree, modified);
-			changeset.sort(amdSort).reverse();
+			var parentTree = (at > 0) ? t[at-1].tree : [];
+			var changeset = generateChangeset(commit.tree, parentTree);
+			changeset = changeset.concat(modified);
+			changeset.sort(amdSort);
 			changeset.forEach(function(modification) {
 
 				switch(modification.op) {
@@ -67,6 +90,11 @@
 				}
 			});
 
+			console.log(commit);
+			author.innerText = commit.author + ':\n';
+			message.innerText = commit.message;
+			time.innerText = new Date(commit.date * 1000);
+
 		}
 
 		function initSimulations() {
@@ -75,7 +103,6 @@
 
 			fs.root.onAdd.do(onNodeAdd);
 			fs.root.onRemove.do(onNodeRemove);
-
 		}
 
 		function init() {

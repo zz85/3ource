@@ -96,7 +96,7 @@ function paint() {
 			label = node.name.split('/');
 			label = label[label.length - 2] || 'three.js';
 
-			if (mouseDown) removeNode(fs.index[node.name], node);
+			// if (mouseDown) removeNode(fs.index[node.name], node);
 
 		}
 
@@ -117,7 +117,7 @@ function paint() {
 			label = node.name.substring(node.name.lastIndexOf('/') + 1);
 			selected = node;
 
-			if (mouseDown) removeNode(fs.index[node.name], node);
+			// if (mouseDown) removeNode(fs.index[node.name], node);
 		}
 		
 	}

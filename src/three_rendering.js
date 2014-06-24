@@ -53,6 +53,37 @@ function newEdge(parent, child, isFile) {
 	}
 }
 
+// TODO
+function removeNode(node, graphNode) {
+	var indexOf, i;
+	if (node.isFile()) {
+		indexOf = fileNodes.indexOf(graphNode);
+		if (indexOf<0) {
+			console.warn('Cannot find index in fileNodes');
+		}
+		fileNodes.splice(indexOf, 1);
+
+		for (i=clusters.length; i-- > 0;) {
+			if (clusters[i].to == graphNode) {
+				clusters.splice(i, 1);
+			}
+		}
+
+	} else {
+		indexOf = nodes.indexOf(graphNode);
+		if (indexOf<0) {
+			console.warn('Cannot find index in nodes');
+		}
+		nodes.splice(indexOf, 1);
+
+		for (i=links.length; i-- > 0;) {
+			if (links[i].to == graphNode) {
+				links.splice(i, 1);
+			}
+		}
+	}
+}
+
 
 function initDrawings() {
 

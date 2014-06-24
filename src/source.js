@@ -20,7 +20,6 @@ function requestLog(url, callback, filenames) {
 				change = changes[j].split('|');
 				changes[j] = new Change(filenames[change[0]], change[1]);
 			}
-
 		}
 		console.timeEnd('decode');
 		processTrees(timeline);
@@ -35,8 +34,8 @@ function amdSort(a, b) {
 	a = amd_priority[a.op];
 	b = amd_priority[b.op];
 
-    if(a>b) return -1;
-    if(a<b) return 1;
+    if(a>b) return 1;
+    if(a<b) return -1;
     return 0;
 }
 
@@ -52,9 +51,6 @@ function processTrees(timeline) {
 	window.c = commits_hash;
 
 	var tree;
-	var adding = false;
-	var removing = false;
-
 
 	for (i=0, il=timeline.length;i<il;i++) {
 		commit = timeline[i];
@@ -78,7 +74,6 @@ function processTrees(timeline) {
 		// slog(0.01, 'i', i, commit, parent, commit.parents[0]); //change
 
 		// change = change.sort(amdSort);
-		// change = change.reverse();
 
 		for (j=change.length;j--;) {
 			file = change[j];
@@ -86,76 +81,31 @@ function processTrees(timeline) {
 
 			switch (file.op) {
 				case 'A':
-					adding = true;
-					removing = false;
+					tree.push(filename);
 					break;
 				case 'M':
-					// adding = true;
-					// removing = true;
-					adding = removing = false;
+					
 					break;
 				case 'D':
-					adding = false;
-					removing = true;
+					var found;
+					found = tree.indexOf(filename);
+					if (found < 0) {
+						console.log('warning');
+						// some sanity check
+					} else {
+						tree.splice(found, 1);
+					}
 					break;
 			}
 
 			// tree[current_hash] = filename;
-			if (removing) {
-				var found;
-				found = tree.indexOf(filename);
-				if (found < 0) {
-					console.log('warning');
-					// some sanity check
-				} else {
-					tree.splice(found, 1);
-				}
-			}
-
-			if (adding) {
-				tree.push(filename);
-			}
-
 		}
 
 	}
 
 	console.timeEnd('processTrees');
 
-
 }
-
-function checkTree(tree) {
-	var x = 0;
-	allnodes.forEach(function(node) {
-		if (node instanceof FileNode) x++}
-	);
-	if (x!=tree.length) {
-		console.log(tree.length, x);
-		debugger;
-	};
-}
-
-function treelog(tree) {
-	var uniq = {}, u =0;
-	tree = tree.sort(function(a,b){
-	    if(a<b) return -1;
-	    if(a>b) return 1;
-	    return 0;
-	});
-
-	for (var i=0, il=tree.length; i<il;i++) {
-		filename = tree[i];
-		console.log(filename);
-		if (!(filename in uniq)) {
-			uniq[filename] = null;
-			u++;
-		}
-	}
-	console.log('Files: ' + il, u)
-}
-
-
 
 function getJSON(url, callback) {
 
@@ -167,6 +117,55 @@ function getJSON(url, callback) {
 	};
 	request.send(null);
 
+}
+
+function Change(file, op) {
+	this.file = file;
+	this.op = op;
+}
+
+function generateChangeset(currentTree, parentTree) {
+	var i;
+	var changes = [];
+
+	if (parentTree === undefined) parentTree = [];
+
+	// slog(0.001, 'trees', currentTree, parentTree)
+
+	var added = [], f, deleted = [];
+	for (i=0;i<currentTree.length;i++) {
+		f = currentTree[i];
+		if (parentTree.indexOf(f) == -1) {
+			changes.push(new Change(f, 'A'));
+		}
+	}
+
+	for (i=0;i<parentTree.length;i++) {
+		f = parentTree[i];
+		if (currentTree.indexOf(f) == -1) {
+			changes.push(new Change(f, 'D'));
+		}
+	}
+
+	return changes;
+}
+
+/*************************************/
+
+function json_pack(a, schema) {
+	// From [{a, b, c}, {a, b, c}] => {a:[], b:[], c:[]}
+	var packed = {}, k;
+	for (k in schema) {
+		packed[k] = [];
+	}
+	var i,il, e;
+	for (i=0, il=a.length; i<il; i++) {
+		e = a[i];
+		for (k in schema) {
+			packed[k].push(e[k]);
+		}
+	}
+	return packed;
 }
 
 // TODO move to seperate class
@@ -193,36 +192,15 @@ function json_unpack(packed) {
 function slog() {
 	var args = Array.prototype.slice.call(arguments);
 	var sample = args.shift();
-	(Math.random() < sample) && console.log.apply(console, args);
+	if (Math.random() < sample) console.log.apply(console, args);
 }
 
-function Change(file, op) {
-	this.file = file;
-	this.op = op;
-}
+/*************************************/
 
-function generateChangeset(currentTree, parentTree, modified) {
-	var i;
-	var changes = modified.concat();
-
-	if (parentTree === undefined) parentTree = [];
-
-	// slog(0.001, 'trees', currentTree, parentTree)
-
-	var added = [], f, deleted = [];
-	for (i=0;i<currentTree.length;i++) {
-		f = currentTree[i];
-		if (parentTree.indexOf(f) == -1) {
-			changes.push(new Change(f, 'A'));
-		}
-	}
-
-	for (i=0;i<parentTree.length;i++) {
-		f = parentTree[i];
-		if (currentTree.indexOf(f) == -1) {
-			changes.push(new Change(f, 'D'));
-		}
-	}
-
-	return changes;
+if (typeof(module) === 'object') {
+	module.exports = {
+		json_pack: json_pack,
+		json_unpack: json_unpack,
+		slog: slog
+	};
 }

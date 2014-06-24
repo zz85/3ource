@@ -1,6 +1,8 @@
 var exec = require('child_process').exec;
 var fs = require('fs');
 var md5 = require('../src/lib/md5baseJS.js').md5;
+var utils = require('../src/source.js');
+var slog = utils.slog, json_pack = utils.json_pack;
 
 var http = require('http'),
 	fs = require('fs');
@@ -12,8 +14,8 @@ var OUTPUT_JSON = 'data/test.json';
 var FILENAMES_JSON = 'data/filenames.json';
 var AVATAR_DESTINATION = 'data/avatars/';
 var DOWNLOAD_GRAVATAR = !true;
-var pretty_json = true;
-var pack_json = true;
+var PRETTY_JSON = true;
+var PACK_JSON = true;
 // End Options
 
 /*
@@ -189,13 +191,6 @@ function get_git_raw() {
 	});
 }
 
-
-function slog() {
-	var args = Array.prototype.slice.call(arguments);
-	var sample = args.shift();
-	(Math.random() < sample) && console.log.apply(console, args);
-}
-
 function getTree(name, commit, i) {
 	var ls_cmd =  GIT_TREE_LS + name;
 	slog(0.01, ls_cmd, i, 'unique filenames' + filenames);
@@ -225,42 +220,6 @@ function getTree(name, commit, i) {
 		});
 }
 
-function json_pack(a, schema) {
-	// From [{a, b, c}, {a, b, c}] => {a:[], b:[], c:[]}
-	var packed = {}, k;
-	for (k in schema) {
-		packed[k] = [];
-	}
-	var i,il, e;
-	for (i=0, il=a.length; i<il; i++) {
-		e = a[i];
-		for (k in schema) {
-			packed[k].push(e[k]);
-		}
-	}
-	return packed;
-}
-
-function json_unpack(packed) {
-	// From {a:[], b:[], c:[]} => [{a, b, c}, {a, b, c}]
-	var unpacked = [], k, il;
-	for (k in packed) {
-		il = packed[k].length;
-		break;
-	}
-
-	var i, o;
-	for (i=0;i<il;i++) {
-		o = {};
-		for (k in packed) {
-			o[k] = packed[k][i];
-		}
-		unpacked.push(o);
-	}
-	return unpacked;
-
-}
-
 function loop(i) {
 	var commit;
 	if (i<commits.length) {
@@ -271,160 +230,6 @@ function loop(i) {
 	} else {
 		done();
 	}
-}
-
-function processTrees(timeline) {
-	// TEST STUFF HERE
-	// timeline = timeline.sort(compare);
-	// timeline = timeline.reverse();
-	console.time('processTrees');
-	var i,il, commit, j, entry, filename;
-
-	var commits_hash = {};
-	window.c = commits_hash;
-
-	var tree;
-	var adding = false;
-	var removing = false;
-
-
-	for (i=0, il=timeline.length;i<il;i++) {
-		commit = timeline[i];
-		commit.tree = [];
-		commits_hash[commit.hash] = commit;
-	}
-
-	// Build tree structure
-	for (i=timeline.length;i--;) { // Run from earilest to latest
-		commit = timeline[i];
-		change = commit.change;
-
-		if (commit.parents.length) {
-			parent = commits_hash[commit.parents[0]].tree;
-		} else {
-			parent = [];
-		}
-
-		// tree = commit.tree = commit.tree.concat(parent);
-
-		// // slog(0.01, 'i', i, commit, parent, commit.parents[0]); //change
-
-		// // change = change.sort(amdSort);
-		// // change = change.reverse();
-
-		// for (j=change.length;j--;) {
-		// 	file = change[j];
-		// 	filename = file.file;
-
-		// 	switch (file.op) {
-		// 		case 'A':
-		// 			adding = true;
-		// 			removing = false;
-		// 			break;
-		// 		case 'M':
-		// 			// adding = true;
-		// 			// removing = true;
-		// 			adding = removing = false;
-		// 			break;
-		// 		case 'D':
-		// 			adding = false;
-		// 			removing = true;
-		// 			break;
-		// 	}
-
-		// 	// tree[current_hash] = filename;
-		// 	if (removing) {
-		// 		var found;
-		// 		found = tree.indexOf(filename);
-		// 		if (found < 0) {
-		// 			console.log('warning');
-		// 			// some sanity check
-		// 		} else {
-		// 			tree.splice(found, 1);
-		// 		}
-		// 	}
-
-		// 	if (adding) {
-		// 		tree.push(filename);
-		// 	}
-
-		// }
-	}
-
-	console.timeEnd('processTrees');
-
-
-}
-
-function checkTree(tree) {
-	var x = 0;
-	allnodes.forEach(function(node) {
-		if (node instanceof FileNode) x++}
-	);
-	if (x!=tree.length) {
-		console.log(tree.length, x);
-		debugger;
-	};
-}
-
-function treelog(tree) {
-	var uniq = {}, u =0;
-	tree = tree.sort(function(a,b){
-	    if(a<b) return -1;
-	    if(a>b) return 1;
-	    return 0;
-	});
-
-	for (var i=0, il=tree.length; i<il;i++) {
-		filename = tree[i];
-		console.log(filename);
-		if (!(filename in uniq)) {
-			uniq[filename] = null;
-			u++;
-		}
-	}
-	console.log('Files: ' + il, u)
-}
-
-
-
-function getJSON(url, callback) {
-
-	var request = new XMLHttpRequest();
-	var u;
-	request.open( 'GET', url, true );
-	request.onload = function(e) {
-		callback(request.response);
-	};
-	request.send(null);
-
-}
-
-// TODO move to seperate class
-function json_unpack(packed) {
-	// From {a:[], b:[], c:[]} => [{a, b, c}, {a, b, c}]
-	var unpacked = [], k, il;
-	for (k in packed) {
-		il = packed[k].length;
-		break;
-	}
-
-	var i, o;
-	for (i=0;i<il;i++) {
-		o = {};
-		for (k in packed) {
-			o[k] = packed[k][i];
-		}
-		unpacked.push(o);
-	}
-	return unpacked;
-
-}
-
-function slog() {
-	var args = Array.prototype.slice.call(arguments);
-	var sample = args.shift();
-	(Math.random() < sample) && console.log.apply(console, args);
 }
 
 function generateChangeset(changes, currentTree, parentTree, modified) {
@@ -467,10 +272,10 @@ function done() {
 
 	console.log('done!!');
 
-	if (pack_json) commits = json_pack(commits, json_format);
+	if (PACK_JSON) commits = json_pack(commits, json_format);
 
 	var json = JSON.stringify(commits, null,
-		pretty_json ? '\t' : '');
+		PRETTY_JSON ? '\t' : '');
 
 	fs.writeFileSync(OUTPUT_JSON, json, 'utf8');
 	fs.writeFileSync(FILENAMES_JSON, JSON.stringify(indexed_filenames), 'utf8');
