@@ -18,10 +18,7 @@ function requestLog(url, callback, filenames) {
 
 			for (j=0,jl=changes.length;j<jl;j++) {
 				change = changes[j].split('|');
-				changes[j] = {
-					file: filenames[change[0]],
-					op: change[1]
-				};
+				changes[j] = new Change(filenames[change[0]], change[1]);
 			}
 
 		}
@@ -70,14 +67,9 @@ function processTrees(timeline) {
 		commit = timeline[i];
 		change = commit.change;
 
-		// if (commit.parents.length) {
-		// 	parent = commits_hash[commit.parents[0]].tree;
-		// } else {
-		// 	parent = [];
-		// }
-
-		parent = timeline[i + 1];
-		if (!parent) {
+		if (commit.parents.length) {
+			parent = commits_hash[commit.parents[0]].tree;
+		} else {
 			parent = [];
 		}
 
@@ -125,6 +117,7 @@ function processTrees(timeline) {
 			}
 
 		}
+
 	}
 
 	console.timeEnd('processTrees');
@@ -201,4 +194,35 @@ function slog() {
 	var args = Array.prototype.slice.call(arguments);
 	var sample = args.shift();
 	(Math.random() < sample) && console.log.apply(console, args);
+}
+
+function Change(file, op) {
+	this.file = file;
+	this.op = op;
+}
+
+function generateChangeset(currentTree, parentTree, modified) {
+	var i;
+	var changes = modified.concat();
+
+	if (parentTree === undefined) parentTree = [];
+
+	// slog(0.001, 'trees', currentTree, parentTree)
+
+	var added = [], f, deleted = [];
+	for (i=0;i<currentTree.length;i++) {
+		f = currentTree[i];
+		if (parentTree.indexOf(f) == -1) {
+			changes.push(new Change(f, 'A'));
+		}
+	}
+
+	for (i=0;i<parentTree.length;i++) {
+		f = parentTree[i];
+		if (currentTree.indexOf(f) == -1) {
+			changes.push(new Change(f, 'D'));
+		}
+	}
+
+	return changes;
 }

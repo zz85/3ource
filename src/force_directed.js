@@ -14,7 +14,8 @@ function onNodeAdd(node) {
 
 function onNodeRemove(node) {
 	// Handle node removal
-	console.log('onNodeRemove', node);
+	node.onAdd.undo(onNodeAdd);
+	node.onRemove.undo(onNodeRemove);
 	removeNode(node, node.graphNode);
 }
 

@@ -460,8 +460,7 @@ function done() {
 
 	for (i=0;i<commits.length;i++) {
 		commit = commits[i];
-		// parentTree = commit_hashes[commit.parents[0]];
-		parentTree = commit[i - 1];
+		parentTree = commit_hashes[commit.parents[0]];
 		if (parentTree) parentTree = parentTree.tree;
 		generateChangeset(commit.change, commit.tree, parentTree, commit.modified);
 	}

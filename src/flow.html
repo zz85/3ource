@@ -39,8 +39,14 @@
 			// var 
 			commit = t[at++];
 
-			commit.change.forEach(function(modification) {
-				// console.log(at, modification);
+			var modified = commit.change.filter(function(modification) {
+				return modification.op == 'M';
+			});
+
+			var parentTree = (at > 1) ? t[at-2].tree : [];
+			var changeset = generateChangeset(commit.tree, parentTree, modified);
+			changeset.sort(amdSort).reverse();
+			changeset.forEach(function(modification) {
 
 				switch(modification.op) {
 					case 'A':
