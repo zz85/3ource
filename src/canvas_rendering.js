@@ -62,6 +62,7 @@ function paint() {
 	ctx.scale(1.5, 1.5);
 	// ctx.font = '8pt Arial';
 	ctx.textBaseline = 'ideographic';
+	ctx.globalCompositeOperation = 'lighter';
 
 	var node, link;
 	var selected = null, label;
