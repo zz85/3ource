@@ -29,7 +29,7 @@
 		<div id="message"></div>
 		<div id="time"></div>
 	</div>
-	
+
 	<canvas id="canvas"></canvas>
 	<script src="source.js"></script>
 	<script src="test_files.js"></script>
@@ -37,6 +37,7 @@
 
 	<script src="canvas_rendering.js"></script>
 	<script src="force_directed.js"></script>
+	<script src="slider.js"></script>
 
 	<script>
 		var url = '../data/test.json';
@@ -47,6 +48,16 @@
 		var at = -1;
 
 		var previousTree = [];
+
+		var scroller = new Scrollbar(100, 50);
+		scroller.onScroll.do(function(v) {
+			console.log(v);
+			at = v;
+			display();
+		});
+		document.body.appendChild(scroller.dom);
+		setInterval(scroller.paint.bind(scroller), 50);
+
 
 		function readTimeline(timeline) {
 			t = timeline.concat().reverse();
@@ -78,8 +89,10 @@
 		}
 
 		function display() {
-			// var 
+			// var
 			commit = t[at];
+			scroller.setValue(at);
+			scroller.setMax(t.length - 1);
 
 			var modified = commit.change.filter(function(modification) {
 				return modification.op == 'M';

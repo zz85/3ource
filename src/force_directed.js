@@ -6,7 +6,7 @@ var fileNodes = [];
 function onNodeAdd(node) {
 	var graphNode = newNode(node.fullPath(), node.isFile(), this.graphNode.x, this.graphNode.y);
 	node.graphNode = graphNode;
-	newEdge(this.graphNode, node.graphNode, node.isFile());	
+	newEdge(this.graphNode, node.graphNode, node.isFile());
 
 	node.onAdd.do(onNodeAdd);
 	node.onRemove.do(onNodeRemove);

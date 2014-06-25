@@ -69,7 +69,7 @@ function Do(parent) {
 	this.undo = function(callback) {
 		listeners.splice(listeners.indexOf(callback), 1);
 	};
-	this.notify = function() {
+	this.fire = function() {
 		for (var v = 0; v<listeners.length; v++) {
 			listeners[v].apply(parent, arguments);
 		}
@@ -93,7 +93,7 @@ function iNode(name, parent) {
 
 	if (parent) {
 		parent.children[name] = this;
-		this.parent.onAdd.notify(this);
+		this.parent.onAdd.fire(this);
 	}
 
 }
@@ -114,7 +114,7 @@ iNode.prototype.remove = function() {
 	// Detach from parent
 	delete this.parent.children[this.name];
 
-	this.onRemove.notify(this);
+	this.onRemove.fire(this);
 	// this.parent = null
 	return true;
 };
