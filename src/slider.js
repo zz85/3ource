@@ -39,8 +39,13 @@ Scrollbar.prototype = {
 
 		track.style.height = '40px';
 		track.style.width = this.trackLength + 'px';
-		track.style.backgroundColor = '#fff';
+		track.style.backgroundColor = '#333';
 
+		var slidingSpace = this.trackLength - this.gripLength;
+		var percentage = this.value / this.max;
+		var left = slidingSpace * percentage;
+		if (Math.random() < 0.1) console.log(slidingSpace, percentage, left);
+		thumb.style.marginLeft = left + 'px';
 		thumb.style.height = '40px';
 		thumb.style.width = this.gripLength + 'px';
 		thumb.style.backgroundColor = '#f00';
