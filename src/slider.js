@@ -1,15 +1,14 @@
-function Scrollbar(t, g) { // TODO extend SlidingWindow
+function Scrollbar(track, grip) { // TODO extend SlidingWindow
 	this.max = 100;
 	this.min = 0;
 	this.value = 0;
 
 	this.initUI();
 
-	t = 200;
+	this.setTrackLength(track || 600);
+	this.setGripLength(grip || 50);
 
-	this.setTrackLength(t);
-	this.setGripLength(g);
-
+	this.onScroll = new Do(this);
 }
 
 Scrollbar.prototype = {
@@ -52,7 +51,9 @@ Scrollbar.prototype = {
 	},
 
 	onMouseDown: function(e) {
-		console.log(e.offsetX, this.trackLength);
+		var value = e.offsetX / this.trackLength * this.max | 0;
+		this.setValue(value);
+		this.onScroll.fire(value);
 	},
 
 	initUI: function() {
