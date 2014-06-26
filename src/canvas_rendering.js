@@ -133,6 +133,8 @@ function paint() {
 
 
 function labelNode(node, label, bubble) {
+	ctx.save();
+	ctx.globalCompositeOperation = 'source-over';
 	var r = 10;
 	var width = ctx.measureText(label).width * 1;
 	var height = 10;
@@ -163,6 +165,8 @@ function labelNode(node, label, bubble) {
 	ctx.beginPath();
 	ctx.arc(node.x, node.y, 5, 0, Math.PI * 2);
 	ctx.fill();
+
+	ctx.restore();
 }
 
 var mouseX = 0, mouseY = 0, mouseDown = false;
