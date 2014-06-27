@@ -35,10 +35,20 @@ DOT Styles
 var DOT_COLOR_SCHEME = 1;
 
 // Pwn CSS
+if (!document.styleSheets.length) document.head.appendChild(document.createElement('style'));
 var sheet = document.styleSheets[document.styleSheets.length - 1];
-function addRule(selector, styles) {
-	if (sheet.insertRule) sheet.insertRule(selector + " {" + styles + "}", sheet.cssRules.length);
-	else if (sheet.addRule) sheet.addRule(selector, styles);
+var rules = {};
+function cssRule(selector, styles) {
+	var index;
+	if (selector in rules) {
+		index = rules[selector];
+		sheet.deleteRule(index);
+	} else {
+		index = rules[selector] = sheet.cssRules.length;
+	}
+
+	sheet.insertRule(selector + " {" + styles + "}", index);
+	// Don't support for <IE9 sheet.addRule, sorry, ha!
 }
 
 /* CUSTOMIZATIONS */
@@ -55,11 +65,23 @@ var Scheme = {
 	White: '#979797/#ffffff'.split('/')
 };
 
-addRule('.log', 'height: ' + ROW_HEIGHT + 'px; width: 800px;');
-addRule('.hash', 'color: ' + Scheme.Blue[Bold] + ';');
-addRule('.time', 'float: right;color: ' + Scheme.Green[Bold] + ';');
-addRule('.author', 'color: ' + Scheme.Cyan[Bold] + '; width: 100px; display:inline-block; overflow: hidden;');
-addRule('.message', 'color: ' + Scheme.White[Bold] + '; width: 400px; display:inline-block; overflow: hidden;');
+
+function setWidth(width) {
+	var messageWidth = 400;
+	var recommended = 30 + 50 + messageWidth + 100 + 105;
+	console.log(recommended);
+	if (width > recommended) messageWidth = width - recommended + messageWidth;
+
+	cssRule('.log', 'height: ' + ROW_HEIGHT + 'px; width: ' + width + ';');
+
+	cssRule('.hash', 'color: ' + Scheme.Blue[Bold] + ';');
+	cssRule('.time', 'color: ' + Scheme.Green[Bold] + ';');
+	cssRule('.author', 'color: ' + Scheme.Cyan[Bold] + '; width: 100px; display:inline-block; overflow: hidden;');
+
+	cssRule('.message', 'color: ' + Scheme.White[Bold] + '; width: ' + messageWidth + 'px; display:inline-block; overflow: hidden;');
+}
+
+setWidth(innerWidth - 200);
 
 // Colors from jquery commits-graph
 var colors =[
@@ -168,7 +190,6 @@ function GitLogViewer(timeline) {
 	this.currentRow = 0; // Current Row to Render from
 
 	var i, il, commit;
-	var hashes = {};
 
 	// Date order vs Ancestor order
 	// timeline.sort(compare); // TODO Buggy, dont use
@@ -338,10 +359,48 @@ function GitLogViewer(timeline) {
 
 	console.log(maxTracks);
 
-	var container = document.getElementById('container');
-	var timeline_panel = document.getElementById('timeline_panel');
-	var panel_spacer = document.getElementById('panel_spacer');
-	var sliding_window = document.getElementById('sliding_window');
+	['DIV', 'CANVAS'].forEach(function(name) {
+		self[name] = el(name);
+	});
+
+	function el(name) {
+		return function(id) {
+			var e = document.createElement(name);
+			for (var i = 1; i < arguments.length; i++) {
+				e.appendChild(arguments[i]);
+			}
+			e.id = id;
+			self[id] = e;
+			return e;
+		};
+	}
+
+	// <div id="timeline_panel">
+	// 	<div id="sliding_window">
+	// 		<div id="container"></div>
+	// 	</div>
+
+	// 	<div id="panel_spacer"></div>
+	// </div>
+
+	DIV('timeline_panel',
+		DIV('sliding_window',
+			CANVAS('graph'),
+			DIV('container')
+		),
+		DIV('panel_spacer')
+	);
+
+	document.body.appendChild(timeline_panel);
+
+	
+
+	// console.log(self);
+
+	// var container = document.getElementById('container');
+	// var timeline_panel = document.getElementById('timeline_panel');
+	// var panel_spacer = document.getElementById('panel_spacer');
+	// var sliding_window = document.getElementById('sliding_window');
 
 	container.style.left = (maxTracks + 2) * TRACK_WIDTH + 'px';
 
@@ -360,6 +419,7 @@ function GitLogViewer(timeline) {
 	window.addEventListener('resize', function() {
 		console.log('resizing');
 		initDimensions();
+		setWidth(innerWidth - 200);
 	})
 
 	timeline_panel.addEventListener('scroll', function(e) {
@@ -383,13 +443,10 @@ function GitLogViewer(timeline) {
 		ratio = window.devicePixelRatio;
 	}
 
-	var canvas = document.createElement('canvas');
-	canvas.id = 'graph';
-	canvas.width = (maxTracks + 1) * TRACK_WIDTH;
-	canvas.height = (targetRows + bufferRows * 2) * 25;
-	sliding_window.insertBefore(canvas, container);
-
-	var ctx = canvas.getContext('2d');
+	graph.width = (maxTracks + 1) * TRACK_WIDTH;
+	graph.height = (targetRows + bufferRows * 2) * 25;
+	
+	var ctx = graph.getContext('2d');
 	ctx.lineWidth = 1.5;
 
 	var divs = [], d;
@@ -407,8 +464,8 @@ function GitLogViewer(timeline) {
 		d.onclick = (function(j) {
 			return function(e) {
 				onClick(e, links[j]);
-			}
-		})(j)
+			};
+		})(j);
 		
 		container.appendChild(d);
 		divs.push(d);
@@ -457,7 +514,7 @@ function GitLogViewer(timeline) {
 
 	function drawGraph() {
 		// Draw commit tracks
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.clearRect(0, 0, graph.width, graph.height);
 		ctx.save();
 		ctx.scale(ratio, ratio);
 		
