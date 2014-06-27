@@ -55,9 +55,9 @@ var Scheme = {
 	White: '#979797/#ffffff'.split('/')
 };
 
-addRule('.log', 'height: ' + ROW_HEIGHT + 'px;');
+addRule('.log', 'height: ' + ROW_HEIGHT + 'px; width: 800px;');
 addRule('.hash', 'color: ' + Scheme.Blue[Bold] + ';');
-addRule('.time', 'color: ' + Scheme.Green[Bold] + ';');
+addRule('.time', 'float: right;color: ' + Scheme.Green[Bold] + ';');
 addRule('.author', 'color: ' + Scheme.Cyan[Bold] + '; width: 100px; display:inline-block; overflow: hidden;');
 addRule('.message', 'color: ' + Scheme.White[Bold] + '; width: 400px; display:inline-block; overflow: hidden;');
 
@@ -173,24 +173,6 @@ function GitLogViewer(timeline) {
 	// Date order vs Ancestor order
 	// timeline.sort(compare); // TODO Buggy, dont use
 
-	// create hashes
-	for (i=0,il=timeline.length;i<il;i++) {
-		commit = timeline[i];
-		commit.children = [];
-		hashes[commit.hash] = commit;
-	}
-
-	var parents, hash;
-
-	// create reverse references
-	for (i=0;i<il;i++) {
-		commit = timeline[i];
-		parents = commit.parents;
-		for (j=0;j<parents.length;j++) {
-			hash = parents[j];
-			hashes[hash].children.push(commit);
-		}
-	}
 
 	// Graphing strategies
 	// 1. pending parents first (gitk, jetbrains, git log --graph)
@@ -204,9 +186,6 @@ function GitLogViewer(timeline) {
 	
 	var p;
 
-	console.time('graphing');
-
-
 	function CommitPath(hash, row) {
 		this.targetHash = hash; // hash for matching parent
 		this.row = row; // commit sequence id
@@ -216,8 +195,10 @@ function GitLogViewer(timeline) {
 	var nodeTracks; // Track which lane the node is at for every row
 	var tracks;
 
-
 	this.regenerate = function() {
+		// Calculating tracks for git log graphs
+
+		console.time('graphing');
 
 		var nodeTrack; // Lane the node is on
 		nodeTracks = []; // Track which lane the node is at for every row
@@ -327,7 +308,7 @@ function GitLogViewer(timeline) {
 				p = pendingPaths[j];
 
 				// Draw connecting lines
-				if (p.length==0) {
+				if (p.length === 0) {
 					p.prevLane = nodeTrack;
 				} else {
 					p.prevLane = p.lane;
@@ -338,11 +319,12 @@ function GitLogViewer(timeline) {
 			nodeTracks.push(nodeTrack);
 		}
 
+		console.timeEnd('graphing');
+
 	};
 
 	this.regenerate();
 
-	console.timeEnd('graphing');
 
 
 	console.time('draw');
@@ -567,6 +549,10 @@ function GitLogViewer(timeline) {
 					break;
 				case 3: // Colored fill, white outline
 					ctx.fillStyle = colors[i % colors.length];
+					ctx.strokeStyle = Scheme.White[Bold];
+					break;
+				case 4:
+					ctx.fillStyle = Scheme.Black[Bold];
 					ctx.strokeStyle = Scheme.White[Bold];
 					break;
 			}
