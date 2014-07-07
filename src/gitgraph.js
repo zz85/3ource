@@ -79,7 +79,20 @@ function setWidth(width) {
 	cssRule('.author', 'color: ' + Scheme.Cyan[Bold] + '; width: 100px; display:inline-block; overflow: hidden;');
 
 	cssRule('.message', 'color: ' + Scheme.White[Bold] + '; width: ' + messageWidth + 'px; display:inline-block; overflow: hidden;');
+	cssRule('.selected', 'font-weight: bold; background-color:' + '#000' + ';'); //  font-size: larger;
 }
+
+function scrollGraphTo(row) {
+	var y = t.length - row;
+	// TODO set some limits
+	// TODO add some easing
+	timeline_panel.scrollTop = ROW_HEIGHT * y;
+}
+
+var selected = -1;
+
+
+
 
 setWidth(innerWidth - 200);
 
@@ -202,8 +215,6 @@ function GitLogViewer(timeline) {
 	// 4. Perhaps one which has a fill space algorithm
 
 	// TODO Mouse over interactivity
-
-	var e;
 	
 	var p;
 
@@ -215,6 +226,12 @@ function GitLogViewer(timeline) {
 
 	var nodeTracks; // Track which lane the node is at for every row
 	var tracks;
+
+	this.selectRow = function selectRow(row) {
+		selected = row;
+		scrollGraphTo(row);
+		this.draw();
+	}
 
 	this.regenerate = function() {
 		// Calculating tracks for git log graphs
@@ -264,7 +281,7 @@ function GitLogViewer(timeline) {
 
 					if (first && currentPaths.length) {
 
-						tmp = currentPaths.shift()
+						tmp = currentPaths.shift();
 						tmp.lane = j;
 						tmp.id = pendingPaths[j].id;
 						pendingPaths[j] = tmp;
@@ -359,8 +376,8 @@ function GitLogViewer(timeline) {
 
 	console.log(maxTracks);
 
-	['DIV', 'CANVAS'].forEach(function(name) {
-		self[name] = el(name);
+	['div', 'canvas'].forEach(function(name) {
+		self[name.toUpperCase()] = el(name);
 	});
 
 	function el(name) {
@@ -375,6 +392,12 @@ function GitLogViewer(timeline) {
 		};
 	}
 
+	function style(dom, o) {
+		for (var k in o) {
+			dom.style[k] = o[k];
+		}
+	}
+
 	// <div id="timeline_panel">
 	// 	<div id="sliding_window">
 	// 		<div id="container"></div>
@@ -383,34 +406,76 @@ function GitLogViewer(timeline) {
 	// 	<div id="panel_spacer"></div>
 	// </div>
 
-	DIV('timeline_panel',
-		DIV('sliding_window',
-			CANVAS('graph'),
-			DIV('container')
-		),
-		DIV('panel_spacer')
+
+	// var container, timeline_panel, panel_spacer, sliding_window, graph;
+
+	DIV('gitgraph',
+		DIV('timeline_panel',
+			DIV('sliding_window',
+				CANVAS('graph'),
+				DIV('container')
+			),
+			DIV('panel_spacer')
+		)
 	);
 
-	document.body.appendChild(timeline_panel);
+	style(graph, {
+		position: 'absolute'
+	});
 
-	
+	style(container, {
+		position: 'absolute',
+		left: '120px',
+		whiteSpace: 'nowrap',
+		fontSize: '12px'
+	});
 
-	// console.log(self);
+	style(timeline_panel, {
+		border: '1px solid white',
+		height: '100%',
+		overflow: 'auto',
+		position: 'relative'
+	});
 
-	// var container = document.getElementById('container');
-	// var timeline_panel = document.getElementById('timeline_panel');
-	// var panel_spacer = document.getElementById('panel_spacer');
-	// var sliding_window = document.getElementById('sliding_window');
+	style(panel_spacer, {
+		// height: '14000px'
+	});
+
+	style(sliding_window, {
+		position: 'absolute',
+		top: 0
+	});
+
+	style(gitgraph, {
+		zIndex: '10',
+		bottom: '0',
+		left: '0',
+		width: '100%',
+		fontFamily: 'monospace',
+		background: '#202020',
+		color: '#979797',
+		opacity: 1,
+		position: 'absolute',
+		height: '50%',
+		transition: 'all 1s'
+	});
+
+	document.body.appendChild(gitgraph);
 
 	container.style.left = (maxTracks + 2) * TRACK_WIDTH + 'px';
 
-	panel_spacer.style.height = ROW_HEIGHT * timeline.length;
+	// virtual height
+	panel_spacer.style.height = ROW_HEIGHT * timeline.length + 'px';
+	console.log('panel_spacer height' + panel_spacer.style.height, timeline.length, ROW_HEIGHT, ROW_HEIGHT * timeline.length);
 
 	var sa, rows;
 
+	// timeline_panel.clientHeight / timeline_panel.scrollHeight
+	// panel_spacer.clientHeight / panel_spacer.scrollHeight
+
 	function initDimensions() {
 		// calculations for viewport or new row count changes.
-		sa = timeline_panel.scrollHeight - timeline_panel.clientHeight;
+		sa = panel_spacer.scrollHeight - timeline_panel.clientHeight;
 		rows = sa / timeline_panel.scrollHeight * timeline.length; // actual scrollable rows
 	}
 
@@ -418,15 +483,16 @@ function GitLogViewer(timeline) {
 
 	window.addEventListener('resize', function() {
 		console.log('resizing');
-		initDimensions();
+		initDimensions(); // TODO rename to set height
 		setWidth(innerWidth - 200);
-	})
+	});
 
 	timeline_panel.addEventListener('scroll', function(e) {
+		// console.log('scroll', timeline_panel.scrollTop);
 		var p = timeline_panel.scrollTop / sa; // percentage scrolled
 		var sliding = timeline_panel.scrollTop % ROW_HEIGHT;
 
-		sliding_window.style.top = timeline_panel.scrollTop - sliding; //  - bufferRows * ROW_HEIGHT
+		sliding_window.style.top = timeline_panel.scrollTop - sliding + 'px'; //  - bufferRows * ROW_HEIGHT
 
 		viewer.currentRow = p * rows | 0;
 
@@ -654,8 +720,20 @@ function GitLogViewer(timeline) {
 			commit = timeline[i];
 			links[j] = i;
 			d = divs[j];
+			window.d = d;
+			var number = timeline.length-i;
+			if (number == selected) {
+				if (!d.classList.contains('selected')) {
+					d.classList.add('selected');
+
+				}
+			} else {
+				if (d.classList.contains('selected')) {
+					d.classList.remove('selected');
+				}
+			}
 			d.innerHTML = '<span class="id">%id</span>. <span class="hash">%hash</span> <span class="message">%message</span>  <span class="author">%author</span> <span class="time">%time</span>'
-				.replace(/%id/, replacer(timeline.length-i))
+				.replace(/%id/, replacer(number))
 				.replace(/%message/, replacer(commit.message))
 				.replace(/%time/, replacer(new Date(commit.date * 1000).toDateString()))
 				.replace(/%hash/, replacer(commit.hash))
