@@ -1,0 +1,68 @@
+<html>
+<body>
+	<style>
+	body {
+		font-family: monospace;
+		background: #202020;
+		color: #979797;
+		overflow: hidden;
+	}
+
+	</style>
+
+	<div class="message">
+	This demostrates a git log viewer with pretty log graph done in js.
+	Both canvas and commit messages are renderered with virtual viewports.
+	</div>
+
+	<br/>
+
+	Graph line style:
+	<select onchange="graphStyle(this.value)">
+		<option value="0">Flat</option>
+		<option value="1">Slant</option>
+		<option value="2">Curved</option>
+		<option value="3">Flat2</option>
+	</select>
+	
+	Commit Dot style:
+	<select onchange="dotStyle(this.value)">
+		<option value="0">Black core, White outline</option>
+		<option value="1">Colored core, Empty outline</option>
+		<option value="2">Black core, Colored outline</option> 
+		<option value="3">Colored core, White outline</option>
+		<option value="4">Black core, White outline</option>
+	</select>
+
+	<script src="source.js"></script>
+	<script src="gitgraph2.js"></script>
+	<script>
+
+	// TODO line highlights and hoverovers
+
+	var url = '../data/test.json';
+	getLog('../data/filenames.json', url, readTimeline);
+
+	function readTimeline(timeline) {
+
+		viewer = new GitLogViewer(timeline);
+
+	}
+
+	function graphStyle(id) {
+		GRAPH_MODE = +id;
+		if (viewer) {
+			viewer.regenerate();
+			viewer.draw();
+		}
+	}
+
+	function dotStyle(id) {
+		DOT_COLOR_SCHEME = +id;
+		if (viewer) viewer.draw();
+	}
+
+
+	</script>
+</body>
+</html>
