@@ -53,11 +53,18 @@ Slidebar.prototype = {
 		thumb.style.height = this.height +  'px';
 		thumb.style.width = this.gripLength + 'px';
 		thumb.style.backgroundColor = '#f00';
+		thumb.style.cursor = 'pointer';
+	},
+
+	mouseX: function(x) {
+		var value = (x - this.gripLength / 2) / this.trackLength * this.max | 0;
+		value = Math.max(value, 0);
+		this.setValue(value);
+		return value;
 	},
 
 	onMouseDown: function(e) {
-		var value = e.offsetX / this.trackLength * this.max | 0;
-		this.setValue(value);
+		var value = this.mouseX(e.offsetX);
 		this.onScroll.fire(value);
 
 		this.mousemove = this.onMouseMove.bind(this);
@@ -67,15 +74,15 @@ Slidebar.prototype = {
 	},
 
 	onMouseMove: function(e) {
-		var value = e.offsetX / this.trackLength * this.max | 0;
-		this.setValue(value);
+		var value = this.mouseX(e.offsetX);
 		// this.onScroll.fire(value);
 	},
 
 	onMouseUp: function(e) {
-		var value = e.offsetX / this.trackLength * this.max | 0;
-		this.setValue(value);
-		this.onScroll.fire(value);
+		// console.log(e);
+		// var value = this.mouseX(e.offsetX);
+		// this.onScroll.fire(value);
+
 		this.track.removeEventListener('mousemove', this.mousemove);
 		this.track.removeEventListener('mouseup', this.mouseup);
 	},
