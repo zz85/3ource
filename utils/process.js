@@ -277,7 +277,10 @@ function done() {
 	var json = JSON.stringify(commits, null,
 		PRETTY_JSON ? '\t' : '');
 
+	var json_filenames = JSON.stringify(indexed_filenames, null,
+		PRETTY_JSON ? '\t' : '');
+
 	fs.writeFileSync(OUTPUT_JSON, json, 'utf8');
-	fs.writeFileSync(FILENAMES_JSON, JSON.stringify(indexed_filenames), 'utf8');
+	fs.writeFileSync(FILENAMES_JSON, json_filenames, 'utf8');
 
 }
