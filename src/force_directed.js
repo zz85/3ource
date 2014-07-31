@@ -3,6 +3,88 @@ var links = []; // list of all constrained edges
 var clusters = []; // list for parent-children links
 var fileNodes = [];
 
+var DAMPING = 0.96;
+var SPEED_LIMIT = 10;
+
+function CirclePacking() {
+	var SIZE = 5;
+	var SPACE = SIZE * 2 + 2;
+
+	var PI2 = Math.PI * 2;
+	var angles = [];
+	var HEX = 6;
+
+
+	// Alternative approach:
+	// Insertion sort (using virtual grids)
+
+	var points = [];
+	var LIMIT = 5000;
+
+	// calculate hex angles
+	for (var i=0;i<HEX;i++) {
+		var angle = i * PI2 / HEX; // + 0.5;
+
+		angles.push({
+			x: Math.cos(angle),
+			y: Math.sin(angle)
+		});
+	}
+
+	function parameter(n) {
+
+		if (n === 0)  {
+			pointAt(0, 0);
+			return 1;
+		}
+
+		for (var i=0;i<HEX;i++) {
+			var angle = angles[i];
+			var distance = SPACE * n;
+			var _x = angle.x * distance;
+			var _y = angle.y * distance;
+
+			pointAt(_x, _y);
+
+			for (var j=1;j<n;j++) {
+				var angle2 = angles[(i + 2) % HEX];
+
+				pointAt(_x + angle2.x * j * SPACE, _y + angle2.y * j * SPACE);
+
+			}
+		}
+
+		return n * HEX + (n - 1) * HEX;
+	}
+
+
+
+	function pointAt(x, y) {
+		points.push({x: x, y: y});
+	}
+
+	var sum = 0, k = 0;
+	for (;;) {
+		console.log(k, sum);
+		sum += parameter(k);
+		if (sum > LIMIT) break;
+		k++;
+	}
+
+	points.sort(function(a, b) {
+		// return (a.x * a.x + a.y * a.y) - (b.x * b.x + b.y * b.y);
+		var ax = a.x - SPACE / 2;
+		var bx = b.x - SPACE / 2;
+
+		return (ax * ax + a.y * a.y) - (bx * bx + b.y * b.y);
+	});
+
+	this.points = points;
+
+}
+
+var packing = new CirclePacking();
+
 function onNodeAdd(node) {
 	var graphNode = newNode(node.fullPath(), node.isFile(), this.graphNode.x, this.graphNode.y);
 	node.graphNode = graphNode;
@@ -165,7 +247,9 @@ function repel(node1, node2) {
 }
 
 function distanceForChildren(c) {
-	return Math.pow((17 + c) * 1.618, 0.8);
+	var p = packing.points[c];
+	return Math.sqrt(p.x * p.x + p.y * p.y) * 0.7;
+	// return Math.pow((17 + c) * 1.618, 0.8);
 }
 
 function simulate() {
@@ -186,15 +270,10 @@ function simulate() {
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
 		var c = link.from.children++;
-		var d = distanceForChildren(c);
-		c = (16 + c) * 1.618 / 2;
+		var p = packing.points[c];
 
-		gravityNode(link.to, link.from.x + Math.cos(c) * d, link.from.y + Math.sin(c) * d);
-
+		gravityNode(link.to, link.from.x + p.x, link.from.y + p.y);
 	}
-
-	var DAMPING = 0.96;
-	var SPEED_LIMIT = 2;
 
 	// move
 	for (i=nodes.length; i--;) {
