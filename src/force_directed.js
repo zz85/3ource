@@ -20,12 +20,9 @@ function CirclePacking() {
 
 	var points = [];
 
-	this.setTarget = function(target) {
-
-		points = [];
-
+	this.getPoint = function(target, which) {
 		counting = 1;
-		points.push({x: 0, y: 0});
+		if (which == 0) return {x: 0, y: 0};
 
 		var offset = 0;
 
@@ -69,34 +66,32 @@ function CirclePacking() {
 			}
 
 			for (i=0;i<l;i++) {
-				counting++;
-				if (counting > target) break;
 
 				var angle = i * PI2 / l;
 				angle += offset;
 
 				// console.log('counting', counting, 'target', target);
 
-				var x = Math.sin(angle) * space * ring;
-				var y = Math.cos(angle) * space * ring;
-				points.push({x: x, y: y});
+				if (counting == which) {
+					var x = Math.sin(angle) * space * ring;
+					var y = Math.cos(angle) * space * ring;
+					return {x: x, y: y};
+
+				}
+
+
+				counting++;
+				if (counting > target) break;
 			}
 		}
 	};
-
-	this.getPoint = function(p) {
-		return points[p];
-	};
-
-	this.points = points;
 }
 
 
 
 function distanceForChildren(c) {
 	if (c == 0) return 10;
-	packing.setTarget(c);
-	var p = packing.getPoint(c - 1);
+	var p = packing.getPoint(c, c - 1);
 	return (Math.sqrt(p.x * p.x + p.y * p.y)  + 5) * 0.7;
 }
 
@@ -287,8 +282,7 @@ function simulate() {
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
 		var c = link.from.children++;
-		packing.setTarget(link.from.total);
-		var p = packing.getPoint(c);
+		var p = packing.getPoint(link.from.total, c);
 
 		gravityNode(link.to, link.from.x + p.x, link.from.y + p.y);
 	}
