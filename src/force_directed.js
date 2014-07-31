@@ -10,7 +10,7 @@ function CirclePacking() {
 	var TARGET = 1550;
 	var SIZE = 5;
 	var PADDING = 2;
-	var STAGGER = 1; // 0 - 3
+	var STAGGER = 0; // 0 - 3
 
 	var space = SIZE * 2 + PADDING;
 	var PI2 = Math.PI * 2;
@@ -24,7 +24,7 @@ function CirclePacking() {
 		counting = 1;
 		if (which == 0) return {x: 0, y: 0};
 
-		var offset = 0;
+		var offset = Math.PI / 3;
 
 		var rings = 1, total = 1;
 
@@ -41,7 +41,8 @@ function CirclePacking() {
 			total += l;
 
 			if (target < total) {
-				l = Math.max(l - (total - target), 3, l / 3);
+				l = l - (total - target)
+				// l = Math.max(l - (total - target), 3, l / 3);
 			}
 
 			switch (STAGGER) {
