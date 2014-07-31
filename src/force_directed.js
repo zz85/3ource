@@ -7,89 +7,97 @@ var DAMPING = 0.96;
 var SPEED_LIMIT = 10;
 
 function CirclePacking() {
+	var TARGET = 1550;
 	var SIZE = 5;
-	var SPACE = SIZE * 2 + 2;
+	var PADDING = 2;
+	var STAGGER = 1; // 0 - 3
 
+	var space = SIZE * 2 + PADDING;
 	var PI2 = Math.PI * 2;
-	var angles = [];
-	var HEX = 6;
 
-
-	// Alternative approach:
-	// Insertion sort (using virtual grids)
+	var i, j = 0;
+	var count = 0, counting, target;
 
 	var points = [];
-	var LIMIT = 5000;
 
-	// calculate hex angles
-	for (var i=0;i<HEX;i++) {
-		var angle = i * PI2 / HEX; // + 0.5;
+	this.setTarget = function(target) {
 
-		angles.push({
-			x: Math.cos(angle),
-			y: Math.sin(angle)
-		});
-	}
+		points = [];
 
-	function parameter(n) {
+		counting = 1;
+		points.push({x: 0, y: 0});
 
-		if (n === 0)  {
-			pointAt(0, 0);
-			return 1;
-		}
+		var offset = 0;
 
-		for (var i=0;i<HEX;i++) {
-			var angle = angles[i];
-			var distance = SPACE * n;
-			var _x = angle.x * distance;
-			var _y = angle.y * distance;
+		var rings = 1, total = 1;
 
-			pointAt(_x, _y);
+		while (total < target) {
+			total += rings * 6;
+			rings++;
+		} 
 
-			for (var j=1;j<n;j++) {
-				var angle2 = angles[(i + 2) % HEX];
+		// console.log('ring', rings, 'total', total);
 
-				pointAt(_x + angle2.x * j * SPACE, _y + angle2.y * j * SPACE);
+		total = 1;
+		for (var ring = 1; ring < rings; ring++) {
+			var l = 6 * ring;
+			total += l;
 
+			if (target < total) {
+				l = Math.max(l - (total - target), 3, l / 3);
+			}
+
+			switch (STAGGER) {
+				case 0:
+					break;
+				case 1:
+					if (ring > 1) {
+						offset += 0.5 * PI2 / (ring - 1) / 6;
+					}
+					break;
+				case 2:
+					if (ring % 2 !== 0) {
+						offset = PI2 * 0.5 / l;
+					} else {
+						offset = 0;
+					}
+					break;
+				case 3:
+					// pseudo random entry
+					if (ring > 1) offset += PI2 / (ring - 1);
+					break;
+			}
+
+			for (i=0;i<l;i++) {
+				counting++;
+				if (counting > target) break;
+
+				var angle = i * PI2 / l;
+				angle += offset;
+
+				// console.log('counting', counting, 'target', target);
+
+				var x = Math.sin(angle) * space * ring;
+				var y = Math.cos(angle) * space * ring;
+				points.push({x: x, y: y});
 			}
 		}
-
-		return n * HEX + (n - 1) * HEX;
-	}
-
-
-
-	function pointAt(x, y) {
-		points.push({x: x, y: y});
-	}
-
-	var sum = 0, k = 0;
-	for (;;) {
-		console.log(k, sum);
-		sum += parameter(k);
-		if (sum > LIMIT) break;
-		k++;
-	}
-
-	points.sort(function(a, b) {
-		// return (a.x * a.x + a.y * a.y) - (b.x * b.x + b.y * b.y);
-		var ax = a.x - SPACE / 2;
-		var bx = b.x - SPACE / 2;
-
-		return (ax * ax + a.y * a.y) - (bx * bx + b.y * b.y);
-	});
-
-	// this.points = points;
-	this.getPoint = function(index) {
-		return points[index];
 	};
 
+	this.getPoint = function(p) {
+		return points[p];
+	};
+
+	this.points = points;
 }
 
+
+
 function distanceForChildren(c) {
-	var p = packing.getPoint(c);
-	return Math.sqrt(p.x * p.x + p.y * p.y) * 0.7;
-	// return Math.pow((17 + c) * 1.618, 0.8);
+	if (c == 0) return 10;
+	packing.setTarget(c);
+	var p = packing.getPoint(c - 1);
+	return (Math.sqrt(p.x * p.x + p.y * p.y)  + 5) * 0.7;
 }
 
 var packing = new CirclePacking();
@@ -268,11 +276,18 @@ function simulate() {
 
 	for (i=nodes.length; i-- > 0;) {
 		nodes[i].children = 0;
+		nodes[i].total = 0;
+	}
+
+	for (i=clusters.length; i-- > 0;) {
+		link = clusters[i];
+		link.from.total++;
 	}
 
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
 		var c = link.from.children++;
+		packing.setTarget(link.from.total);
 		var p = packing.getPoint(c);
 
 		gravityNode(link.to, link.from.x + p.x, link.from.y + p.y);
