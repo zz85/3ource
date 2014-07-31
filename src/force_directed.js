@@ -79,8 +79,17 @@ function CirclePacking() {
 		return (ax * ax + a.y * a.y) - (bx * bx + b.y * b.y);
 	});
 
-	this.points = points;
+	// this.points = points;
+	this.getPoint = function(index) {
+		return points[index];
+	};
 
+}
+
+function distanceForChildren(c) {
+	var p = packing.getPoint(c);
+	return Math.sqrt(p.x * p.x + p.y * p.y) * 0.7;
+	// return Math.pow((17 + c) * 1.618, 0.8);
 }
 
 var packing = new CirclePacking();
@@ -246,12 +255,6 @@ function repel(node1, node2) {
 
 }
 
-function distanceForChildren(c) {
-	var p = packing.points[c];
-	return Math.sqrt(p.x * p.x + p.y * p.y) * 0.7;
-	// return Math.pow((17 + c) * 1.618, 0.8);
-}
-
 function simulate() {
 
 	repel(nodes);
@@ -270,7 +273,7 @@ function simulate() {
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
 		var c = link.from.children++;
-		var p = packing.points[c];
+		var p = packing.getPoint(c);
 
 		gravityNode(link.to, link.from.x + p.x, link.from.y + p.y);
 	}
