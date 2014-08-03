@@ -1,8 +1,14 @@
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 var container, stats;
-var camera, scene, renderer, particles, geometry, material, i, h, color, sprite, size;
+var camera, scene, renderer, particles,
+spriteGeometry, material, i, h, color, sprite, size;
+
 var mouseX = 0, mouseY = 0;
+
+
+var PARTICLES = 5000; // Particle Pool
+var LINES = 500; // Lines Pool
 
 
 var windowHalfX = window.innerWidth / 2;
@@ -11,7 +17,6 @@ var windowHalfY = window.innerHeight / 2;
 offset = new THREE.Vector3();
 color = new THREE.Color();
 
-
 /* Graph functions */
 function newNode(name, isFile, x, y) {
 	var node = new gNode(name, isFile, x, y);
@@ -19,14 +24,6 @@ function newNode(name, isFile, x, y) {
 		fileNodes.push(node);
 	} else {
 		nodes.push(node);
-	}
-
-	node.ref = geometry.count++;
-
-	geometry.setSprite( 'offsets', node.ref, node.x, node.y, 0);
-	if (isFile) {
-		color.setHSL(0.45 + Math.random(), 0.7, 0.8);
-		geometry.setSprite( 'colors', node.ref, color.r, color.g, color.b);
 	}
 
 	return node;
@@ -39,21 +36,9 @@ function newEdge(parent, child, isFile) {
 	} else {
 		var link = new gLink(parent, child, distance, isFile);
 		links.push(link);
-
-		link.ref = line.count++;
-
-		line.geometry.vertices[link.ref * 2 + 0].x = parent.x;
-		line.geometry.vertices[link.ref * 2 + 0].y = parent.y;
-		line.geometry.vertices[link.ref * 2 + 0].z = 0;
-
-		line.geometry.vertices[link.ref * 2 + 1].x = child.x;
-		line.geometry.vertices[link.ref * 2 + 1].y = child.y;
-		line.geometry.vertices[link.ref * 2 + 1].z = 0;
-
 	}
 }
 
-// TODO
 function removeNode(node, graphNode) {
 	var indexOf, i;
 	if (node.isFile()) {
@@ -97,8 +82,7 @@ function initDrawings() {
 	// scene.fog = new THREE.FogExp2( 0x000000, 0.001 );
 
 	// geometry = new THREE.Geometry();
-	PARTICLES = 5000;
-	geometry = new THREE.ParticleGeometry( PARTICLES, 6 );
+	spriteGeometry = new THREE.ParticleGeometry( PARTICLES, 6 );
 
 	sprite = THREE.ImageUtils.loadTexture( "disc.png" );
 
@@ -123,40 +107,37 @@ function initDrawings() {
 
 	material = new THREE.RawShaderMaterial( spriteOptions );
 
+	spriteGeometry.hideSprite = function(i) {
+		spriteGeometry.setSprite( 'offsets', i, 100000, 100000, 0 );
+	};
+
 	for ( i = 0; i < PARTICLES; i ++ ) {
 
 		// Math.random() * 2000 - 1000
-		geometry.setSprite( 'offsets', i, 100000, 100000, 0 );
-		geometry.setSprite( 'rotations', i, 0, 0, 0);
+		spriteGeometry.hideSprite(i);
+		spriteGeometry.setSprite( 'rotations', i, 0, 0, 0);
 		
 		color.setHSL(0.9, 0.7, 0.8);
-		geometry.setSprite( 'colors', i, color.r, color.g, color.b);
+		spriteGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
 
 	}
 
-
-	geometry.count = 0;
-
-
 	lineGeometry = new THREE.Geometry();
-
-	
 
 	lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 3, opacity: 1 } ); // , vertexColors: THREE.VertexColors
 	line = new THREE.Line( lineGeometry, lineMaterial, THREE.LinePieces);
 	scene.add( line );
 
-	for (i = 0; i < 500; i++) {
+	for (i = 0; i < LINES; i++) {
 		line.geometry.vertices.push(
 			new THREE.Vector3(0, 0, 0), // -5000 fails
 			new THREE.Vector3(0, 0, 0)
 		);
 	}
-	line.count = 0;
 
 	line.geometry.verticesNeedUpdate = true;
 
-	particleMesh = new THREE.Mesh( geometry, material );
+	particleMesh = new THREE.Mesh( spriteGeometry, material );
 
 	scene.add( particleMesh );
 
@@ -252,31 +233,56 @@ function render() {
 
 	// camera.lookAt( scene.position );
 
-	for (i=0;i<links.length;i++) {
-		link = links[i];
+	if (links.length > LINES) {
+		console.warn('warning, please increase Lines pool size');
+	}
+
+
+	if (fileNodes.length > PARTICLES) {
+		console.warn('warning, please increase Particles pool size');
+	}
+	
+
+	for (i=0;i<LINES;i++) {
 
 		var vertices = line.geometry.vertices;
-		vertices[link.ref * 2 + 0].x = link.from.x;
-		vertices[link.ref * 2 + 0].y = link.from.y;
-		vertices[link.ref * 2 + 1].x = link.to.x;
-		vertices[link.ref * 2 + 1].y = link.to.y;
+
+		if (i < links.length) {
+			link = links[i];
+			vertices[i * 2 + 0].x = link.from.x;
+			vertices[i * 2 + 0].y = link.from.y;
+			vertices[i * 2 + 1].x = link.to.x;
+			vertices[i * 2 + 1].y = link.to.y;
+		} else {
+			vertices[i * 2 + 0].x = 0;
+			vertices[i * 2 + 0].y = 0;
+			vertices[i * 2 + 1].x = 0;
+			vertices[i * 2 + 1].y = 0;
+		}
 
 	}
 
-	for (i=0;i<nodes.length;i++) {
-		node = nodes[i];
-		geometry.setSprite( 'offsets', node.ref, node.x, node.y, 0 );
-	}
+	// for (i=0;i<nodes.length;i++) {
+	// 	node = nodes[i];
+	// 	spriteGeometry.setSprite( 'offsets', node.ref, node.x, node.y, 0 );
+		// color.setHSL(0.45 + Math.random(), 0.7, 0.8);
+		// spriteGeometry.setSprite( 'colors', node.ref, color.r, color.g, color.b);
+	
+	// }
 
-	for (i=0;i<fileNodes.length;i++) {
-		node = fileNodes[i];
-		geometry.setSprite( 'offsets', node.ref, node.x, node.y, 0 );
+	for (i=0;i<PARTICLES;i++) {
+		if (i < fileNodes.length) {
+			node = fileNodes[i];
+			spriteGeometry.setSprite( 'offsets', i, node.x, node.y, 0 );	
+		} else {
+			spriteGeometry.hideSprite( i );
+		}
 	}
 
 	line.geometry.verticesNeedUpdate = true;
 
-	geometry.attributes.color.needsUpdate = true;
-	geometry.attributes.offset.needsUpdate = true;
+	spriteGeometry.attributes.color.needsUpdate = true;
+	spriteGeometry.attributes.offset.needsUpdate = true;
 
 	renderer.render( scene, camera );
 
