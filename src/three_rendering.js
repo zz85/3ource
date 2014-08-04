@@ -17,14 +17,23 @@ var windowHalfY = window.innerHeight / 2;
 offset = new THREE.Vector3();
 color = new THREE.Color();
 
+var extension_colors = {};
+
 /* Graph functions */
 function newNode(name, isFile, x, y) {
 	var node = new gNode(name, isFile, x, y);
 	if (isFile) {
 		fileNodes.push(node);
+		var ext = node.name.split('.').pop();
+		if (!extension_colors[ext]) extension_colors[ext] = Math.random();
+		node.ext = ext;
 	} else {
 		nodes.push(node);
 	}
+
+	node.life = 0;
+
+
 
 	return node;
 }
@@ -76,7 +85,7 @@ function initDrawings() {
 	document.body.appendChild( container );
 
 	camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 2, 2000 );
-	camera.position.z = 500;
+	camera.position.z = 200;
 
 	scene = new THREE.Scene();
 	// scene.fog = new THREE.FogExp2( 0x000000, 0.001 );
@@ -266,14 +275,25 @@ function render() {
 	// 	node = nodes[i];
 	// 	spriteGeometry.setSprite( 'offsets', node.ref, node.x, node.y, 0 );
 		// color.setHSL(0.45 + Math.random(), 0.7, 0.8);
-		// spriteGeometry.setSprite( 'colors', node.ref, color.r, color.g, color.b);
 	
 	// }
 
 	for (i=0;i<PARTICLES;i++) {
 		if (i < fileNodes.length) {
 			node = fileNodes[i];
-			spriteGeometry.setSprite( 'offsets', i, node.x, node.y, 0 );	
+			spriteGeometry.setSprite( 'offsets', i, node.x, node.y, 0 );
+
+			node.life++;
+
+			// color.setStyle(node.color);
+			// var c = color.getHSL();
+			// color.setHSL(c.h, c.s, Math.max(0.5, 1 - k * k));
+
+			var k = node.life * 0.01;
+			color.setHSL(extension_colors[node.ext], 0.5, Math.max(0.5, 1 - k * k));
+			
+			spriteGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
+	
 		} else {
 			spriteGeometry.hideSprite( i );
 		}

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<body>
+	<style>
+	body {
+		font-family: monospace;
+	}
+
+	button {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	</style>
+	<button onclick="step()">Step</button>
+
+	<script id="vertexShader" type="x-shader/x-vertex">
+
+			precision mediump float;
+			precision mediump int;
+
+			uniform mat4 modelViewMatrix; // optional
+			uniform mat4 projectionMatrix; // optional
+
+			attribute vec3 position;
+			attribute vec3 offset;
+			attribute vec3 rotation;
+			attribute vec2 uv;
+
+			attribute vec3 color;
+
+			varying vec3 vColor;
+			varying vec2 vUv;
+
+			void main()	{
+
+				vColor = color;
+
+
+				float
+				cosrx = cos(rotation.x),
+				sinrx = sin(rotation.x),
+				cosry = cos(rotation.y),
+				sinry = sin(rotation.y),
+				cosrz = cos(rotation.z),
+				sinrz = sin(rotation.z);
+				
+				mat3 rotX = mat3(
+					1.0, 0.0, 0.0,
+					0.0, cosrx, sinrx,
+					0.0, -sinrx, cosrx
+				);
+
+				mat3 rotY =  mat3(
+					cosry, 0.0 , -sinry,
+					0.0    , 1.0, 0.0,
+					sinry, 0.0, cosry
+				);
+
+				mat3 rotZ =  mat3(
+					cosrz , sinrz, 0.0,
+					-sinrz, cosrz, 0.0,
+					0.0 , 0.0    , 1.0
+				);
+
+				vec3 newPosition = offset + position * rotZ * rotY * rotX;
+		
+				vUv = uv;
+
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 );
+
+			}
+
+		</script>
+
+		<script id="fragmentShader" type="x-shader/x-fragment">
+
+			precision mediump float;
+			precision mediump int;
+
+			uniform float time;
+			uniform float depth;
+			uniform sampler2D texture;
+
+			varying vec3 vColor;
+			varying vec2 vUv;
+
+			vec4 pack_depth( const in float depth ) {
+
+				const vec4 bit_shift = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
+				const vec4 bit_mask  = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );
+				vec4 res = fract( depth * bit_shift );
+				res -= res.xxyz * bit_mask;
+				return res;
+
+			}
+
+			void main()	{
+
+				// gl_FragColor = vec4( 1., 1., 1., 1. );
+				vec4 tex = texture2D(texture, vUv);
+
+				// alpha test
+				if (tex.a < 0.5) discard;
+
+				if (depth > 0.) {
+
+					gl_FragData[ 0 ] = pack_depth( gl_FragCoord.z );
+
+				} else {
+
+					vec4 color =  vec4(tex.xyz *  vColor, 1. );
+					// color.xyz *= sin( time ) * 0.1 + 0.8;
+
+					// gl_FragColor = vec4( 1. * sin(time), 1., 1., 1. );
+					gl_FragData[ 0 ] =  color;
+				}
+
+			}
+
+		</script>
+
+
+		<div id="info">
+			<a href="http://threejs.org" target="_blank">three.js</a> - webgl force directed graphs wip
+		</div>
+
+		<script src="test_files.js"></script>
+		<script src="fs.js"></script>
+
+		<script src="lib/three.min.js"></script>
+		<script src="lib/ParticleGeometry.js"></script>
+
+		<script src="lib/Detector.js"></script>
+		<script src="lib/stats.min.js"></script>
+
+		<script src="three_rendering.js"></script>
+		<script src="force_directed.js"></script>
+
+		<script src="source.js"></script>
+		
+	<script>
+		var url = '../data/test.json';
+		getLog('../data/filenames.json', url, readTimeline);
+
+		var fs;
+		var t;
+		var at = -1;
+
+		var previousTree = [];
+
+		function readTimeline(timeline) {
+			t = timeline.concat().reverse();
+			step();
+		}
+
+		document.body.addEventListener('keydown', step);
+
+		function step(e) {
+			if (e) { // which
+				switch (e.keyCode) {
+					case 74: // j
+					case 37: // left
+						at--;
+						break;
+
+					case 75: // k
+					// case 40: // down
+					case 39: // right
+						at++;
+						break;
+				}
+			} else {
+				at++;
+			}
+			if (at >= t.length) at = t.length - 1;
+			if (at < 0) at = 0;
+			display();
+		}
+
+		function display() {
+			// var
+			commit = t[at];
+			// slidebar.setValue(at);
+			// slidebar.setMax(t.length - 1);
+
+			var modified = commit.change.filter(function(modification) {
+				return modification.op == 'M';
+			});
+
+			var changeset = generateChangeset(commit.tree, previousTree);
+			changeset = changeset.concat(modified);
+			changeset.sort(amdSort);
+			changeset.forEach(function(modification) {
+
+				switch(modification.op) {
+					case 'A':
+						fs.touch(modification.file);
+						break;
+					case 'D':
+						fs.rm(modification.file);
+						break;
+					case 'M':
+						var g = fs.find(modification.file).graphNode;
+						// TODO highlight colors / nicer movements
+						// add forces / drag user
+						// g.x += (Math.random() - 0.5) * 10;
+						// g.y += (Math.random() - 0.5) * 10;
+						g.life = 0;
+						break;
+					default:
+						console.log(modification.op, 'not supported');
+				}
+			});
+
+			// author.innerText = '#' + (at + 1) + ' ' + commit.author + ':\n';
+			// message.innerText = commit.message;
+			// time.innerText = new Date(commit.date * 1000);
+
+			previousTree = commit.tree;
+
+		}
+
+		function initSimulations() {
+			fs = new FS();
+			fs.root.graphNode = newNode('.');
+
+			fs.root.onAdd.do(onNodeAdd);
+			fs.root.onRemove.do(onNodeRemove);
+
+		}
+
+		function init() {
+			initDrawings();
+			initSimulations();
+		}
+
+		init();
+	</script>
+</body>
+</html>
