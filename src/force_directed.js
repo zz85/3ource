@@ -1,10 +1,12 @@
+'use strict';
+
 var nodes = []; // list of all graph nodes
-var links = []; // list of all constrained edges
-var clusters = []; // list for parent-children links
-var fileNodes = [];
+var links = []; // list of all constrained edges (FOLDERS)
+var clusters = []; // list for parent-children links (FILES)
+var fileNodes = []; // Just graph nodes for FILES.
 
 var DAMPING = 0.96;
-var SPEED_LIMIT = 10;
+var SPEED_LIMIT = 5;
 
 function CirclePacking() {
 	var TARGET = 1550;
@@ -183,6 +185,7 @@ function gravity(nodes, x, y) {
 		cl = Math.sqrt(cx * cx + cy * cy);
 		if (cl === 0) continue;
 
+		// linear velocity towards center
 		node.dx += cx / cl * 0.1;
 		node.dy += cy / cl * 0.1;
 		// node.dx += cx / cl * 0.1 * (node.children * 0.1 + 1);
@@ -190,7 +193,7 @@ function gravity(nodes, x, y) {
 	}
 }
 
-function gravityNode(node, x, y) {
+function graivateTo(node, x, y) {
 	var cx, cy, cl;
 
 	cx = x - node.x;
@@ -198,9 +201,8 @@ function gravityNode(node, x, y) {
 	cl = Math.sqrt(cx * cx + cy * cy);
 	if (cl === 0) return;
 
-	node.x += cx * 0.3;
-	node.y += cy * 0.3;
-
+	node.x += cx * 0.1;
+	node.y += cy * 0.1;
 
 	// node.dx += cx / cl * 0.1;
 	// node.dy += cy / cl * 0.1;
@@ -208,6 +210,8 @@ function gravityNode(node, x, y) {
 
 function repel(node1, node2) {
 	var cx, cy, cl2, cl;
+	var i, j;
+	var mul, mx, my;
 
 	for (i=nodes.length; i--;) {
 		node1 = nodes[i];
@@ -217,10 +221,10 @@ function repel(node1, node2) {
 
 			mul = 1; //node1.file && node2.file ?  0.5: 1.2 - 0.5;
 			// mul += (node1.children + node2.children) * 0.1;
-
-			//var m1 = m2 = 1 + (node1.children + node2.children) * 0.6;
-			var m1 = node2.children * 0.8 + 1;
-			var m2 = node1.children * 0.8 + 1;
+			var m2;
+			var m1 = m2 = 1 + (node1.children + node2.children) * 0.6;
+			// var m1 = node2.children * 0.8 + 1;
+			// var m2 = node1.children * 0.8 + 1;
 			// m1 = mul * 1;
 			// m2 = mul * 1;
 
@@ -260,32 +264,42 @@ function repel(node1, node2) {
 }
 
 function simulate() {
+	var node;
 
+	// Move all nodes away from each other. Only folder nodes are updated.
 	repel(nodes);
+
+	// Move all nodes towards the center
 	gravity(nodes, 0, 0);
 
 	var link, i;
+	// Move all folders within distance of each other
 	for (i=links.length; i-- > 0;) {
 		link = links[i];
 		link.resolve();
 	}
 
+	// Reset counters
 	for (i=nodes.length; i-- > 0;) {
 		nodes[i].children = 0;
 		nodes[i].total = 0;
 	}
 
+	// Counting
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
 		link.from.total++;
 	}
+
+	// Cluster == folder of files.
+	// var ax = 0, ay = 0;
 
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
 		var c = link.from.children++;
 		var p = packing.getPoint(link.from.total, c);
 
-		gravityNode(link.to, link.from.x + p.x, link.from.y + p.y);
+		graivateTo(link.to, link.from.x + p.x, link.from.y + p.y);
 	}
 
 	// move

@@ -27,13 +27,12 @@ function newNode(name, isFile, x, y) {
 		var ext = node.name.split('.').pop();
 		if (!extension_colors[ext]) extension_colors[ext] = Math.random();
 		node.ext = ext;
+		node.sat = Math.random() * 0.5 + 0.5;
 	} else {
 		nodes.push(node);
 	}
 
 	node.life = 0;
-
-
 
 	return node;
 }
@@ -85,13 +84,13 @@ function initDrawings() {
 	document.body.appendChild( container );
 
 	camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 2, 2000 );
-	camera.position.z = 200;
+	camera.position.z = 800;
 
 	scene = new THREE.Scene();
 	// scene.fog = new THREE.FogExp2( 0x000000, 0.001 );
 
 	// geometry = new THREE.Geometry();
-	spriteGeometry = new THREE.ParticleGeometry( PARTICLES, 6 );
+	spriteGeometry = new THREE.ParticleGeometry( PARTICLES, 5 * 1.5);
 
 	sprite = THREE.ImageUtils.loadTexture( "disc.png" );
 
@@ -290,7 +289,8 @@ function render() {
 			// color.setHSL(c.h, c.s, Math.max(0.5, 1 - k * k));
 
 			var k = node.life * 0.01;
-			color.setHSL(extension_colors[node.ext], 0.5, Math.max(0.5, 1 - k * k));
+			k = Math.max(0.5, 1 - k * k);
+			color.setHSL(extension_colors[node.ext], node.sat * 0.2 + k * 0.6 + 0.2, k);
 			
 			spriteGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
 	

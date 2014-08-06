@@ -25,11 +25,9 @@ THREE.ParticleGeometry = function ( sprites, d ) {
 	var cb = new THREE.Vector3();
 	var ab = new THREE.Vector3();
 
-	e = d || 6;	// individual triangle size
+	d = d || 6;	// individual triangle size
 
 	for ( var i = 0, j = 0; i < sprites; i++, j += 18) {
-
-		d = e + Math.random() * 2.5;
 
 		// simple square planes
 		this.setVertex( 'positions', j + 0, -d, -d, 0 );
@@ -44,8 +42,8 @@ THREE.ParticleGeometry = function ( sprites, d ) {
 		this.setVertexUv( 'uvs', i * 12 + 2,  0,  1);
 		this.setVertexUv( 'uvs', i * 12 + 4,  1,  1);
 		this.setVertexUv( 'uvs', i * 12 + 6,  1,  1);
-		this.setVertexUv( 'uvs', i * 12 + 8, 1,  0);
-		this.setVertexUv( 'uvs', i * 12 + 10, 0, 0);
+		this.setVertexUv( 'uvs', i * 12 + 8,  1,  0);
+		this.setVertexUv( 'uvs', i * 12 + 10, 0,  0);
 
 		// flat face normals
 		this.getVertex( 'positions', j + 0, pA );
