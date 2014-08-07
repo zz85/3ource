@@ -13,9 +13,12 @@
 		left: 0;
 	}
 
-	</style>
-	<button onclick="step()">Step</button>
+	#info {
+		position: absolute;
+	}
 
+	</style>
+	
 	<script id="vertexShader" type="x-shader/x-vertex">
 
 			precision mediump float;
@@ -125,6 +128,8 @@
 
 		<div id="info">
 			<a href="http://threejs.org" target="_blank">three.js</a> - webgl force directed graphs wip
+<br/>
+			<button onclick="step()">Step</button>
 		</div>
 
 		<script src="test_files.js"></script>

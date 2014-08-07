@@ -4,10 +4,11 @@ var container, stats;
 var camera, scene, renderer, particles,
 spriteGeometry, material, i, h, color, sprite, size;
 
+var projector, raycaster;
 var mouseX = 0, mouseY = 0;
 
 
-var PARTICLES = 5000; // Particle Pool
+var PARTICLES = 1000; // Particle Pool
 var LINES = 500; // Lines Pool
 
 
@@ -84,7 +85,7 @@ function initDrawings() {
 	document.body.appendChild( container );
 
 	camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 2, 2000 );
-	camera.position.z = 800;
+	camera.position.z = 200;
 
 	scene = new THREE.Scene();
 	// scene.fog = new THREE.FogExp2( 0x000000, 0.001 );
@@ -145,15 +146,132 @@ function initDrawings() {
 
 	line.geometry.verticesNeedUpdate = true;
 
-	particleMesh = new THREE.Mesh( spriteGeometry, material );
+	
+THREE.Mesh.prototype.raycast = ( function () {
+
+	var inverseMatrix = new THREE.Matrix4();
+	var ray = new THREE.Ray();
+	var vA = new THREE.Vector3();
+	var vB = new THREE.Vector3();
+	var vC = new THREE.Vector3();
+
+	return function ( raycaster, intersects ) {
+
+		var geometry = this.geometry;
+		// debugger;
+
+		// Check boundingBox before continuing
+
+		inverseMatrix.getInverse( this.matrixWorld );
+		ray.copy( raycaster.ray ).applyMatrix4( inverseMatrix );
+
+		if ( geometry.boundingBox !== null ) {
+
+			if ( ray.isIntersectionBox( geometry.boundingBox ) === false )  {
+
+				return;
+
+			}
+
+		}
+
+		if ( geometry instanceof THREE.BufferGeometry ) {
+
+			var material = this.material;
+
+			if ( material === undefined ) return;
+
+			var attributes = geometry.attributes;
+
+			var a, b, c;
+			var precision = raycaster.precision;
+
+			var positions = attributes.position.array;
+			var offsets = attributes.offset.array;
+
+			for ( var i = 0, j = 0, il = positions.length; i < il; i += 3, j += 9 ) {
+
+				a = i;
+				b = i + 1;
+				c = i + 2;
+
+				vA.set(
+					positions[ j     ] + offsets[ j     ],
+					positions[ j + 1 ] + offsets[ j + 1 ],
+					positions[ j + 2 ] + offsets[ j + 2 ]
+				);
+				vB.set(
+					positions[ j + 3 ] + offsets[ j + 3 ],
+					positions[ j + 4 ] + offsets[ j + 4 ],
+					positions[ j + 5 ] + offsets[ j + 5 ]
+				);
+				vC.set(
+					positions[ j + 6 ] + offsets[ j + 6 ],
+					positions[ j + 7 ] + offsets[ j + 7 ],
+					positions[ j + 8 ] + offsets[ j + 8 ]
+				);
+
+
+				if ( material.side === THREE.BackSide ) {
+
+					var intersectionPoint = ray.intersectTriangle( vC, vB, vA, true );
+
+				} else {
+
+					var intersectionPoint = ray.intersectTriangle( vA, vB, vC, material.side !== THREE.DoubleSide );
+
+				}
+
+				if ( intersectionPoint === null ) continue;
+
+				intersectionPoint.applyMatrix4( this.matrixWorld );
+
+				var distance = raycaster.ray.origin.distanceTo( intersectionPoint );
+
+				if ( distance < precision || distance < raycaster.near || distance > raycaster.far ) continue;
+
+				var whi = j / 9 / 2 | 0;
+				intersects.push( {
+
+					distance: distance,
+					point: intersectionPoint,
+					face: new THREE.Face3( a, b, c, THREE.Triangle.normal( vA, vB, vC ) ),
+					faceIndex: j / 9,
+					object: this
+
+				} );
+
+				console.log(whi, fileNodes[whi].name);
+
+			}
+
+		} 
+
+	};
+
+}() );
+
+particleMesh = new THREE.Mesh( spriteGeometry, material );
+
+
 
 	scene.add( particleMesh );
+
+	//
+
+	projector = new THREE.Projector();
+	raycaster = new THREE.Raycaster();
+
 
 	//
 
 	renderer = new THREE.WebGLRenderer( { clearAlpha: 1 } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	container.appendChild( renderer.domElement );
+
+
+	// renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
+
 
 	//
 
@@ -164,9 +282,12 @@ function initDrawings() {
 
 	//
 
-	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-	document.addEventListener( 'touchstart', onDocumentTouchStart, false );
-	document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+renderer.domElement.addEventListener( 'mousedown', function() {
+	moo = true;
+}, false );
+	renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
+	renderer.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false );
+	renderer.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false );
 
 	//
 
@@ -192,6 +313,7 @@ function onDocumentMouseMove( event ) {
 
 	mouseX = event.clientX - windowHalfX;
 	mouseY = event.clientY - windowHalfY;
+	// console.log('move', mouseX, mouseY);
 
 }
 
@@ -303,6 +425,37 @@ function render() {
 
 	spriteGeometry.attributes.color.needsUpdate = true;
 	spriteGeometry.attributes.offset.needsUpdate = true;
+
+	// find intersections
+
+	if (window.moo) {
+	
+		vector = new THREE.Vector3( mouseX / windowHalfX, -1 * mouseY / windowHalfY, 1 );
+		// console.log(vector);
+		projector.unprojectVector( vector, camera );
+
+		raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
+
+
+
+		console.time('check');
+		var intersects = raycaster.intersectObjects( scene.children );
+
+		if ( intersects.length > 0 ) {
+			console.log(intersects.length)
+			console.log(intersects[0])
+			
+		} else {
+
+			
+
+		}
+		console.timeEnd('check')
+
+		moo = false;
+	}
+
+
 
 	renderer.render( scene, camera );
 
