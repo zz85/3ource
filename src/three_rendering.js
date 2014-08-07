@@ -8,7 +8,7 @@ var projector, raycaster;
 var mouseX = 0, mouseY = 0;
 
 
-var PARTICLES = 1000; // Particle Pool
+var PARTICLES = 5000; // Particle Pool
 var LINES = 500; // Lines Pool
 
 
@@ -25,7 +25,10 @@ function newNode(name, isFile, x, y) {
 	var node = new gNode(name, isFile, x, y);
 	if (isFile) {
 		fileNodes.push(node);
-		var ext = node.name.split('.').pop();
+		var name = node.name;
+		var split = name.lastIndexOf('.');
+
+		var ext = split > 0 ? name.substring(split + 1) : '';
 		if (!extension_colors[ext]) extension_colors[ext] = Math.random();
 		node.ext = ext;
 		node.sat = Math.random() * 0.5 + 0.5;
@@ -84,7 +87,7 @@ function initDrawings() {
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
-	camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 2, 2000 );
+	camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 );
 	camera.position.z = 200;
 
 	scene = new THREE.Scene();
@@ -139,43 +142,28 @@ function initDrawings() {
 
 	for (i = 0; i < LINES; i++) {
 		line.geometry.vertices.push(
-			new THREE.Vector3(0, 0, 0), // -5000 fails
-			new THREE.Vector3(0, 0, 0)
+			new THREE.Vector3(0, 0, -10), // -5000 fails
+			new THREE.Vector3(0, 0, -10)
 		);
 	}
 
 	line.geometry.verticesNeedUpdate = true;
 
+	particleMesh = new THREE.Mesh( spriteGeometry, material );
 	
-THREE.Mesh.prototype.raycast = ( function () {
+	particleMesh.raycast = ( function () {
 
-	var inverseMatrix = new THREE.Matrix4();
-	var ray = new THREE.Ray();
-	var vA = new THREE.Vector3();
-	var vB = new THREE.Vector3();
-	var vC = new THREE.Vector3();
+		var inverseMatrix = new THREE.Matrix4();
+		var ray = new THREE.Ray();
+		var vA = new THREE.Vector3();
+		var vB = new THREE.Vector3();
+		var vC = new THREE.Vector3();
 
-	return function ( raycaster, intersects ) {
+		return function ( raycaster, intersects ) {
 
-		var geometry = this.geometry;
-		// debugger;
-
-		// Check boundingBox before continuing
-
-		inverseMatrix.getInverse( this.matrixWorld );
-		ray.copy( raycaster.ray ).applyMatrix4( inverseMatrix );
-
-		if ( geometry.boundingBox !== null ) {
-
-			if ( ray.isIntersectionBox( geometry.boundingBox ) === false )  {
-
-				return;
-
-			}
-
-		}
-
-		if ( geometry instanceof THREE.BufferGeometry ) {
+			var geometry = this.geometry;
+			inverseMatrix.getInverse( this.matrixWorld );
+			ray.copy( raycaster.ray ).applyMatrix4( inverseMatrix );
 
 			var material = this.material;
 
@@ -189,7 +177,9 @@ THREE.Mesh.prototype.raycast = ( function () {
 			var positions = attributes.position.array;
 			var offsets = attributes.offset.array;
 
-			for ( var i = 0, j = 0, il = positions.length; i < il; i += 3, j += 9 ) {
+			var limits = fileNodes.length * 2;
+
+			for ( var i = 0, j = 0, k = 0, il = positions.length; i < il && k < limits; i += 3, j += 9, k++) {
 
 				a = i;
 				b = i + 1;
@@ -230,13 +220,13 @@ THREE.Mesh.prototype.raycast = ( function () {
 
 				if ( distance < precision || distance < raycaster.near || distance > raycaster.far ) continue;
 
-				var whi = j / 9 / 2 | 0;
+				var whi = k / 2 | 0;
 				intersects.push( {
 
 					distance: distance,
 					point: intersectionPoint,
 					face: new THREE.Face3( a, b, c, THREE.Triangle.normal( vA, vB, vC ) ),
-					faceIndex: j / 9,
+					faceIndex: k,
 					object: this
 
 				} );
@@ -245,15 +235,9 @@ THREE.Mesh.prototype.raycast = ( function () {
 
 			}
 
-		} 
+		};
 
-	};
-
-}() );
-
-particleMesh = new THREE.Mesh( spriteGeometry, material );
-
-
+	}() );
 
 	scene.add( particleMesh );
 
@@ -435,7 +419,6 @@ function render() {
 		projector.unprojectVector( vector, camera );
 
 		raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
-
 
 
 		console.time('check');
