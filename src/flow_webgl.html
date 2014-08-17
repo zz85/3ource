@@ -186,6 +186,8 @@
 		}
 
 		function display() {
+
+			if (at > t.length - 1) return;
 			// var
 			commit = t[at];
 			// slidebar.setValue(at);
@@ -240,7 +242,39 @@
 		function init() {
 			initDrawings();
 			initSimulations();
+
+			setInterval(function() {at+=5; //console.log(at);
+				display(); }, 50);;
 		}
+
+		// Fit button
+		window.addEventListener('mousewheel', function(e) {
+			// TODO position mouse on where it zooms
+			camera.position.z -= e.wheelDeltaY;
+		});
+
+		var mousex = null, mousey = null;
+		window.addEventListener('mousedown', function(e) {
+			mousex = e.offsetX;
+			mousey = e.offsetY;
+		});
+
+		window.addEventListener('mousemove', function(e) {
+			// TODO use actual distance
+			if (mousex !== null && mousey !== null) {
+				camera.position.x -= e.offsetX - mousex;
+				camera.position.y += e.offsetY - mousey;
+				mousex = e.offsetX;
+				mousey = e.offsetY;
+			}
+		});
+
+		window.addEventListener('mouseup', function(e) {
+			mousex = null;
+			mousey = null;
+		});
+
+
 
 		init();
 	</script>

@@ -8,7 +8,7 @@ var projector, raycaster;
 var mouseX = 0, mouseY = 0;
 
 
-var PARTICLES = 5000; // Particle Pool
+var PARTICLES = 2000; // Particle Pool
 var LINES = 500; // Lines Pool
 
 
