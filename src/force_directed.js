@@ -1,12 +1,16 @@
 'use strict';
 
-var nodes = []; // list of all graph nodes
-var links = []; // list of all constrained edges (FOLDERS)
-var clusters = []; // list for parent-children links (FILES)
+var nodes = []; // list of all graph nodes (directory)
+var links = []; // list of gLink constrained edges (FOLDERS to Parents)
+var clusters = []; // list for parent-children links (FILES to Folders)
 var fileNodes = []; // Just graph nodes for FILES.
 
 var DAMPING = 0.96;
 var SPEED_LIMIT = 5;
+
+var cache = {};
+
+var tmpLink = new gLink();
 
 function CirclePacking() {
 	var TARGET = 1550;
@@ -23,6 +27,8 @@ function CirclePacking() {
 	var points = [];
 
 	this.getPoint = function(target, which) {
+
+		if (cache[target + '.' + which]) return cache[target + '.' + which];
 		counting = 1;
 		if (which == 0) return {x: 0, y: 0};
 
@@ -78,6 +84,8 @@ function CirclePacking() {
 				if (counting == which) {
 					var x = Math.sin(angle) * space * ring;
 					var y = Math.cos(angle) * space * ring;
+					cache[target + '.' + which] = {x: x, y: y};
+
 					return {x: x, y: y};
 
 				}
@@ -91,10 +99,10 @@ function CirclePacking() {
 }
 
 
-
+var p = {};
 function distanceForChildren(c) {
 	if (c == 0) return 10;
-	var p = packing.getPoint(c, c - 1);
+	var p = packing.getPoint(c, c - 1, p);
 	return (Math.sqrt(p.x * p.x + p.y * p.y)  + 5) * 0.7;
 }
 
@@ -133,12 +141,20 @@ function gNode(name, f, x, y) {
 	this.children = 0;
 }
 
-function gLink(node1, node2, distance, hidden) {
+function gLink(node1, node2, distance) {
 	// constrains
 	this.distance = distance ? distance : 50 ;
 	this.from = node1;
 	this.to = node2;
-	this.hidden = hidden;
+}
+
+function getDistance(t) {
+	p = packing.getPoint(t, t-1, p);
+	if (p) {
+		var d = Math.sqrt(p.x * p.x + p.y + p.y);
+		return d;
+	}
+	return 0;
 }
 
 gLink.prototype.resolve = function() {
@@ -149,8 +165,16 @@ gLink.prototype.resolve = function() {
 	var cy = node2.y - node1.y;
 
 	var distance = this.distance;
-	distance += Math.max(distanceForChildren(node1.children) * 2, distanceForChildren(node2.children) * 2);
+	// distance += Math.max(distanceForChildren(node1.children) * 2, distanceForChildren(node2.children) * 2);
 	// distance += distanceForChildren(Math.max(node1.children, 1)) + distanceForChildren(Math.max(node2.children, 1))  * 1.5;
+
+
+	distance = 10;
+	distance += getDistance(node1.total);
+	distance += getDistance(node2.total);
+	
+	// distance *= 1.5;
+	// console.log(link.distance)
 
 	var lengthSquared = cx * cx + cy * cy;
 	if (lengthSquared === 0) return;
@@ -158,6 +182,9 @@ gLink.prototype.resolve = function() {
 	var cl = Math.sqrt(lengthSquared);
 	var k, mx, my;
 	k = (distance - cl) / distance;
+
+	// if (k > 2) return;
+
  	var mul = 0.015;
 	mx = k * cx * distance / cl * mul;
 	my = k * cy * distance / cl * mul;
@@ -208,7 +235,10 @@ function graivateTo(node, x, y) {
 	// node.dy += cy / cl * 0.1;
 }
 
-function repel(node1, node2) {
+function repel() {
+	// repel clusters
+
+	var node1, node2;
 	var cx, cy, cl2, cl;
 	var i, j;
 	var mul, mx, my;
@@ -219,18 +249,17 @@ function repel(node1, node2) {
 		for (j=i; j--;) {
 			node2 = nodes[j];
 
-			mul = 1; //node1.file && node2.file ?  0.5: 1.2 - 0.5;
-			// mul += (node1.children + node2.children) * 0.1;
-			var m2;
-			var m1 = m2 = 1 + (node1.children + node2.children) * 0.6;
-			// var m1 = node2.children * 0.8 + 1;
-			// var m2 = node1.children * 0.8 + 1;
-			// m1 = mul * 1;
-			// m2 = mul * 1;
 
-			// if (!node1.file || !node1.file) continue;
-			// mul = 1.2;
-			// var m1 = node1.
+			
+
+			// mul = 1; //node1.file && node2.file ?  0.5: 1.2 - 0.5;
+			// // mul += (node1.children + node2.children) * 0.1;
+			// var m2;
+			// var m1 = m2 = 1 + (node1.children + node2.children) * 0.6;
+			// // var m1 = node2.children * 0.8 + 1;
+			// // var m2 = node1.children * 0.8 + 1;
+			// // m1 = mul * 1;
+			// // m2 = mul * 1;
 
 			cx = node2.x - node1.x;
 			cy = node2.y - node1.y;
@@ -242,22 +271,47 @@ function repel(node1, node2) {
 				cl = 1;
 			}
 
-			if (cl2 < 100000) {
-				// cl = Math.sqrt(cl2);
-				cl = cl2;
-				mx = cx / cl * mul;
-				my = cy / cl * mul;
+			cl = Math.sqrt(cl2);
 
-				if (!node1.file) {
-					node1.dx -= mx * m1;
-					node1.dy -= my * m1;
-				}
+			var d = 10 + getDistance(node1)
+			+ getDistance(node2);
 
-				if (!node2.file) {
-					node2.dx += mx * m2;
-					node2.dy += my * m2;
-				}
+			var b = 300;
+			if (cl < b) {
+				// tmpLink.distance = 10;
+				// tmpLink.from = node1;
+				// tmpLink.to = node2;
+				// tmpLink.resolve(); 
+
+				var k = (b - cl) / b;
+
+
+				mx = cx / cl * k;
+				my = cy / cl * k;
+
+				node1.dx -= mx ;
+				node1.dy -= my ;
+
+				node2.dx += mx;
+				node2.dy += my;
+
 			}
+
+
+
+			// if (cl2 < 100000) {
+			// 	// cl = Math.sqrt(cl2);
+			// 	cl = cl2;
+			// 	mx = cx / cl * mul;
+			// 	my = cy / cl * mul;
+
+			// 	node1.dx -= mx * m1;
+			// 	node1.dy -= my * m1;
+
+			// 	node2.dx += mx * m2;
+			// 	node2.dy += my * m2;
+				
+			// }
 		}
 	}
 
@@ -266,18 +320,10 @@ function repel(node1, node2) {
 function simulate() {
 	var node;
 
-	// Move all nodes away from each other. Only folder nodes are updated.
-	repel(nodes);
-
 	// Move all nodes towards the center
 	gravity(nodes, 0, 0);
 
 	var link, i;
-	// Move all folders within distance of each other
-	for (i=links.length; i-- > 0;) {
-		link = links[i];
-		link.resolve();
-	}
 
 	// Reset counters
 	for (i=nodes.length; i-- > 0;) {
@@ -294,13 +340,24 @@ function simulate() {
 	// Cluster == folder of files.
 	// var ax = 0, ay = 0;
 
+	var p = {};
 	for (i=clusters.length; i-- > 0;) {
 		link = clusters[i];
 		var c = link.from.children++;
-		var p = packing.getPoint(link.from.total, c);
+		p = packing.getPoint(link.from.total, c, p);
 
 		graivateTo(link.to, link.from.x + p.x, link.from.y + p.y);
 	}
+
+	// Move all folders within distance of each other
+	for (i=links.length; i-- > 0;) {
+		link = links[i];
+		link.resolve();
+	}
+
+
+	// Move all nodes away from each other. Only folder nodes are updated.
+	repel();
 
 	// move
 	for (i=nodes.length; i--;) {
