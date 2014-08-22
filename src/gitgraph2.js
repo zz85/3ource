@@ -9,9 +9,9 @@
 
 var TRACK_WIDTH = 10;
 var DOT_SIZE = 3;
-var ROW_HEIGHT = 100;
+var ROW_HEIGHT = 70; // 20 - 100
 
-var targetRows = 50; // Number of dom elements
+var targetRows = 40; // Number of dom elements (TODO make this correct)
 var bufferRows = 0;
 
 var LINK_PORTION = 0.28;
@@ -30,7 +30,7 @@ var where = 0;
 document.addEventListener('mousewheel', function(e) {
 	where -= e.wheelDelta / 100;
 	where = where < 0 ? 0 : where > t.length ? t.length  - 1 : where;
-	if (Math.random() < 0.2) console.log(viewer.currentRow);
+	// if (Math.random() < 0.2) console.log(viewer.currentRow);
 	viewer.currentRow = where;
 	viewer.draw();
 })
@@ -98,7 +98,7 @@ function scrollGraphTo(row) {
 }
 
 var selected = -1;
-
+var selectedEntry;
 
 
 
@@ -445,6 +445,13 @@ function GitLogViewer(timeline) {
 
 	document.body.appendChild(gitgraph);
 
+	var mouseX = -1, mouseY = -1;
+
+	graph.addEventListener('mousemove', function(e) {
+		mouseX = e.offsetX;
+		mouseY = e.offsetY;
+	});
+
 	
 	var sa, rows;
 
@@ -510,7 +517,7 @@ function GitLogViewer(timeline) {
 		var now = Date.now();
 		// if (now - lastRenderered < 16) {
 		// 	// console.log('skip');
-		// 	setTimeout(draw, 16);
+			// setTimeout(draw, 16);
 		// 	return;
 		// }
 
@@ -528,8 +535,9 @@ function GitLogViewer(timeline) {
 
 	}
 
-	function drawGraph() {
+	// setInterval(draw, 50);
 
+	function drawGraph() {
 		// Draw commit tracks
 		ctx.clearRect(0, 0, graph.width, graph.height);
 		ctx.save();
@@ -645,7 +653,17 @@ function GitLogViewer(timeline) {
 				ctx.fill();
 				ctx.stroke();
 
+				if (ctx.isPointInPath(mouseX, mouseY)) {
+					console.log('yeah!', entry, t[entry.row]);
+					selectedEntry = entry;
+				}
 				// if (entry.row > maxRow) break;
+			}
+
+			if (selectedEntry) {
+				ctx.beginPath();
+				ctx.arc(getTrackX(selectedEntry.lane), getRowY(selectedEntry.row), DOT_SIZE * 1.5, 0, Math.PI * 2);
+				ctx.fill();
 			}
 
 			/*
