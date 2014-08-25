@@ -456,7 +456,7 @@ function GitLogViewer(timeline) {
 		color: '#979797',
 		opacity: 1,
 		position: 'absolute',
-		height: '50%',
+		height: '80%',
 		transition: 'all 1s'
 	});
 

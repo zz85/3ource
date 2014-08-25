@@ -10,10 +10,13 @@ It was also inspired by [Gource](https://code.google.com/p/gource/).
 ## Warning: Work-in-progress
 
 Sneak peak:
-[Gitlog viewer](https://zz85.github.io/3ource/src/timeline.html)
-[Log graph stepper](https://zz85.github.io/3ource/src/flow.html)
-[Three.js WebGL Rendering](https://zz85.github.io/3ource/src/force_directed_webgl.html)
-[Canvas grapher rendering](https://zz85.github.io/3ource/src/force_directed.html)
+- [Gitlog viewer](https://zz85.github.io/3ource/src/timeline.html)
+- [Git History Player (WebGL Rendering with Three.js)](https://zz85.github.io/3ource/src/flow_webgl.html)
+- [Git History Player (Canvas)](https://zz85.github.io/3ource/src/flow.html)
+
+## Slides
+[Slides for presentation](https://slides.com/zz85/git-visualization-js/) at SingaporeJS meetup.
+
 
 ## Usage
 
