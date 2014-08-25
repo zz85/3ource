@@ -165,15 +165,11 @@ gLink.prototype.resolve = function() {
 	var cy = node2.y - node1.y;
 
 	var distance = this.distance;
-	// distance += Math.max(distanceForChildren(node1.children) * 2, distanceForChildren(node2.children) * 2);
-	// distance += distanceForChildren(Math.max(node1.children, 1)) + distanceForChildren(Math.max(node2.children, 1))  * 1.5;
 
-
-	distance = 10;
+	distance = 1;
 	distance += getDistance(node1.total);
 	distance += getDistance(node2.total);
-	
-	// distance *= 1.5;
+	distance *= 1.5;
 	// console.log(link.distance)
 
 	var lengthSquared = cx * cx + cy * cy;
@@ -183,7 +179,7 @@ gLink.prototype.resolve = function() {
 	var k, mx, my;
 	k = (distance - cl) / distance;
 
-	// if (k > 2) return;
+	// if (k > 1) return;
 
  	var mul = 0.015;
 	mx = k * cx * distance / cl * mul;
@@ -193,12 +189,6 @@ gLink.prototype.resolve = function() {
 	node1.dy -= my;
 	node2.dx += mx;
 	node2.dy += my;
-
-	// node1.dx -= mx * 1 / (node1.children + 1);
-	// node1.dy -= my * 1 / (node1.children + 1);
-	// node2.dx += mx * 1 / (node2.children + 1);
-	// node2.dy += my * 1 / (node2.children + 1);
-
 };
 
 function gravity(nodes, x, y) {
@@ -249,18 +239,6 @@ function repel() {
 		for (j=i; j--;) {
 			node2 = nodes[j];
 
-
-			
-
-			// mul = 1; //node1.file && node2.file ?  0.5: 1.2 - 0.5;
-			// // mul += (node1.children + node2.children) * 0.1;
-			// var m2;
-			// var m1 = m2 = 1 + (node1.children + node2.children) * 0.6;
-			// // var m1 = node2.children * 0.8 + 1;
-			// // var m2 = node1.children * 0.8 + 1;
-			// // m1 = mul * 1;
-			// // m2 = mul * 1;
-
 			cx = node2.x - node1.x;
 			cy = node2.y - node1.y;
 			cl2 = cx * cx + cy * cy;
@@ -273,17 +251,19 @@ function repel() {
 
 			cl = Math.sqrt(cl2);
 
-			var d = 10 + getDistance(node1)
+			var d = 1+ getDistance(node1)
 			+ getDistance(node2);
 
-			var b = 300;
+			var b = d * 100 ;
 			if (cl < b) {
+				// if (cl < d) b = d * 100;
 				// tmpLink.distance = 10;
 				// tmpLink.from = node1;
 				// tmpLink.to = node2;
 				// tmpLink.resolve(); 
 
-				var k = (b - cl) / b;
+				var k = (b - cl) / 40;
+				//  / b 
 
 
 				mx = cx / cl * k;

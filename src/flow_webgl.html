@@ -5,6 +5,7 @@
 	<style>
 	body {
 		font-family: monospace;
+		overflow: hidden;
 	}
 
 	button {
@@ -15,6 +16,32 @@
 
 	#info {
 		position: absolute;
+	}
+
+	#color_legend {
+		position: absolute;
+		z-index: 99;
+		top: 40px;
+		left: 100px;
+		width: 80px;
+		/*height: 200px;*/
+	}
+
+	#color_legend > div{
+		width: 100%;
+		display: block;
+		height: 20px;
+		color: #fff;
+		padding: 0 10px;
+		text-shadow: 0 0 10px rgb(0, 0, 0);
+	}
+
+	#commit {
+		position: absolute;
+		top: 50px;
+		right: 100px;
+		font-size: 20px;
+		color: #fff;
 	}
 
 	</style>
@@ -130,7 +157,24 @@
 			<a href="http://threejs.org" target="_blank">three.js</a> - webgl force directed graphs wip
 <br/>
 			<button onclick="step()">Step</button>
+
 		</div>
+
+
+
+	<div id="commit">
+		<div id="author"></div>
+		<div id="message"></div>
+		<div id="time"></div>
+	</div>
+
+	<div id="color_legend">
+		<div>Legend</div>
+	</div>
+	<script>
+		var color_legend = document.getElementById('color_legend');
+	</script>
+
 
 		<script src="test_files.js"></script>
 		<script src="fs.js"></script>
@@ -143,6 +187,7 @@
 
 		<script src="three_rendering.js"></script>
 		<script src="force_directed.js"></script>
+		<script src="slidebar.js"></script>
 
 		<script src="source.js"></script>
 		
@@ -155,6 +200,15 @@
 		var at = -1;
 
 		var previousTree = [];
+
+		var slidebar = new Slidebar(600, 50);
+		slidebar.onScroll.do(function(v) {
+			console.log(v);
+			at = v;
+			display();
+		});
+
+		document.body.appendChild(slidebar.dom);
 
 		function readTimeline(timeline) {
 			t = timeline.concat().reverse();
@@ -176,6 +230,18 @@
 					case 39: // right
 						at++;
 						break;
+					case 82:
+						camera.rotation.z += 0.1;
+						break;
+					case 89:
+						camera.rotation.z -= 0.1;
+						break;
+					case 85:
+						camera.rotation.x += 0.01;
+						break;
+					case 84:
+						camera.rotation.x -= 0.01;
+						break;
 				}
 			} else {
 				at++;
@@ -190,8 +256,8 @@
 			if (at > t.length - 1) return;
 			// var
 			commit = t[at];
-			// slidebar.setValue(at);
-			// slidebar.setMax(t.length - 1);
+			slidebar.setValue(at);
+			slidebar.setMax(t.length - 1);
 
 			var modified = commit.change.filter(function(modification) {
 				return modification.op == 'M';
@@ -222,9 +288,9 @@
 				}
 			});
 
-			// author.innerText = '#' + (at + 1) + ' ' + commit.author + ':\n';
-			// message.innerText = commit.message;
-			// time.innerText = new Date(commit.date * 1000);
+			author.innerText = '#' + (at + 1) + ' ' + commit.author + ':\n';
+			message.innerText = commit.message;
+			time.innerText = new Date(commit.date * 1000);
 
 			previousTree = commit.tree;
 
@@ -243,8 +309,8 @@
 			initDrawings();
 			initSimulations();
 
-			setInterval(function() {at+=5; //console.log(at);
-				display(); }, 50);;
+			// setInterval(function() {at+=5; //console.log(at);
+			// 	display(); }, 50);;
 		}
 
 		// Fit button
@@ -278,5 +344,6 @@
 
 		init();
 	</script>
+
 </body>
 </html>

@@ -29,9 +29,22 @@ function newNode(name, isFile, x, y) {
 		var split = name.lastIndexOf('.');
 
 		var ext = split > 0 ? name.substring(split + 1) : '';
-		if (!extension_colors[ext]) extension_colors[ext] = Math.random();
+
 		node.ext = ext;
 		node.sat = Math.random() * 0.5 + 0.5;
+
+		if (!extension_colors[ext]) {
+			extension_colors[ext] = Math.random();
+			color.setHSL(extension_colors[ext], 0.5, 0.5);
+			var div = document.createElement('div');
+			if (split) {
+				div.style.cssText = 'background-color: #' + color.getHexString() + ';';
+				div.innerText = ext;
+				color_legend.appendChild(div);
+			}
+
+		}
+
 	} else {
 		nodes.push(node);
 	}
