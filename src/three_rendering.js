@@ -7,7 +7,6 @@ spriteGeometry, material, i, h, color, sprite, size;
 var projector, raycaster;
 var mouseX = 0, mouseY = 0;
 
-
 var PARTICLES = 2000; // Particle Pool
 var LINES = 500; // Lines Pool
 
@@ -23,12 +22,19 @@ var extension_colors = {};
 /* Graph functions */
 function newNode(name, isFile, x, y) {
 	var node = new gNode(name, isFile, x, y);
+	// TODO
+	// Histogram count / sort
+	// Equidistance colors
+	// Common File Types.
+
 	if (isFile) {
 		fileNodes.push(node);
-		var name = node.name;
-		var split = name.lastIndexOf('.');
 
-		var ext = split > 0 ? name.substring(split + 1) : '';
+		var filename = name.split('/').pop();
+		var split = filename.lastIndexOf('.');
+
+		// If no extension or hidden file (eg. .gitignore)
+		var ext = split > 0 ? filename.substring(split + 1).toLowerCase() : '';
 
 		node.ext = ext;
 		node.sat = Math.random() * 0.5 + 0.5;
@@ -37,11 +43,9 @@ function newNode(name, isFile, x, y) {
 			extension_colors[ext] = Math.random();
 			color.setHSL(extension_colors[ext], 0.5, 0.5);
 			var div = document.createElement('div');
-			if (split) {
-				div.style.cssText = 'background-color: #' + color.getHexString() + ';';
-				div.innerText = ext;
-				color_legend.appendChild(div);
-			}
+			div.style.cssText = 'background-color: #' + color.getHexString() + ';';
+			div.innerText = '.' + ext;
+			color_legend.appendChild(div);
 
 		}
 

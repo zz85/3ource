@@ -298,7 +298,7 @@
 
 		function initSimulations() {
 			fs = new FS();
-			fs.root.graphNode = newNode('.');
+			fs.root.graphNode = newNode('.', false);
 
 			fs.root.onAdd.do(onNodeAdd);
 			fs.root.onRemove.do(onNodeRemove);
