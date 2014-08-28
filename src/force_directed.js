@@ -179,9 +179,10 @@ gLink.prototype.resolve = function() {
 	var k, mx, my;
 	k = (distance - cl) / distance;
 
-	// if (k > 1) return;
+	if (k > 0) return;
 
- 	var mul = 0.015;
+ 	var mul = 0.001;
+	cl = 1000
 	mx = k * cx * distance / cl * mul;
 	my = k * cy * distance / cl * mul;
 
@@ -242,27 +243,43 @@ function repel() {
 			cx = node2.x - node1.x;
 			cy = node2.y - node1.y;
 			cl2 = cx * cx + cy * cy;
+			
+			if (cl2 > 100 * 100) continue;
+
+			cl = Math.sqrt(cl2);
 
 			if (!cl) {
 				cx = Math.random() - 0.5;
 				cy = Math.random() - 0.5;
 				cl = 1;
 			}
-
-			cl = Math.sqrt(cl2);
-
-			var d = 1+ getDistance(node1)
+			
+			var d = 2 + getDistance(node1)
 			+ getDistance(node2);
 
 			var b = d * 100 ;
-			if (cl < b) {
+			
+			if (true || cl < b) {
 				// if (cl < d) b = d * 100;
-				// tmpLink.distance = 10;
-				// tmpLink.from = node1;
-				// tmpLink.to = node2;
-				// tmpLink.resolve(); 
+				/*
+				tmpLink.distance = d;
+				tmpLink.from = node1;
+				tmpLink.to = node2;
+				tmpLink.resolve(); 
+				*/
+				var k = (cl - d) / d * 0.05;
+				if (k < 0) continue;
+				mx = cx/cl * k;
+				my = cy/cl * k;
 
-				var k = (b - cl) / 40;
+				node1.x -= mx ;
+				node1.y -= my ;
+
+				node2.x += mx;
+				node2.y += my;
+				
+				/*
+				var k = ((cl - d) / d * 0.1) * cl ;
 				//  / b 
 
 
@@ -274,6 +291,7 @@ function repel() {
 
 				node2.dx += mx;
 				node2.dy += my;
+				*/
 
 			}
 
@@ -301,7 +319,7 @@ function simulate() {
 	var node;
 
 	// Move all nodes towards the center
-	gravity(nodes, 0, 0);
+	//gravity(nodes, 0, 0);
 
 	var link, i;
 
