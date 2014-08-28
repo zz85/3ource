@@ -169,7 +169,7 @@ gLink.prototype.resolve = function() {
 	distance = 1;
 	distance += getDistance(node1.total);
 	distance += getDistance(node2.total);
-	distance *= 1.5;
+	distance *= 2;
 	// console.log(link.distance)
 
 	var lengthSquared = cx * cx + cy * cy;
@@ -181,15 +181,22 @@ gLink.prototype.resolve = function() {
 
 	if (k > 0) return;
 
- 	var mul = 0.001;
-	cl = 1000
+ 	var mul = 0.01;
+	//cl = 1000
 	mx = k * cx * distance / cl * mul;
 	my = k * cy * distance / cl * mul;
 
+	
 	node1.dx -= mx;
 	node1.dy -= my;
 	node2.dx += mx;
 	node2.dy += my;
+	/*
+	node1.x -= mx;
+	node1.y -= my;
+	node2.x += mx;
+	node2.y += my;
+	*/
 };
 
 function gravity(nodes, x, y) {
@@ -204,8 +211,8 @@ function gravity(nodes, x, y) {
 		if (cl === 0) continue;
 
 		// linear velocity towards center
-		node.dx += cx / cl * 0.1;
-		node.dy += cy / cl * 0.1;
+		node.dx += cx / cl * 0.05;
+		node.dy += cy / cl * 0.05;
 		// node.dx += cx / cl * 0.1 * (node.children * 0.1 + 1);
 		// node.dy += cy / cl * 0.1 * (node.children * 0.1 + 1);
 	}
@@ -243,23 +250,17 @@ function repel() {
 			cx = node2.x - node1.x;
 			cy = node2.y - node1.y;
 			cl2 = cx * cx + cy * cy;
-			
-			if (cl2 > 100 * 100) continue;
 
-			cl = Math.sqrt(cl2);
+			// skip if too far away			
+			if (cl2 > 200 * 200) continue;
 
-			if (!cl) {
-				cx = Math.random() - 0.5;
-				cy = Math.random() - 0.5;
-				cl = 1;
-			}
-			
 			var d = 2 + getDistance(node1)
 			+ getDistance(node2);
 
-			var b = d * 100 ;
+			var d2 = d * d;
+			var d3 = cl2 < d2 ? 0.1: cl2 - d2;
 			
-			if (true || cl < b) {
+			if (true || cl2 < d2) {
 				// if (cl < d) b = d * 100;
 				/*
 				tmpLink.distance = d;
@@ -267,16 +268,16 @@ function repel() {
 				tmpLink.to = node2;
 				tmpLink.resolve(); 
 				*/
-				var k = (cl - d) / d * 0.05;
-				if (k < 0) continue;
-				mx = cx/cl * k;
-				my = cy/cl * k;
+				var k = 50 * 1 / d3;
+				
+				mx = cx * k;
+				my = cy * k;
 
-				node1.x -= mx ;
-				node1.y -= my ;
+				node1.dx -= mx ;
+				node1.dy -= my ;
 
-				node2.x += mx;
-				node2.y += my;
+				node2.dx += mx;
+				node2.dy += my;
 				
 				/*
 				var k = ((cl - d) / d * 0.1) * cl ;
@@ -319,7 +320,7 @@ function simulate() {
 	var node;
 
 	// Move all nodes towards the center
-	//gravity(nodes, 0, 0);
+	gravity(nodes, 0, 0);
 
 	var link, i;
 
