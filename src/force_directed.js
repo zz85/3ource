@@ -124,12 +124,13 @@ function onNodeRemove(node) {
 	removeNode(node, node.graphNode);
 }
 
-function gNode(name, f, x, y) {
+function gNode(name, f, x, y, spawn) {
 	if (!x) x = 0;
 	if (!y) y = 0;
 	this.file = f;
-	x += (Math.random() - 0.5) * 5;
-	y += (Math.random() - 0.5) * 5;
+	spawn = spawn || ( f ? 150 : 400 );
+	x += (Math.random() - 0.5) * spawn;
+	y += (Math.random() - 0.5) * spawn;
 	this.name = name;
 	this.x = x;
 	this.y = y;
@@ -186,17 +187,16 @@ gLink.prototype.resolve = function() {
 	mx = k * cx * distance / cl * mul;
 	my = k * cy * distance / cl * mul;
 
-	
 	node1.dx -= mx;
 	node1.dy -= my;
 	node2.dx += mx;
 	node2.dy += my;
-	/*
-	node1.x -= mx;
-	node1.y -= my;
-	node2.x += mx;
-	node2.y += my;
-	*/
+
+	// node1.x -= mx;
+	// node1.y -= my;
+	// node2.x += mx;
+	// node2.y += my;
+
 };
 
 function gravity(nodes, x, y) {
@@ -211,8 +211,8 @@ function gravity(nodes, x, y) {
 		if (cl === 0) continue;
 
 		// linear velocity towards center
-		node.dx += cx / cl * 0.05;
-		node.dy += cy / cl * 0.05;
+		node.dx += cx / cl * 0.01;
+		node.dy += cy / cl * 0.01;
 		// node.dx += cx / cl * 0.1 * (node.children * 0.1 + 1);
 		// node.dy += cy / cl * 0.1 * (node.children * 0.1 + 1);
 	}
@@ -258,10 +258,11 @@ function repel() {
 			+ getDistance(node2);
 
 			var d2 = d * d;
+			var k;
 
 			if (cl2 < d2) {
 				// opps overlap
-				var k = 1;
+				k = 0.5;
 				mx = cx * k;
 				my = cy * k;
 
@@ -276,7 +277,19 @@ function repel() {
 
 			var d3 = cl2 < d2 ? 0.1: cl2 - d2;
 
-			var k = 50 * 1 / d3;
+			var massing = 50;
+
+			/**/
+			// massing = (node1.children + node2.children);
+			// massing = Math.min(Math.max(massing, 1), 150);
+
+			massing = node1.children * node2.children;
+			massing = Math.max(node1.children, 1) * Math.max(node2.children, 1);
+			// (Math.random() < 0.001) && console.log(massing);
+			massing = Math.min(Math.max(massing, 1), 150);
+
+			var charge = 1;
+			k = massing * charge / d3;
 
 			mx = cx * k;
 			my = cy * k;
