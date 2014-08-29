@@ -179,7 +179,7 @@ gLink.prototype.resolve = function() {
 	var k, mx, my;
 	k = (distance - cl) / distance;
 
-	if (k > 0) return;
+	if (k > 0) return; // make this a retract only spring (no push)
 
  	var mul = 0.01;
 	//cl = 1000
@@ -254,63 +254,53 @@ function repel() {
 			// skip if too far away			
 			if (cl2 > 200 * 200) continue;
 
-			var d = 2 + getDistance(node1)
+			var d = 1 + getDistance(node1)
 			+ getDistance(node2);
 
 			var d2 = d * d;
-			var d3 = cl2 < d2 ? 0.1: cl2 - d2;
-			
-			if (true || cl2 < d2) {
-				// if (cl < d) b = d * 100;
-				/*
-				tmpLink.distance = d;
-				tmpLink.from = node1;
-				tmpLink.to = node2;
-				tmpLink.resolve(); 
-				*/
-				var k = 50 * 1 / d3;
-				
+
+			if (cl2 < d2) {
+				// opps overlap
+				var k = 1;
 				mx = cx * k;
 				my = cy * k;
 
-				node1.dx -= mx ;
-				node1.dy -= my ;
+				node1.x -= mx ;
+				node1.y -= my ;
 
-				node2.dx += mx;
-				node2.dy += my;
-				
-				/*
-				var k = ((cl - d) / d * 0.1) * cl ;
-				//  / b 
+				node2.x += mx;
+				node2.y += my;
 
-
-				mx = cx / cl * k;
-				my = cy / cl * k;
-
-				node1.dx -= mx ;
-				node1.dy -= my ;
-
-				node2.dx += mx;
-				node2.dy += my;
-				*/
-
+				continue;
 			}
 
+			var d3 = cl2 < d2 ? 0.1: cl2 - d2;
 
+			var k = 50 * 1 / d3;
 
-			// if (cl2 < 100000) {
-			// 	// cl = Math.sqrt(cl2);
-			// 	cl = cl2;
-			// 	mx = cx / cl * mul;
-			// 	my = cy / cl * mul;
+			mx = cx * k;
+			my = cy * k;
 
-			// 	node1.dx -= mx * m1;
-			// 	node1.dy -= my * m1;
+			node1.dx -= mx ;
+			node1.dy -= my ;
 
-			// 	node2.dx += mx * m2;
-			// 	node2.dy += my * m2;
-				
-			// }
+			node2.dx += mx;
+			node2.dy += my;
+
+			/*
+			var k = ((cl - d) / d * 0.1) * cl ;
+			//  / b 
+
+			mx = cx / cl * k;
+			my = cy / cl * k;
+
+			node1.dx -= mx ;
+			node1.dy -= my ;
+
+			node2.dx += mx;
+			node2.dy += my;
+			*/
+
 		}
 	}
 
