@@ -10,8 +10,6 @@ var SPEED_LIMIT = 5;
 
 var cache = {};
 
-var tmpLink = new gLink();
-
 function CirclePacking() {
 	var TARGET = 1550;
 	var SIZE = 5;
@@ -147,6 +145,11 @@ function gLink(node1, node2, distance) {
 	this.distance = distance ? distance : 50 ;
 	this.from = node1;
 	this.to = node2;
+
+	var ax = (node1.x + node2.x) / 2;
+	var ay = (node1.y + node2.y) / 2;
+	this.average = {x: ax, y: ay};
+	this.current = {x: ax, y: ay};
 }
 
 function getDistance(t) {
@@ -157,6 +160,19 @@ function getDistance(t) {
 	}
 	return 0;
 }
+
+gLink.prototype.move = function() {
+	var node1 = this.from;
+	var node2 = this.to;
+	var ax = (node1.x + node2.x) / 2;
+	var ay = (node1.y + node2.y) / 2;
+	
+	this.average.x = ax;
+	this.average.y = ay;
+
+	this.current.x += (ax - this.current.x) * 0.05;
+	this.current.y += (ay - this.current.y) * 0.05;
+};
 
 gLink.prototype.resolve = function() {
 	var node1 = this.from;
@@ -355,6 +371,11 @@ function simulate() {
 	for (i=links.length; i-- > 0;) {
 		link = links[i];
 		link.resolve();
+	}
+
+	for (i=links.length; i-- > 0;) {
+		link = links[i];
+		link.move();
 	}
 
 
