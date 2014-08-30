@@ -266,27 +266,18 @@
 			var changeset = generateChangeset(commit.tree, previousTree);
 			changeset = changeset.concat(modified);
 			changeset.sort(amdSort);
-			changeset.forEach(function(modification) {
 
-				switch(modification.op) {
-					case 'A':
-						fs.touch(modification.file);
-						break;
-					case 'D':
-						fs.rm(modification.file);
-						break;
-					case 'M':
-						var g = fs.find(modification.file).graphNode;
-						// TODO highlight colors / nicer movements
-						// add forces / drag user
-						// g.x += (Math.random() - 0.5) * 10;
-						// g.y += (Math.random() - 0.5) * 10;
-						g.life = 0;
-						break;
-					default:
-						console.log(modification.op, 'not supported');
-				}
+			// changeset.forEach(onModify);
+
+			var c = 0;
+			changeset.forEach(function(mod) {
+				// TODO put in a self running queue here
+				c++;
+				setTimeout(function() {
+					onModify(mod);
+				}, c * 10);
 			});
+
 
 			author.innerText = '#' + (at + 1) + ' ' + commit.author + ':\n';
 			message.innerText = commit.message;
@@ -294,6 +285,28 @@
 
 			previousTree = commit.tree;
 
+		}
+
+		function onModify(modification) {
+
+			switch(modification.op) {
+				case 'A':
+					fs.touch(modification.file);
+					break;
+				case 'D':
+					fs.rm(modification.file);
+					break;
+				case 'M':
+					var g = fs.find(modification.file).graphNode;
+					// TODO highlight colors / nicer movements
+					// add forces / drag user
+					// g.x += (Math.random() - 0.5) * 10;
+					// g.y += (Math.random() - 0.5) * 10;
+					g.life = 0;
+					break;
+				default:
+					console.log(modification.op, 'not supported');
+			}
 		}
 
 		function initSimulations() {

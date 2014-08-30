@@ -284,7 +284,7 @@ function repel() {
 			// massing = Math.min(Math.max(massing, 1), 150);
 
 			massing = node1.children * node2.children;
-			massing = Math.max(node1.children, 1) * Math.max(node2.children, 1);
+			// massing = Math.max(node1.children, 1) * Math.max(node2.children, 1);
 			// (Math.random() < 0.001) && console.log(massing);
 			massing = Math.min(Math.max(massing, 1), 150);
 
