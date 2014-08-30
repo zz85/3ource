@@ -269,13 +269,10 @@
 
 			// changeset.forEach(onModify);
 
-			var c = 0;
 			changeset.forEach(function(mod) {
-				// TODO put in a self running queue here
-				c++;
-				setTimeout(function() {
+				queue.add(function() {
 					onModify(mod);
-				}, c * 10);
+				});
 			});
 
 
@@ -286,6 +283,44 @@
 			previousTree = commit.tree;
 
 		}
+
+		function ExecutionQueue() {
+			this.queue = [];
+		}
+
+		ExecutionQueue.prototype.add = function(func) {
+			this.queue.push(func);
+		};
+
+		ExecutionQueue.prototype.clear = function() {
+			this.queue = [];
+		};
+
+		ExecutionQueue.prototype.executeAll = function() {
+			var queue = this.queue, i = 0, il = queue.length;
+			for (; i < il; i++) {
+				queue[i]();
+			}
+
+			this.clear();
+		};
+
+		ExecutionQueue.prototype.start = function() {
+			this._timer = setInterval(this.execute.bind(this), 100);
+		};
+
+		ExecutionQueue.prototype.execute = function() {
+			var queue = this.queue, i = 0, il = queue.length;
+
+			for (;i < 100 && i < il; i++) {
+				queue[i]();
+			}
+
+			if (i) this.queue.splice(0, i);
+		};
+
+		var queue = new ExecutionQueue();
+		queue.start();
 
 		function onModify(modification) {
 
