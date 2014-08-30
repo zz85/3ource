@@ -270,9 +270,7 @@
 			// changeset.forEach(onModify);
 
 			changeset.forEach(function(mod) {
-				queue.add(function() {
-					onModify(mod);
-				});
+				queue.add(mod);
 			});
 
 
@@ -284,8 +282,15 @@
 
 		}
 
-		function ExecutionQueue() {
+		/*
+		 * ExecutionQueue creates a queue up of execution jobs
+		 * and runs them in slightly delayed batches.
+		 *
+		 * Currently, uses its build in timer
+		 */
+		function ExecutionQueue(executor) {
 			this.queue = [];
+			this.executor = executor;
 		}
 
 		ExecutionQueue.prototype.add = function(func) {
@@ -298,8 +303,9 @@
 
 		ExecutionQueue.prototype.executeAll = function() {
 			var queue = this.queue, i = 0, il = queue.length;
+			var exec = this.executor;
 			for (; i < il; i++) {
-				queue[i]();
+				exec(queue[i]);
 			}
 
 			this.clear();
@@ -309,17 +315,22 @@
 			this._timer = setInterval(this.execute.bind(this), 100);
 		};
 
+		ExecutionQueue.prototype.stop = function() {
+			if (this._timer) clearInterval(this._timer);
+		};
+
 		ExecutionQueue.prototype.execute = function() {
 			var queue = this.queue, i = 0, il = queue.length;
+			var exec = this.executor;
 
 			for (;i < 100 && i < il; i++) {
-				queue[i]();
+				exec(queue[i]);
 			}
 
 			if (i) this.queue.splice(0, i);
 		};
 
-		var queue = new ExecutionQueue();
+		var queue = new ExecutionQueue(onModify);
 		queue.start();
 
 		function onModify(modification) {
@@ -335,8 +346,8 @@
 					var g = fs.find(modification.file).graphNode;
 					// TODO highlight colors / nicer movements
 					// add forces / drag user
-					// g.x += (Math.random() - 0.5) * 10;
-					// g.y += (Math.random() - 0.5) * 10;
+					// g.x += (Math.random() - 0.5) * 100;
+					// g.y += (Math.random() - 0.5) * 100;
 					g.life = 0;
 					break;
 				default:
