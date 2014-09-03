@@ -179,7 +179,7 @@ function initDrawings() {
 		n2 = new THREE.Vector2(),
 		n3 = new THREE.Vector2(),
 		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 2;
+		LINE_WIDTH = 8;
 
 	LINES = 1000;
 
@@ -188,10 +188,12 @@ function initDrawings() {
 		var j = line * 18;
 
 		grad.set(x2 - x1, y2 - y1).normalize();
-		n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
+		n.set(-grad.y, grad.x).multiplyScalar(0.125 * LINE_WIDTH);
 		
 		n1.set(x1, y1).add(n);
 		n2.set(x1, y1).sub(n);
+
+		n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
 		
 		n3.set(x2, y2).sub(n);
 		n4.set(x2, y2).add(n);
