@@ -115,9 +115,7 @@ function initDrawings() {
 
 	sprite = THREE.ImageUtils.loadTexture( "disc.png" );
 
-
 	var spriteOptions = {
-
 		uniforms: {
 			time: { type: "f", value: 1.0 },
 			depth: { type: "f", value: 0.0 },
@@ -151,6 +149,84 @@ function initDrawings() {
 
 	}
 
+
+	lineGeometry = new THREE.ParticleGeometry( LINES, 5 * 1.5 );
+
+	var lineOptions = {
+
+		uniforms: {
+			time: { type: "f", value: 1.0 },
+			depth: { type: "f", value: 0.0 },
+			texture: { type: 't', value: THREE.ImageUtils.loadTexture( "textures/sprites/ball.png" ) },
+		},
+		attributes: {
+			offset: { type: 'v3', value: null },
+			rotation: { type: 'v3', value: null },
+		},
+		vertexShader: document.getElementById( 'vertexShader' ).textContent,
+		fragmentShader: document.getElementById( 'lineFragmentShader' ).textContent,
+		side: THREE.DoubleSide,
+		transparent: true
+
+	};
+
+	var lineMaterial = new THREE.RawShaderMaterial( lineOptions );
+
+	var
+		grad = new THREE.Vector2(),
+		n = new THREE.Vector2(),
+		n1 = new THREE.Vector2(),
+		n2 = new THREE.Vector2(),
+		n3 = new THREE.Vector2(),
+		n4 = new THREE.Vector2(),
+		LINE_WIDTH = 10;
+
+	LINES = 100;
+
+	lineGeometry.setLine = function(line, x1, y1, x2, y2) {
+		var j = line * 18;
+
+		grad.set(x2 - x1, y2 - y1).normalize();
+		n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
+		
+		n1.set(x1, y1).add(n);
+		n2.set(x1, y1).sub(n);
+		
+		n3.set(x2, y2).sub(n);
+		n4.set(x2, y2).add(n);
+
+		this.setVertex( 'positions', j + 0, n1.x, n1.y, 0 );
+		this.setVertex( 'positions', j + 3, n2.x, n2.y, 0 );
+		this.setVertex( 'positions', j + 6, n4.x, n4.y, 0 );
+
+		this.setVertex( 'positions', j + 9, n2.x, n2.y, 0 );
+		this.setVertex( 'positions', j + 12, n3.x, n3.y, 0 );
+		this.setVertex( 'positions', j + 15, n4.x, n4.y, 0 );
+
+	};
+
+	for ( i = 0; i < LINES; i ++ ) {
+
+		lineGeometry.setLine(i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
+		// lineGeometry.setSprite( 'offsets', i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
+		// lineGeometry.setSprite( 'rotations', i, 0, 0, 0.25);
+		
+		color.setHSL(Math.random(), Math.random(), 0.7);
+		lineGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
+
+	}
+
+
+// lineGeometry.attributes.position.needsUpdate = true;
+// lineGeometry.attributes.rotation.needsUpdate = true;
+// 	lineGeometry.attributes.color.needsUpdate = true;
+// 	lineGeometry.attributes.offset.needsUpdate = true;
+
+	lineMesh = new THREE.Mesh( lineGeometry, lineMaterial );
+	scene.add(lineMesh);
+
+	/*
+
 	lineGeometry = new THREE.Geometry();
 
 	lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 3, opacity: 1 } ); // , vertexColors: THREE.VertexColors
@@ -165,6 +241,7 @@ function initDrawings() {
 	}
 
 	line.geometry.verticesNeedUpdate = true;
+	*/
 
 	particleMesh = new THREE.Mesh( spriteGeometry, material );
 	
@@ -374,6 +451,8 @@ function render() {
 	}
 	
 
+	/*
+	// Draw links
 	for (i=0;i<LINES;i++) {
 
 		var vertices = line.geometry.vertices;
@@ -392,6 +471,7 @@ function render() {
 		}
 
 	}
+	*/
 
 	// for (i=0;i<nodes.length;i++) {
 	// 	node = nodes[i];
@@ -422,7 +502,7 @@ function render() {
 		}
 	}
 
-	line.geometry.verticesNeedUpdate = true;
+	// line.geometry.verticesNeedUpdate = true;
 
 	spriteGeometry.attributes.color.needsUpdate = true;
 	spriteGeometry.attributes.offset.needsUpdate = true;

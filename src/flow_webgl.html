@@ -153,6 +153,60 @@
 		</script>
 
 
+		<script id="lineFragmentShader" type="x-shader/x-fragment">
+
+			precision mediump float;
+			precision mediump int;
+
+			uniform float time;
+			uniform float depth;
+			uniform sampler2D texture;
+
+			varying vec3 vColor;
+			varying vec2 vUv;
+
+			vec4 pack_depth( const in float depth ) {
+
+				const vec4 bit_shift = vec4( 256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0 );
+				const vec4 bit_mask  = vec4( 0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0 );
+				vec4 res = fract( depth * bit_shift );
+				res -= res.xxyz * bit_mask;
+				return res;
+
+			}
+
+			float inCurve(vec2 uv) {
+				float sdf = uv.x * uv.x - uv.y;
+
+				// if (abs(sdf) < 0.05) return -1.;
+				if ((sdf) >- 0.05 && sdf < 0.) return -1.;
+				return 1.;
+				// on render < 0
+			}
+
+
+			void main()	{
+
+				// gl_FragColor = vec4( 1., 1., 1., 1. );
+				// vec4 tex = texture2D(texture, vUv);
+
+				// alpha test
+				// if (tex.a < 0.5) discard;
+
+				if (depth > 0.) {
+
+					gl_FragData[ 0 ] = pack_depth( gl_FragCoord.z );
+
+				} else {
+					vec4 color =  vec4(vColor, 1. );
+					gl_FragData[ 0 ] =  color;
+				}
+
+			}
+
+		</script>
+
+
 		<div id="info">
 			<a href="http://threejs.org" target="_blank">three.js</a> - webgl force directed graphs wip
 <br/>

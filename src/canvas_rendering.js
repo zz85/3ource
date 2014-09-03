@@ -125,7 +125,6 @@ function paint() {
 			label = node.name.substring(node.name.lastIndexOf('/') + 1);
 			selected = node;
 
-			// if (mouseDown) removeNode(fs.index[node.name], node);
 		}
 		
 	}
