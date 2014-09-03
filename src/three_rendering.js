@@ -179,7 +179,7 @@ function initDrawings() {
 		n2 = new THREE.Vector2(),
 		n3 = new THREE.Vector2(),
 		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 8;
+		LINE_WIDTH = 4;
 
 	LINES = 1000;
 
@@ -207,13 +207,31 @@ function initDrawings() {
 		this.setVertex( 'positions', j + 15, n4.x, n4.y, -4 );
 	};
 
+	lineGeometry.setBezier = function(line, x1, y1, x2, y2, x3, y3) {
+		var j = line * 18;
+		this.setVertex( 'positions', j + 0, x1, y1, -4 );
+		this.setVertex( 'positions', j + 3, x2, y2, -4 );
+		this.setVertex( 'positions', j + 6, x3, y3, -4);
+
+		this.setVertex( 'positions', j + 9, 0, 0, -4 );
+		this.setVertex( 'positions', j + 12, 0,0, -4 );
+		this.setVertex( 'positions', j + 15, 0,0, -4 );
+	};
+
 	for ( i = 0; i < LINES; i ++ ) {
 
 		lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1); // Hide line (or make -10 on z?)
 		// lineGeometry.setSprite( 'offsets', i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
 		// lineGeometry.setSprite( 'rotations', i, 0, 0, 0.25);
 		
-		color.setHSL(Math.random(), Math.random(), 0.7);
+		lineGeometry.setVertexUv( 'uvs', i * 12 + 0,  0,  0);
+		lineGeometry.setVertexUv( 'uvs', i * 12 + 2,  0.5, 0);
+		lineGeometry.setVertexUv( 'uvs', i * 12 + 4,  1,  1);
+		lineGeometry.setVertexUv( 'uvs', i * 12 + 6,  0,  0);
+		lineGeometry.setVertexUv( 'uvs', i * 12 + 8,  0.5,  0);
+		lineGeometry.setVertexUv( 'uvs', i * 12 + 10, 1,  1);
+
+		color.setHSL(Math.random(), 0.9, 0.9);
 		lineGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
 	}
 
@@ -433,7 +451,16 @@ function render() {
 	for (i=0;i<LINES;i++) {
 		if (i < links.length) {
 			link = links[i];
-			lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
+			// lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
+
+			// ctx.lineTo(link.to.x, link.to.y);
+			// ctx.quadraticCurveTo(link.current.x, link.current.y, link.to.x, link.to.y);
+
+			var rx = link.average.x - link.current.x;
+			var ry = link.average.y - link.current.y;
+
+			lineGeometry.setBezier(i, link.from.x, link.from.y, link.average.x + rx, link.average.y + ry, link.to.x, link.to.y);
+
 		} else {
 			// hide
 			lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1);

@@ -192,6 +192,9 @@
 
 				// alpha test
 				// if (tex.a < 0.5) discard;
+				
+				float x = inCurve(vUv);
+				if (x  > 0.) discard;
 
 				if (depth > 0.) {
 
