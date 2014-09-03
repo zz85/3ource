@@ -335,11 +335,68 @@ function repel() {
 
 }
 
+
+function repelEdges() {
+	// repel clusters
+
+	var node1, node2;
+	var cx, cy, cl2, cl;
+	var i, j;
+	var mul, mx, my;
+
+	for (i=nodes.length; i--;) {
+		node1 = nodes[i];
+
+		for (j=links.length; j--;) {
+			if (links[j].from == node1 || links[j].from == node2) continue;
+			node2 = links[j].average;
+
+			cx = node2.x - node1.x;
+			cy = node2.y - node1.y;
+			cl2 = cx * cx + cy * cy;
+
+			// skip if too far away			
+			if (cl2 > 200 * 200) continue;
+
+			var d = 1 + getDistance(node1);
+
+			var d2 = d * d;
+			var k;
+
+			var d3 = cl2 < d2 ? 0.1: cl2 - d2;
+
+			var massing = 1;
+
+			/**/
+			// massing = (node1.children + node2.children);
+			// massing = Math.min(Math.max(massing, 1), 150);
+
+			// massing = node1.children * node2.children;
+			// // massing = Math.max(node1.children, 1) * Math.max(node2.children, 1);
+			// // (Math.random() < 0.001) && console.log(massing);
+			// massing = Math.min(Math.max(massing, 1), 10);
+
+			var charge = 1;
+			k = massing * charge / d3;
+
+			mx = cx * k;
+			my = cy * k;
+
+			node1.dx -= mx ;
+			node1.dy -= my ;
+
+			// node2.dx += mx;
+			// node2.dy += my;
+		}
+	}
+
+}
+
 function simulate() {
 	var node;
 
 	// Move all nodes towards the center
-	gravity(nodes, 0, 0);
+	// gravity(nodes, 0, 0);
 
 	var link, i;
 
@@ -381,6 +438,7 @@ function simulate() {
 
 	// Move all nodes away from each other. Only folder nodes are updated.
 	repel();
+	repelEdges();
 
 	// move
 	for (i=nodes.length; i--;) {

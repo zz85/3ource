@@ -73,13 +73,16 @@ function paint() {
 		link = links[i];
 
 		// if (link.hidden) continue;
+		ctx.beginPath();
 		ctx.moveTo(link.from.x, link.from.y);
 		// ctx.lineTo(link.to.x, link.to.y);
 		// ctx.quadraticCurveTo(link.current.x, link.current.y, link.to.x, link.to.y);
+
 		var rx = link.average.x - link.current.x;
 		var ry = link.average.y - link.current.y;
 		ctx.quadraticCurveTo(link.average.x + rx, link.average.y + ry, link.to.x, link.to.y);
 		ctx.stroke();
+
 	}
 
 	for (i=0;i<nodes.length;i++) {
