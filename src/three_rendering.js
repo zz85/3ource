@@ -179,11 +179,12 @@ function initDrawings() {
 		n2 = new THREE.Vector2(),
 		n3 = new THREE.Vector2(),
 		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 10;
+		LINE_WIDTH = 2;
 
-	LINES = 100;
+	LINES = 1000;
 
 	lineGeometry.setLine = function(line, x1, y1, x2, y2) {
+		// TODO make line width a parameter
 		var j = line * 18;
 
 		grad.set(x2 - x1, y2 - y1).normalize();
@@ -195,53 +196,29 @@ function initDrawings() {
 		n3.set(x2, y2).sub(n);
 		n4.set(x2, y2).add(n);
 
-		this.setVertex( 'positions', j + 0, n1.x, n1.y, 0 );
-		this.setVertex( 'positions', j + 3, n2.x, n2.y, 0 );
-		this.setVertex( 'positions', j + 6, n4.x, n4.y, 0 );
+		this.setVertex( 'positions', j + 0, n1.x, n1.y, -4 );
+		this.setVertex( 'positions', j + 3, n2.x, n2.y, -4 );
+		this.setVertex( 'positions', j + 6, n4.x, n4.y, -4);
 
-		this.setVertex( 'positions', j + 9, n2.x, n2.y, 0 );
-		this.setVertex( 'positions', j + 12, n3.x, n3.y, 0 );
-		this.setVertex( 'positions', j + 15, n4.x, n4.y, 0 );
-
+		this.setVertex( 'positions', j + 9, n2.x, n2.y, -4 );
+		this.setVertex( 'positions', j + 12, n3.x, n3.y, -4 );
+		this.setVertex( 'positions', j + 15, n4.x, n4.y, -4 );
 	};
 
 	for ( i = 0; i < LINES; i ++ ) {
 
-		lineGeometry.setLine(i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
+		lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1); // Hide line (or make -10 on z?)
 		// lineGeometry.setSprite( 'offsets', i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
 		// lineGeometry.setSprite( 'rotations', i, 0, 0, 0.25);
 		
 		color.setHSL(Math.random(), Math.random(), 0.7);
 		lineGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
-
 	}
 
 
-// lineGeometry.attributes.position.needsUpdate = true;
-// lineGeometry.attributes.rotation.needsUpdate = true;
-// 	lineGeometry.attributes.color.needsUpdate = true;
-// 	lineGeometry.attributes.offset.needsUpdate = true;
 
 	lineMesh = new THREE.Mesh( lineGeometry, lineMaterial );
 	scene.add(lineMesh);
-
-	/*
-
-	lineGeometry = new THREE.Geometry();
-
-	lineMaterial = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 3, opacity: 1 } ); // , vertexColors: THREE.VertexColors
-	line = new THREE.Line( lineGeometry, lineMaterial, THREE.LinePieces);
-	scene.add( line );
-
-	for (i = 0; i < LINES; i++) {
-		line.geometry.vertices.push(
-			new THREE.Vector3(0, 0, -10), // -5000 fails
-			new THREE.Vector3(0, 0, -10)
-		);
-	}
-
-	line.geometry.verticesNeedUpdate = true;
-	*/
 
 	particleMesh = new THREE.Mesh( spriteGeometry, material );
 	
@@ -450,35 +427,20 @@ function render() {
 		console.warn('warning, please increase Particles pool size');
 	}
 	
-
-	/*
 	// Draw links
 	for (i=0;i<LINES;i++) {
-
-		var vertices = line.geometry.vertices;
-
 		if (i < links.length) {
 			link = links[i];
-			vertices[i * 2 + 0].x = link.from.x;
-			vertices[i * 2 + 0].y = link.from.y;
-			vertices[i * 2 + 1].x = link.to.x;
-			vertices[i * 2 + 1].y = link.to.y;
+			lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
 		} else {
-			vertices[i * 2 + 0].x = 0;
-			vertices[i * 2 + 0].y = 0;
-			vertices[i * 2 + 1].x = 0;
-			vertices[i * 2 + 1].y = 0;
+			// hide
+			lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1);
 		}
-
 	}
-	*/
 
-	// for (i=0;i<nodes.length;i++) {
-	// 	node = nodes[i];
-	// 	spriteGeometry.setSprite( 'offsets', node.ref, node.x, node.y, 0 );
-		// color.setHSL(0.45 + Math.random(), 0.7, 0.8);
-	
-	// }
+	// Flag graphic buffers for update
+	lineGeometry.attributes.position.needsUpdate = true;
+	// lineGeometry.attributes.color.needsUpdate = true;
 
 	for (i=0;i<PARTICLES;i++) {
 		if (i < fileNodes.length) {
@@ -501,8 +463,6 @@ function render() {
 			spriteGeometry.hideSprite( i );
 		}
 	}
-
-	// line.geometry.verticesNeedUpdate = true;
 
 	spriteGeometry.attributes.color.needsUpdate = true;
 	spriteGeometry.attributes.offset.needsUpdate = true;
