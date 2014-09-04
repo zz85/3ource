@@ -439,6 +439,12 @@ function render() {
 
 	// camera.lookAt( scene.position );
 
+	s = {
+		lines: links.length,
+		files: fileNodes.length,
+		directories: nodes.length
+	}
+
 	if (links.length > LINES) {
 		console.warn('warning, please increase Lines pool size');
 	}
@@ -452,15 +458,15 @@ function render() {
 	for (i=0;i<LINES;i++) {
 		if (i < links.length) {
 			link = links[i];
-			// lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
-
-			// ctx.lineTo(link.to.x, link.to.y);
-			// ctx.quadraticCurveTo(link.current.x, link.current.y, link.to.x, link.to.y);
-
+			
 			var rx = link.average.x - link.current.x;
 			var ry = link.average.y - link.current.y;
 
-			lineGeometry.setBezier(i, link.from.x, link.from.y, link.average.x + rx, link.average.y + ry, link.to.x, link.to.y);
+			if (rx * rx + ry * ry < 15 * 15) {
+				lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
+			} else {
+				lineGeometry.setBezier(i, link.from.x, link.from.y, link.average.x + rx, link.average.y + ry, link.to.x, link.to.y);
+			}
 
 		} else {
 			// hide

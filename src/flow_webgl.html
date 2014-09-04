@@ -184,7 +184,6 @@
 				// on render < 0
 			}
 
-
 			void main()	{
 
 				// gl_FragColor = vec4( 1., 1., 1., 1. );
@@ -204,10 +203,10 @@
 
 				// http://gamedev.stackexchange.com/questions/49373/how-to-draw-a-bezier-line-with-shaders
 
-				float alpha = 2.0 - abs(sd);
-				if (alpha < 0.) discard;
+				// float alpha = 2.0 - abs(sd);
+				// if (alpha < 0.) discard;
 
-				// float alpha = 0.5 - sd;
+				float alpha = 0.5 - sd;
 				// if (alpha < 0. || alpha > 1.) discard;
 
 				// if (alpha > 1.)       // Inside
