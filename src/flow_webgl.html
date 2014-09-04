@@ -184,11 +184,7 @@
 				// on render < 0
 			}
 
-			void main()	{
-
-				// gl_FragColor = vec4( 1., 1., 1., 1. );
-				// vec4 tex = texture2D(texture, vUv);
-
+			float sdCuve(vec2 vUv) {
 				// alpha test
 				// if (tex.a < 0.5) discard;
 				vec2 px = dFdx(vUv);
@@ -213,11 +209,18 @@
 				// else if (alpha < 0)  // Outside
 				// else Near boundary
 
+				return sd;
+			}
+
+			void main()	{
+
+				// gl_FragColor = vec4( 1., 1., 1., 1. );
+				// vec4 tex = texture2D(texture, vUv);
+
 				// float x = inCurve(vUv);
 				// if (x  > 0.) discard;
 
 				if (depth > 0.) {
-
 					gl_FragData[ 0 ] = pack_depth( gl_FragCoord.z );
 
 				} else {

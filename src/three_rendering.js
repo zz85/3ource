@@ -8,7 +8,7 @@ var projector, raycaster;
 var mouseX = 0, mouseY = 0;
 
 var PARTICLES = 2000; // Particle Pool
-var LINES = 500; // Lines Pool
+var LINES = 5000; // Lines Pool
 
 
 var windowHalfX = window.innerWidth / 2;
@@ -18,6 +18,8 @@ offset = new THREE.Vector3();
 color = new THREE.Color();
 
 var extension_colors = {};
+
+var bezier = new THREE.QuadraticBezierCurve(new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2());
 
 /* Graph functions */
 function newNode(name, isFile, x, y) {
@@ -179,7 +181,7 @@ function initDrawings() {
 		n2 = new THREE.Vector2(),
 		n3 = new THREE.Vector2(),
 		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 4;
+		LINE_WIDTH = 10;
 
 	LINES = 1000;
 
@@ -188,7 +190,7 @@ function initDrawings() {
 		var j = line * 18;
 
 		grad.set(x2 - x1, y2 - y1).normalize();
-		n.set(-grad.y, grad.x).multiplyScalar(0.125 * LINE_WIDTH);
+		n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
 		
 		n1.set(x1, y1).add(n);
 		n2.set(x1, y1).sub(n);
@@ -454,24 +456,41 @@ function render() {
 		console.warn('warning, please increase Particles pool size');
 	}
 	
+	var j = 0, LINE_SEGMENTS = 10;
 	// Draw links
 	for (i=0;i<LINES;i++) {
 		if (i < links.length) {
 			link = links[i];
-			
 			var rx = link.average.x - link.current.x;
 			var ry = link.average.y - link.current.y;
 
-			if (rx * rx + ry * ry < 15 * 15) {
-				lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
-			} else {
-				lineGeometry.setBezier(i, link.from.x, link.from.y, link.average.x + rx, link.average.y + ry, link.to.x, link.to.y);
+			bezier.v0.set(link.from.x, link.from.y);
+			// bezier.v1.set(link.average.x + rx, link.average.y + ry);
+			bezier.v1.set(link.current.x, link.current.y);
+			bezier.v2.set(link.to.x, link.to.y);
+
+			ptA = bezier.getPoint(0);
+			for (k=1; k<=LINE_SEGMENTS;k++) {
+				ptB = bezier.getPoint(k / LINE_SEGMENTS);
+				lineGeometry.setLine(j++, ptA.x, ptA.y, ptB.x, ptB.y);
+				ptA = ptB;
 			}
+
+			// if (rx * rx + ry * ry < 15 * 15) {
+			// 	lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
+			// } else {
+			// 	lineGeometry.setBezier(i, link.from.x, link.from.y, link.average.x + rx, link.average.y + ry, link.to.x, link.to.y);
+			// }
 
 		} else {
 			// hide
-			lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1);
+			// lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1);
 		}
+	}
+
+	// console.log(j);
+	for (j++;j<LINES;j++) {
+		lineGeometry.setLine(j, 0.1, 0.1, 0.1, 0.1);
 	}
 
 	// Flag graphic buffers for update
