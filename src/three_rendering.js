@@ -342,6 +342,7 @@ function initDrawings() {
 
 	renderer = new THREE.WebGLRenderer( { clearAlpha: 1 } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.getContext().getExtension("OES_standard_derivatives");
 	container.appendChild( renderer.domElement );
 
 

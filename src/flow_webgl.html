@@ -106,7 +106,6 @@
 		</script>
 
 		<script id="fragmentShader" type="x-shader/x-fragment">
-
 			precision mediump float;
 			precision mediump int;
 
@@ -154,6 +153,7 @@
 
 
 		<script id="lineFragmentShader" type="x-shader/x-fragment">
+			# extension GL_OES_standard_derivatives : enable
 
 			precision mediump float;
 			precision mediump int;
@@ -192,9 +192,30 @@
 
 				// alpha test
 				// if (tex.a < 0.5) discard;
-				
-				float x = inCurve(vUv);
-				if (x  > 0.) discard;
+				vec2 px = dFdx(vUv);
+				vec2 py = dFdy(vUv);  
+				// Chain rule  
+				float fx = (2.*vUv.x)*px.x - px.y;  
+				float fy = (2.*vUv.x)*py.x - py.y;  
+
+				// Signed distance  
+				float sd = (vUv.x*vUv.x - vUv.y) / sqrt(fx*fx + fy*fy);  
+				// Linear alpha  
+
+				// http://gamedev.stackexchange.com/questions/49373/how-to-draw-a-bezier-line-with-shaders
+
+				float alpha = 2.0 - abs(sd);
+				if (alpha < 0.) discard;
+
+				// float alpha = 0.5 - sd;
+				// if (alpha < 0. || alpha > 1.) discard;
+
+				// if (alpha > 1.)       // Inside
+				// else if (alpha < 0)  // Outside
+				// else Near boundary
+
+				// float x = inCurve(vUv);
+				// if (x  > 0.) discard;
 
 				if (depth > 0.) {
 
