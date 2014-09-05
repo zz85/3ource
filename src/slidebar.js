@@ -94,7 +94,6 @@ Slidebar.prototype = {
 
 		track.addEventListener('mousedown', this.onMouseDown.bind(this));
 
-
 		this.track = track;
 		this.thumb = thumb;
 		this.dom = track;

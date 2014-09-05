@@ -183,7 +183,7 @@ function initDrawings() {
 		n2 = new THREE.Vector2(),
 		n3 = new THREE.Vector2(),
 		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 10;
+		LINE_WIDTH = 0.5;
 
 	LINES = 1000;
 
@@ -215,13 +215,6 @@ function initDrawings() {
 	lineGeometry.setBezierGrid = function(line, bezier) {
 		var j = line * 18;
 
-		// tangent's gradient
-		// // x = a + tn, t is length, n is normal
-		// var t = n.copy(bezier.v2).sub(bezier.v0).length();
-		// n.divideScalar(t);
-		// ap.copy(bezier.v1).sub(bezier.v0);
-		// ap.sub(n.multiplyScalar(ap.dot(n))); // point closest to line
-
 		// https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/2drota.htm
 		var l = nv1.copy(bezier.v2).sub(bezier.v0).length();
 		nv1.divideScalar(l);
@@ -239,14 +232,17 @@ function initDrawings() {
 		y2 = r * Math.sin( a3 );
 		// (Math.random() < 0.01) && console.log(x2);
 		
-		var SPRITE_WIDTH = Math.abs(x2) * 2;
+		var SPRITE_BREATH = Math.abs(y2) * 2;
+
+		// max
+		var w = SPRITE_BREATH + LINE_WIDTH;
 		
 		grad.copy(nv1);
 
-		this.setSprite( 'colors', line, x2, y2, LINE_WIDTH);
-		this.setSprite( 'normals', line, l, SPRITE_WIDTH, LINE_WIDTH);
+		this.setSprite( 'colors', line, x2, SPRITE_BREATH - y2 - LINE_WIDTH, LINE_WIDTH);
+		this.setSprite( 'normals', line, l, w, LINE_WIDTH);
 
-		n.set(-grad.y, grad.x).multiplyScalar(0.5 * SPRITE_WIDTH);
+		n.set(-grad.y, grad.x).multiplyScalar(0.5 * SPRITE_BREATH);
 		
 		n1.copy(bezier.v0).sub(n);
 		n2.copy(bezier.v0).add(n);
@@ -521,8 +517,8 @@ function render() {
 			var ry = link.average.y - link.current.y;
 
 			bezier.v0.set(link.from.x, link.from.y);
-			// bezier.v1.set(link.average.x + rx, link.average.y + ry);
-			bezier.v1.set(link.current.x, link.current.y);
+			bezier.v1.set(link.average.x + rx, link.average.y + ry);
+			// bezier.v1.set(link.current.x, link.current.y);
 			bezier.v2.set(link.to.x, link.to.y);
 
 			lineGeometry.setBezierGrid(j++, bezier);
@@ -534,7 +530,7 @@ function render() {
 	}
 
 	// console.log(j);
-	for (j++;j<LINES;j++) {
+	for (;j<LINES;j++) {
 		lineGeometry.setLine(j, 0.1, 0.1, 0.1, 0.1);
 	}
 

@@ -228,7 +228,8 @@
 
 				float a=det(b0,b2), b=2.0*det(b1,b0), d=2.0*det(b2,b1); // 𝛼,𝛽,𝛿(𝑝)
 
-				if( abs(2.0*a+b+d) < 1000.0 ) return closestPointInSegment(b0,b2);
+				if ( abs(2.0*a+b+d) < 0.001 ) return closestPointInSegment(b0,b2);
+				if (abs(b1.y - b0.y) < 2.) return closestPointInSegment(b0,b2);
 
 				float f=b*d-a*a; // 𝑓(𝑝)
 				vec2 d21=b2-b1, d10=b1-b0, d20=b2-b0;
@@ -250,20 +251,16 @@
 			void main(void)
 			{
 
-				// gl_FragCoord = screen space
-
-
-				vec2 xy = vNormal.xy;
-				// .xy / vUv;
+				vec2 xy = vNormal.xy; // width height in actual pixels
 				
-				vec2 b0 = vec2(0.1, .5) * xy;
-				vec2 b1 = vColor.xy - xy / 2.;
-				vec2 b2 = vec2(.9, .5) * xy;
+				vec2 b0 = vec2(0.01, .5) * xy;
+				vec2 b1 = vColor.xy; // control point
+				vec2 b2 = vec2(.99, .5) * xy;
 				vec2 mid = .5*(b0+b2) + vec2(0.0,0.01);
 				
 				float d = approx_distance(vUv * xy, b0, b1, b2);
-				// float thickness = vColor.z;
-				float thickness = 2.;
+				float thickness = vColor.z;
+				// float thickness = 2.;
 				
 				float a;
 				
@@ -275,14 +272,14 @@
 				}
 				
 				// gl_FragColor = vec4(a,a,a, 1.0);
-				// if (a < 0.01) {
-				// 	gl_FragColor = vec4(vUv,0.0, 1.0);
-				// } else {
-				// 	gl_FragColor = vec4(a,1.0,1.0, 1.0);	
-				// }
+				if (a < 0.01) {
+					discard;
+				} else {
+					gl_FragColor = vec4(a, a, a, a);	
+				}
 
-				float g = vUv.x * 0.8 + 0.2;
-				gl_FragColor = vec4(g, g, g, 1.0);
+				// float g = vUv.x * 0.8 + 0.2;
+				// gl_FragColor = vec4(g, g, g, 1.0);
 
 				// gl_FragColor = vec4(gl_FragCoord.xy / 1000.,1.0, 1.0);
 
