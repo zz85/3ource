@@ -176,6 +176,8 @@ function initDrawings() {
 
 	var
 		grad = new THREE.Vector2(),
+		nv1 = new THREE.Vector2(),
+		nv2 = new THREE.Vector2(),
 		n = new THREE.Vector2(),
 		n1 = new THREE.Vector2(),
 		n2 = new THREE.Vector2(),
@@ -209,6 +211,58 @@ function initDrawings() {
 		this.setVertex( 'positions', j + 15, n4.x, n4.y, -4 );
 	};
 
+	var xaxis = new THREE.Vector2();
+	lineGeometry.setBezierGrid = function(line, bezier) {
+		var j = line * 18;
+
+		// tangent's gradient
+		// // x = a + tn, t is length, n is normal
+		// var t = n.copy(bezier.v2).sub(bezier.v0).length();
+		// n.divideScalar(t);
+		// ap.copy(bezier.v1).sub(bezier.v0);
+		// ap.sub(n.multiplyScalar(ap.dot(n))); // point closest to line
+
+		// https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/2drota.htm
+		var l = nv1.copy(bezier.v2).sub(bezier.v0).length();
+		nv1.divideScalar(l);
+		var r = nv2.copy(bezier.v1).sub(bezier.v0).length();
+		nv2.divideScalar(r);
+
+		xaxis.set(1, 0);
+
+		var a1 = nv1.dot(xaxis);
+		var a2 = nv2.dot(xaxis);
+
+		var a3 = a2 - a1;
+
+		x2 = r * Math.cos( a3 );
+		y2 = r * Math.sin( a3 );
+		// (Math.random() < 0.01) && console.log(x2);
+		
+		var SPRITE_WIDTH = Math.abs(x2) * 2;
+		
+		grad.copy(nv1);
+
+		this.setSprite( 'colors', line, x2, y2, LINE_WIDTH);
+		this.setSprite( 'normals', line, l, SPRITE_WIDTH, LINE_WIDTH);
+
+		n.set(-grad.y, grad.x).multiplyScalar(0.5 * SPRITE_WIDTH);
+		
+		n1.copy(bezier.v0).sub(n);
+		n2.copy(bezier.v0).add(n);
+		
+		n3.copy(bezier.v2).sub(n);
+		n4.copy(bezier.v2).add(n);
+
+		this.setVertex( 'positions', j + 0, n1.x, n1.y, -4 );
+		this.setVertex( 'positions', j + 3, n2.x, n2.y, -4 );
+		this.setVertex( 'positions', j + 6, n4.x, n4.y, -4 );
+
+		this.setVertex( 'positions', j + 9, n4.x, n4.y, -4 );
+		this.setVertex( 'positions', j + 12, n3.x, n3.y, -4 );
+		this.setVertex( 'positions', j + 15, n1.x, n1.y, -4 );
+	};
+
 	lineGeometry.setBezier = function(line, x1, y1, x2, y2, x3, y3) {
 		var j = line * 18;
 		this.setVertex( 'positions', j + 0, x1, y1, -4 );
@@ -220,18 +274,20 @@ function initDrawings() {
 		this.setVertex( 'positions', j + 15, 0,0, -4 );
 	};
 
-	for ( i = 0; i < LINES; i ++ ) {
-
-		lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1); // Hide line (or make -10 on z?)
-		// lineGeometry.setSprite( 'offsets', i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
-		// lineGeometry.setSprite( 'rotations', i, 0, 0, 0.25);
-		
+	lineGeometry.setBezierUvs = function(i) {
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 0,  0,  0);
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 2,  0.5, 0);
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 4,  1,  1);
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 6,  0,  0);
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 8,  0.5,  0);
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 10, 1,  1);
+	}
+
+	for ( i = 0; i < LINES; i ++ ) {
+
+		lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1); // Hide line (or make -10 on z?)
+		// lineGeometry.setSprite( 'offsets', i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
+		// lineGeometry.setSprite( 'rotations', i, 0, 0, 0.25);
 
 		color.setHSL(Math.random(), 0.9, 0.9);
 		lineGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
@@ -469,18 +525,7 @@ function render() {
 			bezier.v1.set(link.current.x, link.current.y);
 			bezier.v2.set(link.to.x, link.to.y);
 
-			ptA = bezier.getPoint(0);
-			for (k=1; k<=LINE_SEGMENTS;k++) {
-				ptB = bezier.getPoint(k / LINE_SEGMENTS);
-				lineGeometry.setLine(j++, ptA.x, ptA.y, ptB.x, ptB.y);
-				ptA = ptB;
-			}
-
-			// if (rx * rx + ry * ry < 15 * 15) {
-			// 	lineGeometry.setLine(i, link.from.x, link.from.y, link.to.x, link.to.y);
-			// } else {
-			// 	lineGeometry.setBezier(i, link.from.x, link.from.y, link.average.x + rx, link.average.y + ry, link.to.x, link.to.y);
-			// }
+			lineGeometry.setBezierGrid(j++, bezier);
 
 		} else {
 			// hide
@@ -495,7 +540,8 @@ function render() {
 
 	// Flag graphic buffers for update
 	lineGeometry.attributes.position.needsUpdate = true;
-	// lineGeometry.attributes.color.needsUpdate = true;
+	lineGeometry.attributes.color.needsUpdate = true;
+	lineGeometry.attributes.normal.needsUpdate = true;
 
 	for (i=0;i<PARTICLES;i++) {
 		if (i < fileNodes.length) {
