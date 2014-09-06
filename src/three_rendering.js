@@ -183,7 +183,7 @@ function initDrawings() {
 		n2 = new THREE.Vector2(),
 		n3 = new THREE.Vector2(),
 		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 20;
+		LINE_WIDTH = 1.5;
 
 	LINES = 1000;
 
@@ -215,7 +215,6 @@ function initDrawings() {
 	lineGeometry.setBezierGrid = function(line, bezier) {
 		var j = line * 18;
 
-
 		// https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/2drota.htm
 		var l = nv1.copy(bezier.v2).sub(bezier.v0).length();
 		nv1.divideScalar(l); // nv1 is now unit vector from v0 to v2
@@ -232,20 +231,22 @@ function initDrawings() {
 		x2 = r * Math.cos( a3 );
 		y2 = r * Math.sin( a3 );
 		
-		var SPRITE_BREATH = Math.abs(y2);
-
-		
-		var w = SPRITE_BREATH * 2 + LINE_WIDTH * 4; // amount of y needed in fragment shaader
+		var SPRITE_BREATH = Math.abs(y2) * 2 + LINE_WIDTH * 4; // amount of y needed in fragment shader
 		l += LINE_WIDTH * 4; // amount of x in frag shader
-		
+
 		grad.copy(nv1);
 
+		// normal to gradient
 		n.set(-grad.y, grad.x).multiplyScalar(0.5 * SPRITE_BREATH);
 		grad.multiplyScalar(2 * LINE_WIDTH);
 
-		this.setSprite( 'normals', line, l, w, LINE_WIDTH );
+		this.setSprite( 'normals', line, l, SPRITE_BREATH, LINE_WIDTH );
 		// FIXME: hijacked colors attributes for passing control points for now
-		this.setSprite( 'colors', line, x2 + 2 * LINE_WIDTH, w / 2 - y2, 0 );
+		this.setSprite( 'colors', line, x2 + 2 * LINE_WIDTH, SPRITE_BREATH / 2 - y2, 0 );
+
+		// SPRITE_BREATH / 2 - y2
+		// SPRITE_BREATH - (SPRITE_BREATH / 2 - y2)
+
 		
 
 		n1.copy(bezier.v0).sub(grad).sub(n);
@@ -281,7 +282,7 @@ function initDrawings() {
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 6,  0,  0);
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 8,  0.5,  0);
 		lineGeometry.setVertexUv( 'uvs', i * 12 + 10, 1,  1);
-	}
+	};
 
 	for ( i = 0; i < LINES; i ++ ) {
 

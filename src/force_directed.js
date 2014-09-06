@@ -170,8 +170,9 @@ gLink.prototype.move = function() {
 	this.average.x = ax;
 	this.average.y = ay;
 
-	this.current.x += (ax - this.current.x) * 0.05;
-	this.current.y += (ay - this.current.y) * 0.05;
+	// FIXME: use dt instead
+	this.current.x += (ax - this.current.x) * 0.02;
+	this.current.y += (ay - this.current.y) * 0.02;
 };
 
 gLink.prototype.resolve = function() {
