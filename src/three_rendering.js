@@ -183,7 +183,7 @@ function initDrawings() {
 		n2 = new THREE.Vector2(),
 		n3 = new THREE.Vector2(),
 		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 0.5;
+		LINE_WIDTH = 20;
 
 	LINES = 1000;
 
@@ -215,40 +215,44 @@ function initDrawings() {
 	lineGeometry.setBezierGrid = function(line, bezier) {
 		var j = line * 18;
 
+
 		// https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/2drota.htm
 		var l = nv1.copy(bezier.v2).sub(bezier.v0).length();
-		nv1.divideScalar(l);
+		nv1.divideScalar(l); // nv1 is now unit vector from v0 to v2
+
 		var r = nv2.copy(bezier.v1).sub(bezier.v0).length();
 		nv2.divideScalar(r);
 
 		xaxis.set(1, 0);
-
 		var a1 = nv1.dot(xaxis);
 		var a2 = nv2.dot(xaxis);
 
-		var a3 = a2 - a1;
+		var a3 = a2 - a1; // amount of rotation to adjust
 
 		x2 = r * Math.cos( a3 );
 		y2 = r * Math.sin( a3 );
-		// (Math.random() < 0.01) && console.log(x2);
 		
-		var SPRITE_BREATH = Math.abs(y2) * 2;
+		var SPRITE_BREATH = Math.abs(y2);
 
-		// max
-		var w = SPRITE_BREATH + LINE_WIDTH;
+		
+		var w = SPRITE_BREATH * 2 + LINE_WIDTH * 4; // amount of y needed in fragment shaader
+		l += LINE_WIDTH * 4; // amount of x in frag shader
 		
 		grad.copy(nv1);
 
-		this.setSprite( 'colors', line, x2, SPRITE_BREATH - y2 - LINE_WIDTH, LINE_WIDTH);
-		this.setSprite( 'normals', line, l, w, LINE_WIDTH);
-
 		n.set(-grad.y, grad.x).multiplyScalar(0.5 * SPRITE_BREATH);
+		grad.multiplyScalar(2 * LINE_WIDTH);
+
+		this.setSprite( 'normals', line, l, w, LINE_WIDTH );
+		// FIXME: hijacked colors attributes for passing control points for now
+		this.setSprite( 'colors', line, x2 + 2 * LINE_WIDTH, w / 2 - y2, 0 );
 		
-		n1.copy(bezier.v0).sub(n);
-		n2.copy(bezier.v0).add(n);
+
+		n1.copy(bezier.v0).sub(grad).sub(n);
+		n2.copy(bezier.v0).sub(grad).add(n);
 		
-		n3.copy(bezier.v2).sub(n);
-		n4.copy(bezier.v2).add(n);
+		n3.copy(bezier.v2).add(grad).sub(n);
+		n4.copy(bezier.v2).add(grad).add(n);
 
 		this.setVertex( 'positions', j + 0, n1.x, n1.y, -4 );
 		this.setVertex( 'positions', j + 3, n2.x, n2.y, -4 );
@@ -288,8 +292,6 @@ function initDrawings() {
 		color.setHSL(Math.random(), 0.9, 0.9);
 		lineGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
 	}
-
-
 
 	lineMesh = new THREE.Mesh( lineGeometry, lineMaterial );
 	scene.add(lineMesh);

@@ -224,12 +224,12 @@
 			}
 
 			// From: http://research.microsoft.com/en-us/um/people/hoppe/ravg.pdf
-			vec2 get_distance_vector(vec2 b0, vec2 b1, vec2 b2) {
+			vec2 get_distance_vector(vec2 b0, vec2 b1, vec2 b2, float thickness) {
 
 				float a=det(b0,b2), b=2.0*det(b1,b0), d=2.0*det(b2,b1); // 𝛼,𝛽,𝛿(𝑝)
 
 				if ( abs(2.0*a+b+d) < 0.001 ) return closestPointInSegment(b0,b2);
-				if (abs(b1.y - b0.y) < 2.) return closestPointInSegment(b0,b2);
+				// if (abs(b1.y - b0.y) < thickness) return closestPointInSegment(b0,b2);
 
 				float f=b*d-a*a; // 𝑓(𝑝)
 				vec2 d21=b2-b1, d10=b1-b0, d20=b2-b0;
@@ -244,24 +244,21 @@
 
 			}
 
-			float approx_distance(vec2 p, vec2 b0, vec2 b1, vec2 b2) {
-				return length(get_distance_vector(b0-p, b1-p, b2-p));
+			float approx_distance(vec2 p, vec2 b0, vec2 b1, vec2 b2, float thickness) {
+				return length(get_distance_vector(b0-p, b1-p, b2-p, thickness));
 			}
 
 			void main(void)
 			{
 
 				vec2 xy = vNormal.xy; // width height in actual pixels
+				float thickness = vNormal.z;
 				
-				vec2 b0 = vec2(0.01, .5) * xy;
-				vec2 b1 = vColor.xy; // control point
-				vec2 b2 = vec2(.99, .5) * xy;
-				vec2 mid = .5*(b0+b2) + vec2(0.0,0.01);
+				vec2 b0 = vec2(0.0, .5) * xy + vec2(thickness * 2.5, 0);
+				vec2 b1 = vColor.xy; // mid control point
+				vec2 b2 = vec2(1.0, .5) * xy - vec2(thickness * 2.5, 0);
 				
-				float d = approx_distance(vUv * xy, b0, b1, b2);
-				float thickness = vColor.z;
-				// float thickness = 2.;
-				
+				float d = approx_distance(vUv * xy, b0, b1, b2, thickness);	
 				float a;
 				
 				if(d < thickness) {
