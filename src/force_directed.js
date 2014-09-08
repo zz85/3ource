@@ -439,7 +439,7 @@ function simulate() {
 
 	// Move all nodes away from each other. Only folder nodes are updated.
 	repel();
-	repelEdges();
+	// repelEdges();
 
 	// move
 	for (i=nodes.length; i--;) {

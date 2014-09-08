@@ -70,7 +70,6 @@
 
 				vColor = color;
 
-
 				float
 				cosrx = cos(rotation.x),
 				sinrx = sin(rotation.x),
@@ -156,10 +155,8 @@
 
 
 		<script id="lineFragmentShader" type="x-shader/x-fragment">
-			#extension GL_OES_standard_derivatives : enable
 
 			// Distance solver by Per Bloksgaard http://micmicc.hinnerup.net/2014/01/BezierDistanceGlow/BezierDistanceGlow.htm
-
 
 			#define EPSILON 0.000000001
 			#define PI 3.14159265358979
@@ -322,8 +319,8 @@
 				vec2 b1 = vColor.xy; // mid control point
 				vec2 b2 = vec2(1.0, .5) * xy - vec2(thickness * 2., 0);
 				
-				// float d = approx_distance(vUv * xy, b0, b1, b2, thickness);
-				float d = calculateDistanceToQuadraticBezier(vUv * xy, b0, b1, b2);	
+				float d = approx_distance(vUv * xy, b0, b1, b2, thickness);
+				// float d = calculateDistanceToQuadraticBezier(vUv * xy, b0, b1, b2);	
 
 				float a;
 				
@@ -331,7 +328,7 @@
 				  a = 1.0;
 				} else {
 				  // Anti-alias the edge.
-				  a = 1.0 - smoothstep(d, thickness, thickness+1.0);
+				  a = 1.0 - smoothstep(thickness, thickness+1.0, d);
 				}
 				
 				// gl_FragColor = vec4(a, 1. , 1., 1.0);

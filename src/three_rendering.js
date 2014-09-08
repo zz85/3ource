@@ -9,6 +9,7 @@ var mouseX = 0, mouseY = 0;
 
 var PARTICLES = 2000; // Particle Pool
 var LINES = 5000; // Lines Pool
+var LINE_WIDTH = 1.0;
 
 
 var windowHalfX = window.innerWidth / 2;
@@ -173,19 +174,6 @@ function initDrawings() {
 	};
 
 	var lineMaterial = new THREE.RawShaderMaterial( lineOptions );
-
-	var
-		grad = new THREE.Vector2(),
-		nv1 = new THREE.Vector2(),
-		nv2 = new THREE.Vector2(),
-		n = new THREE.Vector2(),
-		n1 = new THREE.Vector2(),
-		n2 = new THREE.Vector2(),
-		n3 = new THREE.Vector2(),
-		n4 = new THREE.Vector2(),
-		LINE_WIDTH = 1.5;
-
-	LINES = 1000;
 
 	var xaxis = new THREE.Vector2();
 	lineGeometry.setBezierGrid = function(line, bezier) {
