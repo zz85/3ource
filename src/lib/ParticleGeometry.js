@@ -1,3 +1,7 @@
+/*
+ * @author zz85 https://github.com/zz85
+ */
+
 THREE.ParticleGeometry = function ( sprites, d ) {
 
 	THREE.BufferGeometry.call( this );
@@ -156,3 +160,83 @@ THREE.ParticleGeometry.prototype.getSpriteOffset = function ( face, vector ) {
 	vector.set( this.offsets[ index + 0 ], this.offsets[ index + 1 ], this.offsets[ index + 2 ] )
 
 }
+
+var
+	grad = new THREE.Vector2(),
+	n = new THREE.Vector2(),
+	n1 = new THREE.Vector2(),
+	n2 = new THREE.Vector2(),
+	n3 = new THREE.Vector2(),
+	n4 = new THREE.Vector2(),
+	nv1 = new THREE.Vector2(),
+	nv2 = new THREE.Vector2(),
+	xaxis = new THREE.Vector2(1, 0);
+
+THREE.ParticleGeometry.prototype.setLine = function(line, x1, y1, x2, y2, LINE_WIDTH) {
+	var j = line * 18;
+
+	grad.set(x2 - x1, y2 - y1).normalize();
+	n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
+	
+	n1.set(x1, y1).add(n);
+	n2.set(x1, y1).sub(n);
+
+	n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
+	
+	n3.set(x2, y2).sub(n);
+	n4.set(x2, y2).add(n);
+
+	this.setVertex( 'positions', j + 0, n1.x, n1.y, -4 );
+	this.setVertex( 'positions', j + 3, n2.x, n2.y, -4 );
+	this.setVertex( 'positions', j + 6, n4.x, n4.y, -4);
+
+	this.setVertex( 'positions', j + 9, n2.x, n2.y, -4 );
+	this.setVertex( 'positions', j + 12, n3.x, n3.y, -4 );
+	this.setVertex( 'positions', j + 15, n4.x, n4.y, -4 );
+};
+
+THREE.ParticleGeometry.prototype.setBezierGrid = function(line, v0, v1, v2, LINE_WIDTH) {
+	var j = line * 18;
+
+	// https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/2drota.htm
+	var l = nv1.copy(v2).sub(v0).length();
+	nv1.divideScalar(l); // nv1 is now unit vector from v0 to v2
+
+	var r = nv2.copy(v1).sub(v0).length();
+	nv2.divideScalar(r);
+
+	var a1 = nv1.dot(xaxis);
+	var a2 = nv2.dot(xaxis);
+
+	var a3 = a2 - a1; // amount of rotation to adjust
+
+	x2 = r * Math.cos( a3 );
+	y2 = r * Math.sin( a3 );
+	
+	var SPRITE_BREATH = Math.abs(y2) * 2 + LINE_WIDTH * 4; // amount of y needed in fragment shader
+	l += LINE_WIDTH * 4; // amount of x in frag shader
+
+	grad.copy(nv1);
+
+	// normal to gradient
+	n.set(-grad.y, grad.x).multiplyScalar(0.5 * SPRITE_BREATH);
+	grad.multiplyScalar(2 * LINE_WIDTH);
+
+	this.setSprite( 'normals', line, l, SPRITE_BREATH, LINE_WIDTH );
+	// FIXME: hijacked colors attributes for passing control points for now
+	this.setSprite( 'colors', line, x2 + 2 * LINE_WIDTH, SPRITE_BREATH / 2 - y2, 0 );
+
+	n1.copy(v0).sub(grad).sub(n);
+	n2.copy(v0).sub(grad).add(n);
+	
+	n3.copy(v2).add(grad).sub(n);
+	n4.copy(v2).add(grad).add(n);
+
+	this.setVertex( 'positions', j + 0, n1.x, n1.y, -4 );
+	this.setVertex( 'positions', j + 3, n2.x, n2.y, -4 );
+	this.setVertex( 'positions', j + 6, n4.x, n4.y, -4 );
+
+	this.setVertex( 'positions', j + 9, n4.x, n4.y, -4 );
+	this.setVertex( 'positions', j + 12, n3.x, n3.y, -4 );
+	this.setVertex( 'positions', j + 15, n1.x, n1.y, -4 );
+};

@@ -187,30 +187,6 @@ function initDrawings() {
 
 	LINES = 1000;
 
-	lineGeometry.setLine = function(line, x1, y1, x2, y2) {
-		// TODO make line width a parameter
-		var j = line * 18;
-
-		grad.set(x2 - x1, y2 - y1).normalize();
-		n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
-		
-		n1.set(x1, y1).add(n);
-		n2.set(x1, y1).sub(n);
-
-		n.set(-grad.y, grad.x).multiplyScalar(0.5 * LINE_WIDTH);
-		
-		n3.set(x2, y2).sub(n);
-		n4.set(x2, y2).add(n);
-
-		this.setVertex( 'positions', j + 0, n1.x, n1.y, -4 );
-		this.setVertex( 'positions', j + 3, n2.x, n2.y, -4 );
-		this.setVertex( 'positions', j + 6, n4.x, n4.y, -4);
-
-		this.setVertex( 'positions', j + 9, n2.x, n2.y, -4 );
-		this.setVertex( 'positions', j + 12, n3.x, n3.y, -4 );
-		this.setVertex( 'positions', j + 15, n4.x, n4.y, -4 );
-	};
-
 	var xaxis = new THREE.Vector2();
 	lineGeometry.setBezierGrid = function(line, bezier) {
 		var j = line * 18;
@@ -286,7 +262,7 @@ function initDrawings() {
 
 	for ( i = 0; i < LINES; i ++ ) {
 
-		lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1); // Hide line (or make -10 on z?)
+		lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1, LINE_WIDTH); // Hide line (or make -10 on z?)
 		// lineGeometry.setSprite( 'offsets', i, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000, Math.random() * 2000 - 1000);
 		// lineGeometry.setSprite( 'rotations', i, 0, 0, 0.25);
 
@@ -528,7 +504,7 @@ function render() {
 
 		} else {
 			// hide
-			// lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1);
+			// lineGeometry.setLine(i, 0.1, 0.1, 0.1, 0.1, LINE_WIDTH);
 		}
 	}
 
