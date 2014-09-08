@@ -158,6 +158,9 @@
 		<script id="lineFragmentShader" type="x-shader/x-fragment">
 			#extension GL_OES_standard_derivatives : enable
 
+			// Distance solver by Per Bloksgaard http://micmicc.hinnerup.net/2014/01/BezierDistanceGlow/BezierDistanceGlow.htm
+
+
 			#define EPSILON 0.000000001
 			#define PI 3.14159265358979
 
@@ -180,43 +183,6 @@
 				res -= res.xxyz * bit_mask;
 				return res;
 
-			}
-
-			float inCurve(vec2 uv) {
-				float sdf = uv.x * uv.x - uv.y;
-
-				// if (abs(sdf) < 0.05) return -1.;
-				if ((sdf) >- 0.05 && sdf < 0.) return -1.;
-				return 1.;
-				// on render < 0
-			}
-
-			float sdCuve(vec2 vUv) {
-				// alpha test
-				// if (tex.a < 0.5) discard;
-				vec2 px = dFdx(vUv);
-				vec2 py = dFdy(vUv);  
-				// Chain rule  
-				float fx = (2.*vUv.x)*px.x - px.y;  
-				float fy = (2.*vUv.x)*py.x - py.y;  
-
-				// Signed distance  
-				float sd = (vUv.x*vUv.x - vUv.y) / sqrt(fx*fx + fy*fy);  
-				// Linear alpha  
-
-				// http://gamedev.stackexchange.com/questions/49373/how-to-draw-a-bezier-line-with-shaders
-
-				// float alpha = 2.0 - abs(sd);
-				// if (alpha < 0.) discard;
-
-				float alpha = 0.5 - sd;
-				// if (alpha < 0. || alpha > 1.) discard;
-
-				// if (alpha > 1.)       // Inside
-				// else if (alpha < 0)  // Outside
-				// else Near boundary
-
-				return sd;
 			}
 
 			float det(vec2 a, vec2 b) { return a.x*b.y-b.x*a.y; }
@@ -329,7 +295,6 @@
 				return pos;
 			}
 
-			// based on http://micmicc.hinnerup.net/2014/01/BezierDistanceGlow/BezierDistanceGlow.htm
 			float calculateDistanceToQuadraticBezier(vec2 p, vec2 p0, vec2 p1, vec2 p2) 
 			{
 				vec2 dP0P = p0-p;
@@ -374,37 +339,14 @@
 				if (a < 0.5) {
 					discard;
 				} else {
-					gl_FragColor = vec4(0.8, 0.8, 0.8, a);
+					gl_FragColor = vec4(0.96, 0.96, 0.96, a);
 				}
 
 				// float g = vUv.x * 0.8 + 0.2;
 				// gl_FragColor = vec4(g, g, g, 1.0);
-
-				// gl_FragColor = vec4(gl_FragCoord.xy / 1000.,1.0, 1.0);
-
-				
+			
 				
 			}
-
-			/*
-			void main()	{
-
-				// gl_FragColor = vec4( 1., 1., 1., 1. );
-				// vec4 tex = texture2D(texture, vUv);
-
-				// float x = inCurve(vUv);
-				// if (x  > 0.) discard;
-
-				if (depth > 0.) {
-					gl_FragData[ 0 ] = pack_depth( gl_FragCoord.z );
-
-				} else {
-					vec4 color =  vec4(vColor, 1. );
-					// vec4 color =  vec4(1., 1., 1. , 1. );
-					gl_FragData[ 0 ] =  color;
-				}
-
-			}*/
 
 		</script>
 

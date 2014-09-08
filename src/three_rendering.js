@@ -152,7 +152,7 @@ function initDrawings() {
 	}
 
 
-	lineGeometry = new THREE.ParticleGeometry( LINES, 5 * 1.5 );
+	lineGeometry = new THREE.ParticleGeometry( LINES, 0.1 );
 
 	var lineOptions = {
 
