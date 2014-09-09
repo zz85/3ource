@@ -91,7 +91,7 @@ function paint() {
 		ctx.globalAlpha = 0.2;
 		ctx.beginPath();
 		// TODO 5, 15, children size, or grandchildren size
-		var size = distanceForChildren(node.children) * 2;
+		var size = (getDistance(node.children) + 10) * 0.7 * 2;
 		ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
 		ctx.fill();
 		ctx.globalAlpha = 1;

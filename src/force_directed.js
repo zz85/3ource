@@ -26,7 +26,6 @@ function CirclePacking() {
 
 	this.getPoint = function(target, which) {
 
-		if (cache[target + '.' + which]) return cache[target + '.' + which];
 		counting = 1;
 		if (which == 0) return {x: 0, y: 0};
 
@@ -82,7 +81,6 @@ function CirclePacking() {
 				if (counting == which) {
 					var x = Math.sin(angle) * space * ring;
 					var y = Math.cos(angle) * space * ring;
-					cache[target + '.' + which] = {x: x, y: y};
 
 					return {x: x, y: y};
 
@@ -94,14 +92,6 @@ function CirclePacking() {
 			}
 		}
 	};
-}
-
-
-var p = {};
-function distanceForChildren(c) {
-	if (c == 0) return 10;
-	var p = packing.getPoint(c, c - 1, p);
-	return (Math.sqrt(p.x * p.x + p.y * p.y)  + 5) * 0.7;
 }
 
 var packing = new CirclePacking();
@@ -152,13 +142,18 @@ function gLink(node1, node2, distance) {
 	this.current = {x: ax, y: ay};
 }
 
+
+var p = {};	
+var distance_cache = [];
+
+
 function getDistance(t) {
-	p = packing.getPoint(t, t-1, p);
-	if (p) {
-		var d = Math.sqrt(p.x * p.x + p.y + p.y);
-		return d;
+	if (distance_cache[t] === undefined) {
+		p = packing.getPoint(t, t-1, p);
+		distance_cache[t] = p ? Math.sqrt(p.x * p.x + p.y + p.y) : 0;
 	}
-	return 0;
+
+	return distance_cache[t];
 }
 
 gLink.prototype.move = function() {
