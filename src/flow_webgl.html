@@ -370,6 +370,18 @@
 		var color_legend = document.getElementById('color_legend');
 	</script>
 
+	<canvas id="text_overlay" style="position: absolute; top: 0px; z-index: 100;"></canvas>
+	<script>
+		var text_canvas = document.getElementById('text_overlay');
+		text_canvas.width = innerWidth;
+		text_canvas.height = innerHeight;
+		var ctx = text_canvas.getContext('2d');
+
+		ctx.font = '8pt Arial';
+		ctx.textBaseline = 'ideographic';
+		ctx.globalCompositeOperation = 'lighter';
+	</script>
+
 
 		<script src="test_files.js"></script>
 		<script src="fs.js"></script>
@@ -598,6 +610,7 @@
 
 		init();
 	</script>
+
 
 </body>
 </html>

@@ -17,6 +17,7 @@ var windowHalfY = window.innerHeight / 2;
 
 offset = new THREE.Vector3();
 color = new THREE.Color();
+tmp = new THREE.Vector3();
 
 var extension_colors = {};
 
@@ -174,79 +175,6 @@ function initDrawings() {
 	};
 
 	var lineMaterial = new THREE.RawShaderMaterial( lineOptions );
-
-	var xaxis = new THREE.Vector2();
-	lineGeometry.setBezierGrid = function(line, bezier) {
-		var j = line * 18;
-
-		// https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/2drota.htm
-		var l = nv1.copy(bezier.v2).sub(bezier.v0).length();
-		nv1.divideScalar(l); // nv1 is now unit vector from v0 to v2
-
-		var r = nv2.copy(bezier.v1).sub(bezier.v0).length();
-		nv2.divideScalar(r);
-
-		xaxis.set(1, 0);
-		var a1 = nv1.dot(xaxis);
-		var a2 = nv2.dot(xaxis);
-
-		var a3 = a2 - a1; // amount of rotation to adjust
-
-		x2 = r * Math.cos( a3 );
-		y2 = r * Math.sin( a3 );
-		
-		var SPRITE_BREATH = Math.abs(y2) * 2 + LINE_WIDTH * 4; // amount of y needed in fragment shader
-		l += LINE_WIDTH * 4; // amount of x in frag shader
-
-		grad.copy(nv1);
-
-		// normal to gradient
-		n.set(-grad.y, grad.x).multiplyScalar(0.5 * SPRITE_BREATH);
-		grad.multiplyScalar(2 * LINE_WIDTH);
-
-		this.setSprite( 'normals', line, l, SPRITE_BREATH, LINE_WIDTH );
-		// FIXME: hijacked colors attributes for passing control points for now
-		this.setSprite( 'colors', line, x2 + 2 * LINE_WIDTH, SPRITE_BREATH / 2 - y2, 0 );
-
-		// SPRITE_BREATH / 2 - y2
-		// SPRITE_BREATH - (SPRITE_BREATH / 2 - y2)
-
-		
-
-		n1.copy(bezier.v0).sub(grad).sub(n);
-		n2.copy(bezier.v0).sub(grad).add(n);
-		
-		n3.copy(bezier.v2).add(grad).sub(n);
-		n4.copy(bezier.v2).add(grad).add(n);
-
-		this.setVertex( 'positions', j + 0, n1.x, n1.y, -4 );
-		this.setVertex( 'positions', j + 3, n2.x, n2.y, -4 );
-		this.setVertex( 'positions', j + 6, n4.x, n4.y, -4 );
-
-		this.setVertex( 'positions', j + 9, n4.x, n4.y, -4 );
-		this.setVertex( 'positions', j + 12, n3.x, n3.y, -4 );
-		this.setVertex( 'positions', j + 15, n1.x, n1.y, -4 );
-	};
-
-	lineGeometry.setBezier = function(line, x1, y1, x2, y2, x3, y3) {
-		var j = line * 18;
-		this.setVertex( 'positions', j + 0, x1, y1, -4 );
-		this.setVertex( 'positions', j + 3, x2, y2, -4 );
-		this.setVertex( 'positions', j + 6, x3, y3, -4);
-
-		this.setVertex( 'positions', j + 9, 0, 0, -4 );
-		this.setVertex( 'positions', j + 12, 0,0, -4 );
-		this.setVertex( 'positions', j + 15, 0,0, -4 );
-	};
-
-	lineGeometry.setBezierUvs = function(i) {
-		lineGeometry.setVertexUv( 'uvs', i * 12 + 0,  0,  0);
-		lineGeometry.setVertexUv( 'uvs', i * 12 + 2,  0.5, 0);
-		lineGeometry.setVertexUv( 'uvs', i * 12 + 4,  1,  1);
-		lineGeometry.setVertexUv( 'uvs', i * 12 + 6,  0,  0);
-		lineGeometry.setVertexUv( 'uvs', i * 12 + 8,  0.5,  0);
-		lineGeometry.setVertexUv( 'uvs', i * 12 + 10, 1,  1);
-	};
 
 	for ( i = 0; i < LINES; i ++ ) {
 
@@ -488,7 +416,7 @@ function render() {
 			// bezier.v1.set(link.current.x, link.current.y);
 			bezier.v2.set(link.to.x, link.to.y);
 
-			lineGeometry.setBezierGrid(j++, bezier);
+			lineGeometry.setBezierGrid(j++, bezier.v0, bezier.v1, bezier.v2, LINE_WIDTH);
 
 		} else {
 			// hide
@@ -506,6 +434,7 @@ function render() {
 	lineGeometry.attributes.color.needsUpdate = true;
 	lineGeometry.attributes.normal.needsUpdate = true;
 
+	ctx.clearRect(0, 0, innerWidth, innerHeight)
 	for (i=0;i<PARTICLES;i++) {
 		if (i < fileNodes.length) {
 			node = fileNodes[i];
@@ -522,7 +451,16 @@ function render() {
 			color.setHSL(extension_colors[node.ext], node.sat * 0.2 + k * 0.6 + 0.2, k);
 			
 			spriteGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
-	
+
+			if (node.life < 200) {
+				// prepare label
+				label = node.name.substring(node.name.lastIndexOf('/') + 1);
+				tmp.set(node.x, node.y, 0).applyMatrix4(particleMesh.matrixWorld);
+				
+				tmp = projector.projectVector(tmp, camera);
+				if (tmp.x + 1 < 2 && tmp.y + 1 < 2)
+				labelNode(tmp, label, !true);
+			}
 		} else {
 			spriteGeometry.hideSprite( i );
 		}
@@ -530,6 +468,43 @@ function render() {
 
 	spriteGeometry.attributes.color.needsUpdate = true;
 	spriteGeometry.attributes.offset.needsUpdate = true;
+
+
+
+	function labelNode(node, label, bubble) {
+		ctx.save();
+		ctx.globalCompositeOperation = 'source-over';
+		var r = 10;
+		var width = ctx.measureText(label).width * 1;
+		var height = 10;
+
+		var x = (node.x + 1) * 0.5 * innerWidth + 5;
+		var y = (-node.y + 1) * 0.5 * innerHeight + 5;
+
+		ctx.fillStyle = '#fff';
+
+		if (bubble) {
+			ctx.beginPath();
+			ctx.moveTo(x, y - height);
+			ctx.lineTo(x + width, y - height);
+			ctx.quadraticCurveTo(x + width + r, y - height, x + width + r, y);
+			ctx.quadraticCurveTo(x + width + r, y + height, x + width, y + height);
+			ctx.lineTo(x, y + height);
+			ctx.quadraticCurveTo(x - r, y + height, x - r, y);
+			ctx.quadraticCurveTo(x - r, y - height, x, y - height);
+
+			ctx.closePath();
+			ctx.fill();
+
+			ctx.fillStyle = 'black';
+		}
+
+		ctx.beginPath();
+		ctx.fillText(label, x, y);
+
+		ctx.restore();
+	}
+
 
 	// find intersections
 
