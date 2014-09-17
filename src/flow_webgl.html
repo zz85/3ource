@@ -370,14 +370,14 @@
 		var color_legend = document.getElementById('color_legend');
 	</script>
 
-	<canvas id="text_overlay" style="position: absolute; top: 0px; z-index: 100;"></canvas>
+	<canvas id="text_overlay" style="position: absolute; top: 0px; z-index: 20;"></canvas>
 	<script>
 		var text_canvas = document.getElementById('text_overlay');
 		text_canvas.width = innerWidth;
 		text_canvas.height = innerHeight;
 		var ctx = text_canvas.getContext('2d');
 
-		ctx.font = '8pt Arial';
+		ctx.font = '10pt Arial';
 		ctx.textBaseline = 'ideographic';
 		ctx.globalCompositeOperation = 'lighter';
 	</script>
@@ -392,6 +392,7 @@
 		<script src="lib/Detector.js"></script>
 		<script src="lib/stats.min.js"></script>
 
+		<script src="do.js"></script>
 		<script src="three_rendering.js"></script>
 		<script src="force_directed.js"></script>
 		<script src="slidebar.js"></script>
@@ -579,10 +580,21 @@
 			// 	display(); }, 50);;
 		}
 
+
 		// Fit button
 		window.addEventListener('mousewheel', function(e) {
 			// TODO position mouse on where it zooms
 			camera.position.z -= e.wheelDeltaY;
+			camera.position.z = Math.max(Math.min(camera.position.z, 12000), 10);
+
+			console.log(camera.position.z);
+
+			// camera.fov -= e.wheelDeltaY * 0.1;
+			// camera.fov = Math.max(Math.min(camera.fov, 120), 3);
+			// lens 8 - 400
+			// 
+			// console.log(camera.fov);
+			camera.updateProjectionMatrix()
 		});
 
 		var mousex = null, mousey = null;

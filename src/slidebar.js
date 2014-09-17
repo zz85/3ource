@@ -1,13 +1,14 @@
 function Slidebar(track, grip) {
 	// TODO to extend SlidingWindow
-	this.max = 4;
+	this.max = 2000;
 	this.min = 0;
 	this.value = 0;
 
-	this.height = 30;
+	this.height = 14;
 
 	this.initUI();
 
+	this.AUTOSIZE_GRIP = true;
 	this.setTrackLength(track || 600);
 	this.setGripLength(grip || 50);
 
@@ -31,38 +32,35 @@ Slidebar.prototype = {
 	},
 	setMax: function(x) {
 		this.max = x;
+
 	},
 
 	paint: function() {
-		// TODO refactor styles
+		
 		var track = this.track;
 		var thumb = this.thumb;
-		track.style.position = 'absolute';
-		// track.style.top = '200px';
-		// z-index
-		track.style.left = '20px';
-		track.style.bottom = '30px';
 
 		track.style.height = this.height + 'px';
 		track.style.width = this.trackLength + 'px';
-		track.style.backgroundColor = '#333';
-		track.style.cursor = 'pointer';
 
+
+		var grip = Math.max(this.gripLength, this.trackLength / (this.max - this.min + 1))
 		var units = (this.value - this.min);
-		var unit_bounds = (this.trackLength - this.gripLength) / (this.max - this.min);
+		var unit_bounds = (this.trackLength - grip) / (this.max - this.min);
 		var left = units * unit_bounds;
 
 		thumb.style.marginLeft = left + 'px';
 		thumb.style.height = this.height +  'px';
 		thumb.style.width = this.gripLength + 'px';
-		thumb.style.backgroundColor = '#f00';
+
 	},
 
 	mouseX: function(x) {
-		var unit_bounds = (this.trackLength - this.gripLength) / (this.max - this.min);
+		var grip = Math.max(this.gripLength, this.trackLength / (this.max - this.min + 1))
+		var unit_bounds = (this.trackLength - grip) / (this.max - this.min);
 		var offset = x - 0.5 * this.gripLength + 0.5 * unit_bounds;
 		var value = offset / unit_bounds + this.min | 0;
-		// value = Math.max(Math.min(value, this.max), this.min);
+		value = Math.max(Math.min(value, this.max), this.min);
 		this.setValue(value);
 		console.log('mousex', x, 'value', value);
 		return value;
@@ -119,6 +117,24 @@ Slidebar.prototype = {
 		this.thumb = thumb;
 		this.dom = track;
 
+		// TODO refactor styles
+		track.style.position = 'absolute';
+		// track.style.top = '200px';
+
+		track.style.zIndex = 100;
+		track.style.left = '0';
+		track.style.right = '0';
+		track.style.margin = 'auto';
+		track.style.bottom = '30px';
+		
+		track.style.backgroundColor = '#333';
+		track.style.cursor = 'pointer';
+		thumb.style.backgroundColor = '#f00';
+		track.style.borderRadius = '14px';
+		thumb.style.borderRadius = '14px';
+
+		// track.style.border = '1px solid black';
+		// thumb.style.border = '1px solid black';
 
 	},
 

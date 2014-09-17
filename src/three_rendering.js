@@ -108,8 +108,8 @@ function initDrawings() {
 	container = document.createElement( 'div' );
 	document.body.appendChild( container );
 
-	camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10000 );
-	camera.position.z = 200;
+	camera = new THREE.PerspectiveCamera( 25, window.innerWidth / window.innerHeight, 0.1, 10000 );
+	camera.position.z = 50; // 75
 
 	scene = new THREE.Scene();
 	// scene.fog = new THREE.FogExp2( 0x000000, 0.001 );
@@ -132,7 +132,11 @@ function initDrawings() {
 		vertexShader: document.getElementById( 'vertexShader' ).textContent,
 		fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
 		side: THREE.DoubleSide,
-		transparent: true
+		transparent: true,
+		blending: THREE.AdditiveBlending,
+		blendEquation: THREE.AddEquation,
+		blendSrc: THREE.OneFactor,
+		blendDst: THREE.SrcAlphaFactor
 
 	};
 
@@ -170,7 +174,12 @@ function initDrawings() {
 		vertexShader: document.getElementById( 'vertexShader' ).textContent,
 		fragmentShader: document.getElementById( 'lineFragmentShader' ).textContent,
 		side: THREE.DoubleSide,
-		transparent: true
+		transparent: true,
+		
+		blending: THREE.AdditiveBlending,
+		blendEquation: THREE.AddEquation,
+		blendSrc: THREE.OneFactor,
+		blendDst: THREE.SrcAlphaFactor
 
 	};
 
@@ -307,9 +316,9 @@ function initDrawings() {
 
 	//
 
-renderer.domElement.addEventListener( 'mousedown', function() {
-	moo = true;
-}, false );
+	document.body.addEventListener( 'mousedown', function() {
+		moo = true;
+	}, false );
 	renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 	renderer.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false );
 	renderer.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false );
