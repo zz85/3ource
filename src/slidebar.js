@@ -1,3 +1,11 @@
+/*
+	TODO
+	- Touch Events
+	- Scroll Events
+	- Animation
+	- Styling
+*/
+
 function Slidebar(track, grip) {
 	// TODO to extend SlidingWindow
 	this.max = 2000;
@@ -85,7 +93,7 @@ Slidebar.prototype = {
 		if (e.target === this.thumb) return;
 
 		var value = this.mouseX(e.offsetX);
-		// this.onScroll.fire(value);
+		this.onScroll.fire(value);
 	},
 
 	mouseUp: function(e) {

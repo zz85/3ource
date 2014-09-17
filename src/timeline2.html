@@ -34,20 +34,44 @@
 		<option value="4">Black core, White outline</option>
 	</select>
 
+	<script src="do.js"></script>
 	<script src="source.js"></script>
 	<script src="gitgraph2.js"></script>
+	<script src="slidebar.js"></script>
 	<script>
 
 	// TODO line highlights and hoverovers
 
 	var url = '../data/test.json';
 	getLog('../data/filenames.json', url, readTimeline);
+	
+	var slidebar = new Slidebar(600, 50);
+	slidebar.onScroll.do(function(v) {
+		console.log(v);
+		slidebar.setValue(v);
+		viewer.currentRow = v;
+		viewer.draw();
+	});
+
+	document.body.appendChild(slidebar.dom);
 
 	function readTimeline(timeline) {
 
 		viewer = new GitLogViewer(timeline);
+		slidebar.setMax(timeline.length - 1);
 
 	}
+
+	var where = 0;
+	document.addEventListener('mousewheel', function(e) {
+		where -= e.wheelDelta / 100;
+		where = where < 0 ? 0 : where > t.length ? t.length  - 1 : where;
+		// if (Math.random() < 0.2) console.log(viewer.currentRow);
+		viewer.currentRow = where;
+		slidebar.setValue(t.length - where);
+		viewer.draw();
+	})
+
 
 	function graphStyle(id) {
 		GRAPH_MODE = +id;
