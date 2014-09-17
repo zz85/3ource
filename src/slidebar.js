@@ -1,6 +1,6 @@
 function Slidebar(track, grip) {
 	// TODO to extend SlidingWindow
-	this.max = 100;
+	this.max = 4;
 	this.min = 0;
 	this.value = 0;
 
@@ -34,69 +34,96 @@ Slidebar.prototype = {
 	},
 
 	paint: function() {
+		// TODO refactor styles
 		var track = this.track;
 		var thumb = this.thumb;
 		track.style.position = 'absolute';
 		// track.style.top = '200px';
+		// z-index
 		track.style.left = '20px';
 		track.style.bottom = '30px';
 
 		track.style.height = this.height + 'px';
 		track.style.width = this.trackLength + 'px';
 		track.style.backgroundColor = '#333';
+		track.style.cursor = 'pointer';
 
-		var slidingSpace = this.trackLength - this.gripLength;
-		var percentage = this.value / this.max;
-		var left = slidingSpace * percentage;
-		if (Math.random() < 0.1) console.log(slidingSpace, percentage, left);
+		var units = (this.value - this.min);
+		var unit_bounds = (this.trackLength - this.gripLength) / (this.max - this.min);
+		var left = units * unit_bounds;
+
 		thumb.style.marginLeft = left + 'px';
 		thumb.style.height = this.height +  'px';
 		thumb.style.width = this.gripLength + 'px';
 		thumb.style.backgroundColor = '#f00';
-		thumb.style.cursor = 'pointer';
 	},
 
 	mouseX: function(x) {
-		var value = (x - this.gripLength / 2) / this.trackLength * this.max | 0;
-		value = Math.max(value, 0);
+		var unit_bounds = (this.trackLength - this.gripLength) / (this.max - this.min);
+		var offset = x - 0.5 * this.gripLength + 0.5 * unit_bounds;
+		var value = offset / unit_bounds + this.min | 0;
+		// value = Math.max(Math.min(value, this.max), this.min);
 		this.setValue(value);
+		console.log('mousex', x, 'value', value);
 		return value;
 	},
 
-	onMouseDown: function(e) {
+	mouseDown: function(e) {
+		this.track.addEventListener('mousemove', this.onMouseMove);
+		this.track.addEventListener('mouseup', this.onMouseUp);
+		this.track.addEventListener('mouseleave', this.onMouseUp);
+
+		if (e.target === this.thumb) return;
+
 		var value = this.mouseX(e.offsetX);
 		this.onScroll.fire(value);
 
-		this.mousemove = this.onMouseMove.bind(this);
-		this.mouseup = this.onMouseUp.bind(this);
-		this.track.addEventListener('mousemove', this.mousemove);
-		this.track.addEventListener('mouseup', this.mouseup);
+		e.preventDefault();
+		// e.stopPropagation();
+
 	},
 
-	onMouseMove: function(e) {
+	mouseMove: function(e) {
+		if (e.target === this.thumb) return;
+
 		var value = this.mouseX(e.offsetX);
 		// this.onScroll.fire(value);
 	},
 
-	onMouseUp: function(e) {
-		// console.log(e);
-		// var value = this.mouseX(e.offsetX);
-		// this.onScroll.fire(value);
+	mouseUp: function(e) {
+		if (e.target === this.thumb) return;
 
-		this.track.removeEventListener('mousemove', this.mousemove);
-		this.track.removeEventListener('mouseup', this.mouseup);
+		var value = this.mouseX(e.offsetX);
+		this.onScroll.fire(value);
+
+		this.track.removeEventListener('mousemove', this.onMouseMove);
+		this.track.removeEventListener('mouseup', this.onMouseUp);
+		this.track.removeEventListener('mouseleave', this.onMouseUp);
+
+		// TODO mouseenter?
 	},
 
 	initUI: function() {
 		var track = document.createElement('div');
 		var thumb = document.createElement('div');
+
 		track.appendChild(thumb);
 
-		track.addEventListener('mousedown', this.onMouseDown.bind(this));
+		this.onMouseDown = this.mouseDown.bind(this);
+		this.onMouseMove = this.mouseMove.bind(this);
+		this.onMouseUp = this.mouseUp.bind(this);
+
+		track.addEventListener('mousedown', this.onMouseDown);
 
 		this.track = track;
 		this.thumb = thumb;
 		this.dom = track;
+
+
+	},
+
+	destory: function() {
+		// destory listeners and events
 	}
 };
 
