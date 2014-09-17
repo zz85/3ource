@@ -1,0 +1,60 @@
+<html>
+<body>
+	<p>This is for testing moi custom progress bar / slider / scrollbar</p>
+	<script src="do.js"></script>
+	<script src="slidebar.js"></script>
+	<script>
+	/*
+	Test cases
+	1. resize dom
+	2. set min/ max values
+    3. slider changes values
+    4. setValue changes slider
+	*/
+	var slidebar = new Slidebar();
+
+	window.addEventListener('resize', resize);
+	function resize() {
+		slidebar.setTrackLength(window.innerWidth - 40);
+	}
+
+	// can be porportionate, or have min size, or fixed
+	// ceavets: fix cannot be > length
+
+	// TODO scrubbing
+	// setGripLength
+
+	// Rules.
+
+	// 10 units, Width(100) / 10. Column activates within zone
+	// | 10 | 10 | 10 | 10 |
+
+	// if slider is smaller, width(100) - (5 * 10) = gaps(50).
+	// take (10-1) 9 units.
+	// divide by gaps
+	// 50 / 9 = 5.55 (/2) = 2.77
+	// | 5 + 2.77 | 2.77 + 5 + 2.77 | 2.77 + 5
+	// Alt: 100-10 = 90. 
+	// Can snap to grid or free.
+
+	// if slider is larger
+	// 20.. 100 - 20 = 80
+	// 0 | | 80 -> 80 | | 0
+
+	// 50 -10 | 30 | 10/
+	// (30) | 20. 20 | (30). 25 | 25
+	// 10 + 30 / 2 | 30 / 2 | 10 
+
+
+
+	slidebar.onScroll.do(function(v) {
+		console.log(v, 'value: ' + slidebar.value, 'min: ' + slidebar.min, 'max: ' + slidebar.max);
+	});
+
+	document.body.appendChild(slidebar.dom);
+
+
+	</script>
+
+</body>
+</html>
