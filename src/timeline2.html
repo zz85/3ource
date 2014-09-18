@@ -46,12 +46,7 @@
 	getLog('../data/filenames.json', url, readTimeline);
 	
 	var slidebar = new Slidebar(600, 50);
-	slidebar.onScroll.do(function(v) {
-		console.log(v);
-		slidebar.setValue(v);
-		viewer.currentRow = v;
-		viewer.draw();
-	});
+	
 
 	document.body.appendChild(slidebar.dom);
 
@@ -62,15 +57,25 @@
 
 	}
 
-	var where = 0;
+	var where = slidebar.value;
 	document.addEventListener('mousewheel', function(e) {
 		where -= e.wheelDelta / 100;
 		where = where < 0 ? 0 : where > t.length ? t.length  - 1 : where;
-		// if (Math.random() < 0.2) console.log(viewer.currentRow);
+		if (Math.random() < 0.2) console.log(viewer.currentRow);
+		// currentRow = reverse(index) = t.length - currentRow - 1
 		viewer.currentRow = where;
-		slidebar.setValue(t.length - where);
+		slidebar.setValue(t.length - where - 1);
 		viewer.draw();
-	})
+	});
+
+	slidebar.onScroll.do(function(v) {
+		// console.log(v);
+		slidebar.setValue(v);
+		where = t.length - v - 1;
+		viewer.currentRow = where;
+
+		viewer.draw();
+	});
 
 
 	function graphStyle(id) {

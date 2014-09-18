@@ -4,6 +4,7 @@
 	- Scroll Events
 	- Animation
 	- Styling
+	- Mouse events should work across the screen
 */
 
 function Slidebar(track, grip) {
@@ -70,18 +71,17 @@ Slidebar.prototype = {
 		var value = offset / unit_bounds + this.min | 0;
 		value = Math.max(Math.min(value, this.max), this.min);
 		this.setValue(value);
-		console.log('mousex', x, 'value', value);
+		// console.log('mousex', x, 'value', value);
 		return value;
 	},
 
 	mouseDown: function(e) {
-		this.track.addEventListener('mousemove', this.onMouseMove);
-		this.track.addEventListener('mouseup', this.onMouseUp);
-		this.track.addEventListener('mouseleave', this.onMouseUp);
+		// console.log('z', e.clientX - parseInt(this.track.offsetLeft, 10), e.offsetX);
+		document.addEventListener('mousemove', this.onMouseMove);
+		document.addEventListener('mouseup', this.onMouseUp);
 
-		if (e.target === this.thumb) return;
-
-		var value = this.mouseX(e.offsetX);
+		var x = e.clientX - this.track.offsetLeft;
+		var value = this.mouseX(x);
 		this.onScroll.fire(value);
 
 		e.preventDefault();
@@ -90,23 +90,19 @@ Slidebar.prototype = {
 	},
 
 	mouseMove: function(e) {
-		if (e.target === this.thumb) return;
-
-		var value = this.mouseX(e.offsetX);
+		var x = e.clientX - this.track.offsetLeft;
+		var value = this.mouseX(x);
 		this.onScroll.fire(value);
 	},
 
 	mouseUp: function(e) {
-		if (e.target === this.thumb) return;
-
-		var value = this.mouseX(e.offsetX);
+		var x = e.clientX - this.track.offsetLeft;
+		var value = this.mouseX(x);
 		this.onScroll.fire(value);
 
-		this.track.removeEventListener('mousemove', this.onMouseMove);
-		this.track.removeEventListener('mouseup', this.onMouseUp);
-		this.track.removeEventListener('mouseleave', this.onMouseUp);
+		document.removeEventListener('mousemove', this.onMouseMove);
+		document.removeEventListener('mouseup', this.onMouseUp);
 
-		// TODO mouseenter?
 	},
 
 	initUI: function() {
@@ -136,7 +132,7 @@ Slidebar.prototype = {
 		track.style.bottom = '30px';
 		
 		track.style.backgroundColor = '#333';
-		track.style.cursor = 'pointer';
+		thumb.style.cursor = 'pointer';
 		thumb.style.backgroundColor = '#f00';
 		track.style.borderRadius = '14px';
 		thumb.style.borderRadius = '14px';

@@ -9,7 +9,7 @@
 
 var TRACK_WIDTH = 10;
 var DOT_SIZE = 3;
-var ROW_HEIGHT = 70; // 20 - 100
+var ROW_HEIGHT = 40; // 20 - 100
 
 var targetRows = 40; // Number of dom elements (TODO make this correct)
 var bufferRows = 0;
@@ -26,14 +26,6 @@ var GRAPH_RECT_ENDS = 0,
 	GRAPH_FLAT_ENDS = 3;
 	// TODO: a mode which merges unnessary lanes
 
-var where = 0;
-document.addEventListener('mousewheel', function(e) {
-	where -= e.wheelDelta / 100;
-	where = where < 0 ? 0 : where > t.length ? t.length  - 1 : where;
-	// if (Math.random() < 0.2) console.log(viewer.currentRow);
-	viewer.currentRow = where;
-	viewer.draw();
-})
 
 /*
 DOT Styles
@@ -239,7 +231,8 @@ function GitLogViewer(timeline) {
 		selected = row;
 		scrollGraphTo(row);
 		this.draw();
-	}
+	};
+	
 
 	this.regenerate = function() {
 		// Calculating tracks for git log graphs
