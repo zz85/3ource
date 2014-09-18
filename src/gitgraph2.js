@@ -182,6 +182,7 @@ var colors = [
 // Classic Style
 // var colors = ['black', '#ee8', 'red', 'green', 'blue'];
 
+var dirty;
 
 // utils
 function replacer(w) {
@@ -232,7 +233,7 @@ function GitLogViewer(timeline) {
 		scrollGraphTo(row);
 		this.draw();
 	};
-	
+
 
 	this.regenerate = function() {
 		// Calculating tracks for git log graphs
@@ -517,6 +518,7 @@ function GitLogViewer(timeline) {
 		minRow = Math.max(this.currentRow - bufferRows, 0);
 		maxRow = Math.min(this.currentRow + targetRows + bufferRows, timeline.length);
 
+		dirty = true;
 		drawGraph();
 
 		lastRenderered = now;
@@ -528,11 +530,11 @@ function GitLogViewer(timeline) {
 
 	}
 
-	// setInterval(draw, 50);
+	setInterval(drawGraph, 50);
 
 	function drawGraph() {
 		// Draw commit tracks
-		ctx.clearRect(0, 0, graph.width, graph.height);
+		if (dirty) ctx.clearRect(0, 0, graph.width, graph.height);
 		ctx.save();
 		ctx.translate(graph.width, 0);
 		ctx.scale(ratio, ratio);
@@ -545,6 +547,8 @@ function GitLogViewer(timeline) {
 		var i, il, j, jl;
 
 		// for (i=0,il=tracks.length; i<il; i++) {
+
+		// Tracks
 		for (i=tracks.length; i--;) {
 			track = tracks[i];
 
@@ -609,7 +613,13 @@ function GitLogViewer(timeline) {
 				if (entry.row >= maxRow) break;
 			}
 
-			ctx.stroke();
+			if (ctx.isPointInPath(mouseX, mouseY)) {
+				console.log('yeah!', entry, t[entry.row]);
+				ctx.lineWidth = 4;
+			}
+
+			// console.log('tracks')
+			if (dirty) ctx.stroke();
 
 			switch (DOT_COLOR_SCHEME) {
 				case 0: // White outline, Black fill
@@ -643,8 +653,10 @@ function GitLogViewer(timeline) {
 					|| entry.row < minRow ) continue;
 				ctx.beginPath();
 				ctx.arc(getTrackX(entry.lane), getRowY(entry.row), DOT_SIZE, 0, Math.PI * 2);
-				ctx.fill();
-				ctx.stroke();
+				if (dirty) {
+					ctx.fill();
+					ctx.stroke();
+				}
 
 				if (ctx.isPointInPath(mouseX, mouseY)) {
 					console.log('yeah!', entry, t[entry.row]);
@@ -656,7 +668,8 @@ function GitLogViewer(timeline) {
 			if (selectedEntry) {
 				ctx.beginPath();
 				ctx.arc(getTrackX(selectedEntry.lane), getRowY(selectedEntry.row), DOT_SIZE * 1.5, 0, Math.PI * 2);
-				ctx.fill();
+				// if (dirty) 
+					ctx.fill();
 			}
 
 			/*
@@ -675,6 +688,7 @@ function GitLogViewer(timeline) {
 		}
 
 		ctx.restore();
+		dirty = false;
 	}
 
 }
