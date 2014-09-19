@@ -91,7 +91,8 @@ function scrollGraphTo(row) {
 
 var selected = -1;
 var selectedEntry;
-
+var xy = {x: 0, y: 0};
+var translate = {x: 0, y: 0};
 
 
 setWidth(innerWidth - 200);
@@ -530,23 +531,66 @@ function GitLogViewer(timeline) {
 
 	}
 
-	setInterval(drawGraph, 50);
+	// setInterval(drawGraph, 50);
+
+
+	// function getX(lane) {
+	// 	return getTrackX(lane);
+	// }
+
+	// function getY(row) {
+	// 	return getRowY(row);
+	// }
+
+	function getPoint(lane, row) {
+		var x = getTrackX(lane);
+		var y = getRowY(row);
+		xy.x = graph.width - (y + translate.y);
+		xy.y = graph.height - 100 - x;
+		return xy;
+	}
 
 	function drawGraph() {
+		dirty = true;
 		// Draw commit tracks
 		if (dirty) ctx.clearRect(0, 0, graph.width, graph.height);
 		ctx.save();
-		ctx.translate(graph.width, 0);
+		// ctx.translate(graph.width, 0);
 		ctx.scale(ratio, ratio);
-		ctx.rotate(Math.PI / 2);
+		// ctx.rotate(Math.PI / 2);
 		
-		ctx.translate(0, getRowY(0)-getRowY(minRow));
+		translate.y = getRowY(0)-getRowY(minRow);
 
 		var track, entry;
 
 		var i, il, j, jl;
 
 		// for (i=0,il=tracks.length; i<il; i++) {
+
+		// Tracks
+		for (i=tracks.length; i--;) {
+			track = tracks[i];
+			ctx.strokeStyle = colors[i % colors.length];
+
+
+			// Text
+			for (j=0, jl=track.length;j<jl;j++) {
+				entry = track[j];
+				if (nodeTracks[entry.row] != entry.lane
+					|| entry.row < minRow ) continue;
+				
+
+				ctx.save();
+				getPoint(entry.lane, entry.row);
+				ctx.translate(xy.x, xy.y);
+				ctx.rotate(-Math.PI / 9);
+				// ctx.textAlign = "center";
+				ctx.fillStyle = '#bbb';
+				ctx.fillText(t[entry.row].message, 10, 10);
+				ctx.restore();
+			}
+		}
+
 
 		// Tracks
 		for (i=tracks.length; i--;) {
@@ -559,53 +603,67 @@ function GitLogViewer(timeline) {
 				if (entry.row >= minRow) break;
 			}
 
+			
+
 			ctx.beginPath();
 			
-			ctx.moveTo(getTrackX(entry.lane), getRowY(entry.row));
+			getPoint(entry.lane, entry.row);
+			ctx.moveTo(xy.x, xy.y);
 			
 			var prev;
 			for (j=j+1, jl=track.length;j<jl;j++) {
 				entry = track[j];
 				prev = track[j-1];
 
-				var from_x = getTrackX(prev.lane);
-				var from_y = getRowY(prev.row);
-				var to_x = getTrackX(entry.lane);
-				var to_y = getRowY(entry.row);
+				getPoint(prev.lane, prev.row);
+				var from_x = xy.x;
+				var from_y = xy.y;
+
+				getPoint(entry.lane, entry.row);
+				var to_x = xy.x;
+				var to_y = xy.y;
 
 				switch (GRAPH_MODE) {
 					case GRAPH_RECT_ENDS:
-						ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+						getPoint(entry.lane, entry.row);
+						ctx.lineTo(xy.x, xy.y);
 						break;
 					case GRAPH_SLANT_ENDS:
 						if (j == jl - 1) {
-							ctx.lineTo(getTrackX(prev.lane), getRowY(entry.row-LINK_PORTION));
+							getPoint(prev.lane, entry.row-LINK_PORTION);
+							ctx.lineTo(xy.x, xy.y);
 						} else {
-							ctx.lineTo(getTrackX(entry.lane), getRowY(prev.row+LINK_PORTION));
+							getPoint(entry.lane, prev.row+LINK_PORTION);
+							ctx.lineTo(xy.x, xy.y);
 						}
 
-						ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+						getPoint(entry.lane, entry.row);
+						ctx.lineTo(xy.x, xy.y);
 						break;
 					case GRAPH_CURVED_ENDS:
 						if (entry.lane != prev.lane) {
+							// TODO
 							ctx.bezierCurveTo(
 								from_x - TRACK_WIDTH * x_fact, from_y + ROW_HEIGHT * y_fact,
 								to_x + TRACK_WIDTH * x_fact, to_y - ROW_HEIGHT * y_fact,
 								to_x, to_y
 							);
 						} else {
-							ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+							getPoint(entry.lane, entry.row);
+							ctx.lineTo(xy.x, xy.y);
 						}
 
 						break;
 					case GRAPH_FLAT_ENDS:
 						if (j == jl - 1) {
-							ctx.lineTo(getTrackX(prev.lane), getRowY(entry.row-LINK_PORTION));
+							getPoint(prev.lane, entry.row-LINK_PORTION);
+							ctx.lineTo(xy.x, xy.y);
 						} else {
-							// ctx.lineTo(getTrackX(entry.lane), getRowY(prev.row+LINK_PORTION));
+							// ctx.lineTo(getX(entry.lane), getY(prev.row+LINK_PORTION));
 						}
 
-						ctx.lineTo(getTrackX(entry.lane), getRowY(entry.row));
+						getPoint(entry.lane, entry.row);
+						ctx.lineTo(xy.x, xy.y);
 
 						break;
 				}
@@ -613,9 +671,10 @@ function GitLogViewer(timeline) {
 				if (entry.row >= maxRow) break;
 			}
 
-			if (ctx.isPointInPath(mouseX, mouseY)) {
+			if (ctx.isPointInStroke(mouseX, mouseY)) {
 				console.log('yeah!', entry, t[entry.row]);
 				ctx.lineWidth = 4;
+				ctx.stroke();
 			}
 
 			// console.log('tracks')
@@ -652,14 +711,26 @@ function GitLogViewer(timeline) {
 				if (nodeTracks[entry.row] != entry.lane
 					|| entry.row < minRow ) continue;
 				ctx.beginPath();
-				ctx.arc(getTrackX(entry.lane), getRowY(entry.row), DOT_SIZE, 0, Math.PI * 2);
+
+				getPoint(entry.lane, entry.row);
+				ctx.arc(xy.x, xy.y, DOT_SIZE, 0, Math.PI * 2);
 				if (dirty) {
 					ctx.fill();
 					ctx.stroke();
 				}
 
+				// ctx.save();
+				// getPoint(entry.lane, entry.row);
+				// ctx.translate(xy.x, xy.y);
+				// ctx.rotate(-Math.PI / 9);
+				// // ctx.textAlign = "center";
+				// // ctx.fillStyle = 'white';
+				// ctx.fillText(t[entry.row].message, 10, 10);
+				// ctx.restore();
+
 				if (ctx.isPointInPath(mouseX, mouseY)) {
 					console.log('yeah!', entry, t[entry.row]);
+
 					selectedEntry = entry;
 				}
 				// if (entry.row > maxRow) break;
@@ -667,9 +738,10 @@ function GitLogViewer(timeline) {
 
 			if (selectedEntry) {
 				ctx.beginPath();
-				ctx.arc(getTrackX(selectedEntry.lane), getRowY(selectedEntry.row), DOT_SIZE * 1.5, 0, Math.PI * 2);
+				getPoint(selectedEntry.lane, selectedEntry.row);
+				ctx.arc(xy.x, xy.y, DOT_SIZE * 1.5, 0, Math.PI * 2);
 				// if (dirty) 
-					ctx.fill();
+				ctx.fill();
 			}
 
 			/*
@@ -679,7 +751,7 @@ function GitLogViewer(timeline) {
 				entry = track[j];
 
 				ctx.beginPath();
-				ctx.arc(getTrackX(entry.lane), getRowY(entry.row), 2, 0, Math.PI * 2);
+				ctx.arc(getX(entry.lane), getY(entry.row), 2, 0, Math.PI * 2);
 				ctx.fill();
 
 				if (entry.row >= maxRow) break;

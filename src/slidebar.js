@@ -129,7 +129,7 @@ Slidebar.prototype = {
 		track.style.left = '0';
 		track.style.right = '0';
 		track.style.margin = 'auto';
-		track.style.bottom = '30px';
+		track.style.bottom = '80px';
 		
 		track.style.backgroundColor = '#333';
 		thumb.style.cursor = 'pointer';
