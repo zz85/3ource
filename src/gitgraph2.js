@@ -531,7 +531,7 @@ function GitLogViewer(timeline) {
 
 	}
 
-	// setInterval(drawGraph, 50);
+	setInterval(drawGraph, 50);
 
 
 	// function getX(lane) {
@@ -546,12 +546,13 @@ function GitLogViewer(timeline) {
 		var x = getTrackX(lane);
 		var y = getRowY(row);
 		xy.x = graph.width - (y + translate.y);
-		xy.y = graph.height - 100 - x;
+		xy.y = x + 100;
+		// graph.height - 100 - 
 		return xy;
 	}
 
 	function drawGraph() {
-		dirty = true;
+		// dirty = true;
 		// Draw commit tracks
 		if (dirty) ctx.clearRect(0, 0, graph.width, graph.height);
 		ctx.save();
@@ -566,31 +567,6 @@ function GitLogViewer(timeline) {
 		var i, il, j, jl;
 
 		// for (i=0,il=tracks.length; i<il; i++) {
-
-		// Tracks
-		for (i=tracks.length; i--;) {
-			track = tracks[i];
-			ctx.strokeStyle = colors[i % colors.length];
-
-
-			// Text
-			for (j=0, jl=track.length;j<jl;j++) {
-				entry = track[j];
-				if (nodeTracks[entry.row] != entry.lane
-					|| entry.row < minRow ) continue;
-				
-
-				ctx.save();
-				getPoint(entry.lane, entry.row);
-				ctx.translate(xy.x, xy.y);
-				ctx.rotate(-Math.PI / 9);
-				// ctx.textAlign = "center";
-				ctx.fillStyle = '#bbb';
-				ctx.fillText(t[entry.row].message, 10, 10);
-				ctx.restore();
-			}
-		}
-
 
 		// Tracks
 		for (i=tracks.length; i--;) {
@@ -709,7 +685,7 @@ function GitLogViewer(timeline) {
 			for (j=0, jl=track.length;j<jl;j++) {
 				entry = track[j];
 				if (nodeTracks[entry.row] != entry.lane
-					|| entry.row < minRow ) continue;
+					|| entry.row < minRow  || entry.row > maxRow) continue;
 				ctx.beginPath();
 
 				getPoint(entry.lane, entry.row);
@@ -718,15 +694,6 @@ function GitLogViewer(timeline) {
 					ctx.fill();
 					ctx.stroke();
 				}
-
-				// ctx.save();
-				// getPoint(entry.lane, entry.row);
-				// ctx.translate(xy.x, xy.y);
-				// ctx.rotate(-Math.PI / 9);
-				// // ctx.textAlign = "center";
-				// // ctx.fillStyle = 'white';
-				// ctx.fillText(t[entry.row].message, 10, 10);
-				// ctx.restore();
 
 				if (ctx.isPointInPath(mouseX, mouseY)) {
 					console.log('yeah!', entry, t[entry.row]);
@@ -758,6 +725,30 @@ function GitLogViewer(timeline) {
 			}
 			*/
 		}
+
+		// Text
+		for (i=tracks.length; i--;) {
+			track = tracks[i];
+			ctx.strokeStyle = colors[i % colors.length];
+
+
+			// Text
+			for (j=0, jl=track.length;j<jl;j++) {
+				entry = track[j];
+				if (nodeTracks[entry.row] != entry.lane
+					|| entry.row < minRow  || entry.row > maxRow) continue;
+
+				ctx.save();
+				getPoint(entry.lane, entry.row);
+				ctx.translate(xy.x, xy.y);
+				ctx.rotate(-Math.PI / 9);
+				// ctx.textAlign = "center";
+				ctx.fillStyle = '#bbb';
+				ctx.fillText(t[entry.row].message, 10, 10);
+				ctx.restore();
+			}
+		}
+
 
 		ctx.restore();
 		dirty = false;
