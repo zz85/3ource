@@ -26,6 +26,26 @@ var GRAPH_RECT_ENDS = 0,
 	GRAPH_FLAT_ENDS = 3;
 	// TODO: a mode which merges unnessary lanes
 
+	var RADIUS = 100;
+	var DISTORTION = 2;
+	var mouseX;
+
+	function mapX(x) {
+		var dx = x - mouseX;
+		var dd = Math.abs(dx);
+
+		//
+		if (dd > RADIUS || dd == 0) return x;
+
+		var k0 = Math.exp(DISTORTION);
+		k0 = k0 / (k0 - 1) * RADIUS;
+		var k1 = DISTORTION / RADIUS;
+
+		var k = k0 * (1 - Math.exp(-dd * k1)) / dd * .75 + .25;
+
+		return mouseX + dx * k;
+	}
+
 
 /*
 DOT Styles
@@ -70,6 +90,8 @@ var Scheme = {
 
 
 function setWidth(width) {
+	RADIUS = width / 2;
+	mouseX = RADIUS;
 	var messageWidth = 400;
 	var recommended = 30 + 50 + messageWidth + 100 + 105;
 	console.log(recommended);
@@ -443,8 +465,11 @@ function GitLogViewer(timeline) {
 	var mouseX = -1, mouseY = -1;
 
 	graph.addEventListener('mousemove', function(e) {
+		// FIXME		
+		RADIUS = graph.width / 2;
 		mouseX = e.offsetX;
 		mouseY = e.offsetY;
+		mouseX = RADIUS;
 	});
 
 	
@@ -546,6 +571,7 @@ function GitLogViewer(timeline) {
 		var x = getTrackX(lane);
 		var y = getRowY(row);
 		xy.x = graph.width - (y + translate.y);
+		xy.x = mapX(xy.x);
 		xy.y = x + 100;
 		// graph.height - 100 - 
 		return xy;
