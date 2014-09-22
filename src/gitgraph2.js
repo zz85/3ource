@@ -90,7 +90,7 @@ var Scheme = {
 
 
 function setWidth(width) {
-	RADIUS = width / 2;
+	RADIUS = width;
 	mouseX = RADIUS;
 	var messageWidth = 400;
 	var recommended = 30 + 50 + messageWidth + 100 + 105;
@@ -436,7 +436,7 @@ function GitLogViewer(timeline) {
 
 	// var container, timeline_panel, panel_spacer, sliding_window, graph;
 
-
+	// traffic. slowdown and speedup.
 
 	DIV('gitgraph',
 		CANVAS('graph')
@@ -469,7 +469,18 @@ function GitLogViewer(timeline) {
 		RADIUS = graph.width / 2;
 		mouseX = e.offsetX;
 		mouseY = e.offsetY;
-		mouseX = RADIUS;
+		console.log(mouseY);
+
+		mouseX = graph.width / 2;
+		RADIUS = graph.width / 2;
+		// RADIUS = e.offsetY * 10;
+		DISTORTION = e.offsetY / 10;
+
+		ratio = e.offsetY / 100;
+		console.log(ratio, 'ratio');
+		window.r = ratio;
+
+		// 0.6 - 0.3
 	});
 
 	
@@ -571,18 +582,18 @@ function GitLogViewer(timeline) {
 		var x = getTrackX(lane);
 		var y = getRowY(row);
 		xy.x = graph.width - (y + translate.y);
-		xy.x = mapX(xy.x);
+		// xy.x = mapX(xy.x);
 		xy.y = x + 100;
 		// graph.height - 100 - 
 		return xy;
 	}
 
 	function drawGraph() {
-		// dirty = true;
+		dirty = true;
 		// Draw commit tracks
 		if (dirty) ctx.clearRect(0, 0, graph.width, graph.height);
 		ctx.save();
-		// ctx.translate(graph.width, 0);
+		ctx.translate(graph.width / 2, 0);
 		ctx.scale(ratio, ratio);
 		// ctx.rotate(Math.PI / 2);
 		
@@ -673,11 +684,11 @@ function GitLogViewer(timeline) {
 				if (entry.row >= maxRow) break;
 			}
 
-			if (ctx.isPointInStroke(mouseX, mouseY)) {
-				console.log('yeah!', entry, t[entry.row]);
-				ctx.lineWidth = 4;
-				ctx.stroke();
-			}
+			// if (ctx.isPointInStroke(mouseX, mouseY)) {
+			// 	console.log('yeah!', entry, t[entry.row]);
+			// 	ctx.lineWidth = 4;
+			// 	ctx.stroke();
+			// }
 
 			// console.log('tracks')
 			if (dirty) ctx.stroke();
@@ -721,11 +732,10 @@ function GitLogViewer(timeline) {
 					ctx.stroke();
 				}
 
-				if (ctx.isPointInPath(mouseX, mouseY)) {
-					console.log('yeah!', entry, t[entry.row]);
-
-					selectedEntry = entry;
-				}
+				// if (ctx.isPointInPath(mouseX, mouseY)) {
+				// 	console.log('yeah!', entry, t[entry.row]);
+				// 	selectedEntry = entry;
+				// }
 				// if (entry.row > maxRow) break;
 			}
 
@@ -752,28 +762,26 @@ function GitLogViewer(timeline) {
 			*/
 		}
 
-		// Text
-		for (i=tracks.length; i--;) {
-			track = tracks[i];
-			ctx.strokeStyle = colors[i % colors.length];
+		// // Text
+		// for (i=tracks.length; i--;) {
+		// 	track = tracks[i];
+		// 	ctx.strokeStyle = colors[i % colors.length];
 
+		// 	for (j=0, jl=track.length;j<jl;j++) {
+		// 		entry = track[j];
+		// 		if (nodeTracks[entry.row] != entry.lane
+		// 			|| entry.row < minRow  || entry.row > maxRow) continue;
 
-			// Text
-			for (j=0, jl=track.length;j<jl;j++) {
-				entry = track[j];
-				if (nodeTracks[entry.row] != entry.lane
-					|| entry.row < minRow  || entry.row > maxRow) continue;
-
-				ctx.save();
-				getPoint(entry.lane, entry.row);
-				ctx.translate(xy.x, xy.y);
-				ctx.rotate(-Math.PI / 9);
-				// ctx.textAlign = "center";
-				ctx.fillStyle = '#bbb';
-				ctx.fillText(t[entry.row].message, 10, 10);
-				ctx.restore();
-			}
-		}
+		// 		ctx.save();
+		// 		getPoint(entry.lane, entry.row);
+		// 		ctx.translate(xy.x, xy.y);
+		// 		ctx.rotate(-Math.PI / 9);
+		// 		// ctx.textAlign = "center";
+		// 		ctx.fillStyle = '#bbb';
+		// 		ctx.fillText(t[entry.row].message, 10, 10);
+		// 		ctx.restore();
+		// 	}
+		// }
 
 
 		ctx.restore();

@@ -59,7 +59,7 @@
 
 	var where = slidebar.value;
 	document.addEventListener('mousewheel', function(e) {
-		where -= e.wheelDelta / 100;
+		where -= e.wheelDelta / 100 * 1 / (r * r);
 		where = where < 0 ? 0 : where > t.length ? t.length  - 1 : where;
 		if (Math.random() < 0.2) console.log(viewer.currentRow);
 		// currentRow = reverse(index) = t.length - currentRow - 1
