@@ -151,7 +151,7 @@ function initDrawings() {
 		// Math.random() * 2000 - 1000
 		spriteGeometry.hideSprite(i);
 		spriteGeometry.setSprite( 'rotations', i, 0, 0, 0);
-		
+
 		color.setHSL(0.9, 0.7, 0.8);
 		spriteGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
 
@@ -165,7 +165,7 @@ function initDrawings() {
 		uniforms: {
 			time: { type: "f", value: 1.0 },
 			depth: { type: "f", value: 0.0 },
-			texture: { type: 't', value: THREE.ImageUtils.loadTexture( "textures/sprites/ball.png" ) },
+			texture: { type: 't', value: THREE.ImageUtils.loadTexture( "spark1.png" ) },
 		},
 		attributes: {
 			offset: { type: 'v3', value: null },
@@ -175,7 +175,7 @@ function initDrawings() {
 		fragmentShader: document.getElementById( 'lineFragmentShader' ).textContent,
 		side: THREE.DoubleSide,
 		transparent: true,
-		
+
 		blending: THREE.AdditiveBlending,
 		blendEquation: THREE.AddEquation,
 		blendSrc: THREE.OneFactor,
@@ -199,7 +199,7 @@ function initDrawings() {
 	scene.add(lineMesh);
 
 	particleMesh = new THREE.Mesh( spriteGeometry, material );
-	
+
 	particleMesh.raycast = ( function () {
 
 		var inverseMatrix = new THREE.Matrix4();
@@ -411,7 +411,7 @@ function render() {
 	if (fileNodes.length > PARTICLES) {
 		console.warn('warning, please increase Particles pool size');
 	}
-	
+
 	var j = 0, LINE_SEGMENTS = 10;
 	// Draw links
 	for (i=0;i<LINES;i++) {
@@ -458,14 +458,14 @@ function render() {
 			var k = node.life * 0.01;
 			k = Math.max(0.5, 1 - k * k);
 			color.setHSL(extension_colors[node.ext], node.sat * 0.2 + k * 0.6 + 0.2, k);
-			
+
 			spriteGeometry.setSprite( 'colors', i, color.r, color.g, color.b);
 
 			if (node.life < 200) {
 				// prepare label
 				label = node.name.substring(node.name.lastIndexOf('/') + 1);
 				tmp.set(node.x, node.y, 0).applyMatrix4(particleMesh.matrixWorld);
-				
+
 				tmp = projector.projectVector(tmp, camera);
 				if (tmp.x + 1 < 2 && tmp.y + 1 < 2)
 				labelNode(tmp, label, !true);
@@ -518,7 +518,7 @@ function render() {
 	// find intersections
 
 	if (window.moo) {
-	
+
 		vector = new THREE.Vector3( mouseX / windowHalfX, -1 * mouseY / windowHalfY, 1 );
 		// console.log(vector);
 		projector.unprojectVector( vector, camera );
@@ -532,10 +532,10 @@ function render() {
 		if ( intersects.length > 0 ) {
 			console.log(intersects.length)
 			console.log(intersects[0])
-			
+
 		} else {
 
-			
+
 
 		}
 		console.timeEnd('check')
