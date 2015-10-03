@@ -476,7 +476,7 @@ function GitLogViewer(timeline) {
 		// RADIUS = e.offsetY * 10;
 		DISTORTION = e.offsetY / 10;
 
-		ratio = e.offsetY / 100;
+		ratio = (graph.height - e.offsetY) / 100;
 		console.log(ratio, 'ratio');
 		window.r = ratio;
 
