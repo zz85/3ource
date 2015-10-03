@@ -1,0 +1,23 @@
+{
+  "name": "3ource",
+  "version": "1.0.0",
+  "description": "Git Visualization in JS",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "transform": "node utils/process.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zz85/3ource.git"
+  },
+  "author": "Joshua Koo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zz85/3ource/issues"
+  },
+  "homepage": "https://github.com/zz85/3ource"
+}

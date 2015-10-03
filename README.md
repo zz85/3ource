@@ -20,11 +20,19 @@ Sneak peak:
 
 ## Usage
 
+Converting Git Data to 3ource JS format.
 
 ```js
 node utils/process.js
 ```
-for generating data files of git directory.
+
+or
+
+```sh
+npm run transform
+```
+
+for generating data files of git directory. If the git repository is huge, transforming may take some time.
 
 go poke into /src
 
